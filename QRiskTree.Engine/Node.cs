@@ -30,8 +30,8 @@ namespace QRiskTree.Engine
 
         #region Constants.
         public const uint MaxIterations = 10485760; // Maximum number of iterations for the simulation.
-        public const uint MinIterations = 100000; // Minimum number of iterations for the simulation.
-        public const uint DefaultIterations = 500000; // Default number of iterations for the simulation.
+        public const uint MinIterations = 10000; // Minimum number of iterations for the simulation.
+        public const uint DefaultIterations = 100000; // Default number of iterations for the simulation.
         #endregion
 
         #region Properties.
