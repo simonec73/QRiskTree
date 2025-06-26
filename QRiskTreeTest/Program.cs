@@ -1,7 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using QRiskTree.Engine;
-using ExtendedOpenFAIR;
-using OpenFAIR;
+using QRiskTree.Engine.ExtendedOpenFAIR;
+using QRiskTree.Engine.OpenFAIR;
 
 var model = RiskModel.Instance;
 
@@ -22,7 +22,7 @@ mitigation1.Perc10 = 5000;
 mitigation1.Mode = 10000;
 mitigation1.Perc90 = 20000;
 mitigation1.Confidence = Confidence.Moderate;
-mitigation1.OperationCosts = new Range(RangeType.Money, 
+mitigation1.OperationCosts = new QRiskTree.Engine.Range(RangeType.Money, 
     1200, 6000, 20000, Confidence.Moderate);
 if (risk1.ApplyMitigation(mitigation1, out var r1Mitigation1))
 {
@@ -44,7 +44,7 @@ mitigation2.Perc10 = 5000;
 mitigation2.Mode = 10000;
 mitigation2.Perc90 = 20000;
 mitigation2.Confidence = Confidence.High;
-mitigation2.OperationCosts = new Range(RangeType.Money,
+mitigation2.OperationCosts = new QRiskTree.Engine.Range(RangeType.Money,
     1200, 12000, 24000, Confidence.Moderate);
 if (risk2.ApplyMitigation(mitigation2, out var r2Mitigation2))
 {
@@ -59,7 +59,7 @@ mitigation3.Perc10 = 2000000;
 mitigation3.Mode = 3000000;
 mitigation3.Perc90 = 50000000;
 mitigation3.Confidence = Confidence.Moderate;
-mitigation1.OperationCosts = new Range(RangeType.Money,
+mitigation1.OperationCosts = new QRiskTree.Engine.Range(RangeType.Money,
     10000, 20000, 50000, Confidence.Moderate);
 if (risk3.ApplyMitigation(mitigation3, out var r3Mitigation3))
 {
