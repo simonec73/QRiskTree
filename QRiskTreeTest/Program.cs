@@ -83,26 +83,27 @@ if (firstYearCosts != null)
     Console.WriteLine($"- Mode: {firstYearCosts.Mode.ToString("C0")}");
     Console.WriteLine($"- 90%: {firstYearCosts.Perc90.ToString("C0")}");
     Console.WriteLine($"- Confidence: ({firstYearCosts.Confidence})");
+}
 
+if (followingYearsCosts != null)
+{
     Console.WriteLine("\n--- Estimation of the Minimal Overall Yearly Cost for the following years:");
     Console.WriteLine($"- 10%: {followingYearsCosts.Perc10.ToString("C0")}");
     Console.WriteLine($"- Mode: {followingYearsCosts.Mode.ToString("C0")}");
     Console.WriteLine($"- 90%: {followingYearsCosts.Perc90.ToString("C0")}");
     Console.WriteLine($"- Confidence: ({followingYearsCosts.Confidence})");
+}
 
-
+if (mitigations?.Any() ?? false)
+{
     Console.WriteLine("\n--- Mitigations to be applied:");
-
-    if (mitigations?.Any() ?? false)
+    foreach (var mitigation in mitigations)
     {
-        foreach (var mitigation in mitigations)
+        Console.WriteLine($"\n{mitigation.Name}");
+        Console.WriteLine($"- Implementation Costs: {mitigation.Perc10} - {mitigation.Mode} - {mitigation.Perc90} ({mitigation.Confidence})");
+        if (mitigation.OperationCosts != null)
         {
-            Console.WriteLine($"\n{mitigation.Name}");
-            Console.WriteLine($"- Implementation Costs: {mitigation.Perc10} - {mitigation.Mode} - {mitigation.Perc90} ({mitigation.Confidence})");
-            if (mitigation.OperationCosts != null)
-            {
-                Console.WriteLine($"- Operation Costs: {mitigation.OperationCosts.Perc10} - {mitigation.OperationCosts.Mode} - {mitigation.OperationCosts.Perc90} ({mitigation.OperationCosts.Confidence})");
-            }
+            Console.WriteLine($"- Operation Costs: {mitigation.OperationCosts.Perc10} - {mitigation.OperationCosts.Mode} - {mitigation.OperationCosts.Perc90} ({mitigation.OperationCosts.Confidence})");
         }
     }
 }
