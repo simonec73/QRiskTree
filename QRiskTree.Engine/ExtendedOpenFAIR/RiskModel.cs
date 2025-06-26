@@ -115,6 +115,28 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
         #endregion
 
         #region Simulation.
+        /// <summary>
+        /// Simulation of the model considering only the selected risks, without factoring in the selected mitigations.
+        /// </summary>
+        /// <param name="iterations">Number of iterations.</param>
+        /// <returns>Residual risk.</returns>
+        public Range? Simulate(uint iterations = Node.DefaultIterations)
+        {
+#pragma warning disable CS8604 // Possible null reference argument.
+            var enabledMitigations = _mitigations.Where(x => x.IsEnabled).Select(x => x.Id).ToArray();
+#pragma warning restore CS8604 // Possible null reference argument.
+            SetEnabledState();
+            var samples = CalculateResidualRisk(iterations, out var confidence);
+            SetEnabledState(enabledMitigations);
+            return samples?.ToRange(RangeType.Money, confidence);
+        }
+
+        /// <summary>
+        /// Simulation of the model considering the selected risks and enabled mitigations.
+        /// </summary>
+        /// <param name="costFollowingYears">Overall costs calculated for the years following the first.</param>
+        /// <param name="iterations">Number of iterations.</param>
+        /// <returns>Costs calculated for the first year.</returns>
         public Range? Simulate(out Range? costFollowingYears, uint iterations = Node.DefaultIterations)
         {
             var samples = CalculateResidualRisk(iterations, out var confidence);
@@ -381,7 +403,7 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
             return Simulate(out costFollowingYears, iterations);
         }
 
-        private void SetEnabledState(IEnumerable<Guid> mitigations)
+        private void SetEnabledState(IEnumerable<Guid>? mitigations = null)
         {
             // Set the enabled state of mitigations based on the selection.
             var allMitigations = _mitigations?.ToArray();
@@ -389,7 +411,7 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
             {
                 foreach (var m in allMitigations)
                 {
-                    m.IsEnabled = mitigations.Any(x => x == m.Id);
+                    m.IsEnabled = mitigations?.Any(x => x == m.Id) ?? false;
                 }
             }
         }
