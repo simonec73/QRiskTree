@@ -12,6 +12,7 @@ namespace QRiskTree.Engine.Facts
             _name = name;
         }
 
+        #region Properties.
         [JsonProperty("id")]
         public Guid Id { get; protected set; } = Guid.NewGuid();
 
@@ -125,6 +126,9 @@ namespace QRiskTree.Engine.Facts
 
         [JsonProperty("refDate")]
         public DateTime ReferenceDate { get; set; }
+        #endregion
+
+        #region Obsolescence.
 
         [JsonProperty("obsolete")]
         public bool Obsolete { get; protected set; }
@@ -141,5 +145,6 @@ namespace QRiskTree.Engine.Facts
             }
             Update();
         }
+        #endregion
     }
 }

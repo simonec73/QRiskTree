@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace QRiskTree.Engine.Facts
+namespace QRiskTree.Engine
 {
     [JsonObject(MemberSerialization.OptIn)]
     public class ChangesTracker

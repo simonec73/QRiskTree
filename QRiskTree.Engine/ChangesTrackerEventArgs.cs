@@ -1,4 +1,4 @@
-﻿namespace QRiskTree.Engine.Facts
+﻿namespace QRiskTree.Engine
 {
     public class ChangesTrackerEventArgs : EventArgs
     {

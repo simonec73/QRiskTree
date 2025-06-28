@@ -1,7 +1,5 @@
 ﻿
-using QRiskTree.Engine.Facts;
-
-namespace QriskTree.Engine.Facts
+namespace QRiskTree.Engine.Facts
 {
     class FactComparer : IEqualityComparer<Fact>
     {
