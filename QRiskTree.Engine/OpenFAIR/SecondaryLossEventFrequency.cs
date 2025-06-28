@@ -6,11 +6,11 @@ namespace QRiskTree.Engine.OpenFAIR
     [JsonObject(MemberSerialization.OptIn)]
     public class SecondaryLossEventFrequency : NodeWithFacts
     {
-        public SecondaryLossEventFrequency() : base(RangeType.Frequency)
+        public SecondaryLossEventFrequency() : base(RangeType.Percentage)
         {
         }
 
-        public SecondaryLossEventFrequency(string name) : base(name, RangeType.Frequency)
+        public SecondaryLossEventFrequency(string name) : base(name, RangeType.Percentage)
         {
         }
 
