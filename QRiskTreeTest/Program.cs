@@ -49,7 +49,7 @@ sec2.Add(new SecondaryLossMagnitude("Competitive Advantage loss magnitude") { Pe
 #endregion
 #endregion
 
-#region - A third risk, using only LossEventFrequency and LossMagnitude nodes.
+#region Risk3 - A third risk, using only LossEventFrequency and LossMagnitude nodes.
 var risk3 = model.AddRisk("Risk 3: Phishing attack leading to credential theft.");
 risk3.Add(new LossEventFrequency() { Perc10 = 12, Mode = 60, Perc90 = 1200, Confidence = Confidence.Moderate });
 risk3.Add(new LossMagnitude() { Perc10 = 100, Mode = 500, Perc90 = 1500, Confidence = Confidence.Low });
@@ -110,9 +110,9 @@ if (risk3.ApplyMitigation(mitigation3, out var r3Mitigation3))
 #endregion
 #endregion
 
+#region Step 2 - Calculation of the residual risk for the baseline.
 uint iterations = Node.DefaultIterations;
 
-#region Step 2 - Calculation of the residual risk for the baseline.
 var stopwatch1 = System.Diagnostics.Stopwatch.StartNew();
 var baseline = model.Simulate(iterations);
 stopwatch1.Stop();
