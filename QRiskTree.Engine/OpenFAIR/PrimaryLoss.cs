@@ -7,18 +7,28 @@ namespace QRiskTree.Engine.OpenFAIR
     [JsonObject(MemberSerialization.OptIn)]
     public class PrimaryLoss : NodeWithFacts
     {
-        public PrimaryLoss() : base(RangeType.Money)
+        internal PrimaryLoss() : base(RangeType.Money)
         {
         }
 
-        public PrimaryLoss(string name) : base(name, RangeType.Money)
+        internal PrimaryLoss(string name) : base(name, RangeType.Money)
         {
         }
 
+        #region Loss Form management.
         [JsonProperty("form")]
         [JsonConverter(typeof(StringEnumConverter))]
         public PrimaryLossForm Form { get; set; } = PrimaryLossForm.Undetermined;
 
+        public PrimaryLoss Set(PrimaryLossForm form)
+        {
+            Form = form;
+
+            return this;
+        }
+        #endregion
+
+        #region Member overrides.
         protected override bool IsValidChild(Node node)
         {
             return false;
@@ -30,5 +40,6 @@ namespace QRiskTree.Engine.OpenFAIR
             samples = null;
             return false;
         }
+        #endregion
     }
 }

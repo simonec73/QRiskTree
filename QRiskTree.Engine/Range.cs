@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using QRiskTree.Engine.Facts;
 
 namespace QRiskTree.Engine
@@ -7,6 +8,11 @@ namespace QRiskTree.Engine
     public class Range : ChangesTracker
     {
         #region Constructors.
+        private Range() : base()
+        {
+
+        }
+
         public Range(RangeType rangeType) : base()
         {
             RangeType = rangeType;
@@ -55,8 +61,28 @@ namespace QRiskTree.Engine
         }
         #endregion
 
+        #region Public methods.
+        public Range Set(double perc10, double mode, double perc90, Confidence confidence)
+        {
+            if (!IsValid(perc10))
+                throw new ArgumentOutOfRangeException(nameof(perc10), $"Value '{perc10}' is not acceptable for {RangeType}.");
+            if (!IsValid(mode))
+                throw new ArgumentOutOfRangeException(nameof(mode), $"Value '{mode}' is not acceptable for {RangeType}.");
+            if (!IsValid(perc90))
+                throw new ArgumentOutOfRangeException(nameof(perc90), $"Value '{perc90}' is not acceptable for {RangeType}.");
+
+            _perc10 = perc10;
+            _mode = mode;
+            _perc90 = perc90;
+            _calculated = false;
+            Update();
+
+            return this;
+        }
+        #endregion
+
         #region Properties.
-        [JsonProperty("calculated")]
+        [JsonProperty("calculated", Order = 10)]
         protected bool? _calculated = null;
 
         /// <summary>
@@ -72,7 +98,7 @@ namespace QRiskTree.Engine
         /// </summary>
         public readonly RangeType RangeType;
 
-        [JsonProperty("perc10")]
+        [JsonProperty("perc10", Order = 11)]
         protected double _perc10 { get; set; } = 0.0;
 
         /// <summary>
@@ -95,7 +121,7 @@ namespace QRiskTree.Engine
             }
         }
 
-        [JsonProperty("mode")]
+        [JsonProperty("mode", Order = 12)]
         protected double _mode { get; set; } = 0.0;
 
         /// <summary>
@@ -118,7 +144,7 @@ namespace QRiskTree.Engine
             }
         }
 
-        [JsonProperty("perc90")]
+        [JsonProperty("perc90", Order = 13)]
         protected double _perc90 { get; set; } = 0.0;
 
         /// <summary>
@@ -141,7 +167,7 @@ namespace QRiskTree.Engine
             }
         }
 
-        [JsonProperty("confidence")]
+        [JsonProperty("confidence", Order = 14)]
         [JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
         protected Confidence _confidence { get; set; } = Confidence.Low;
 

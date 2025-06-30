@@ -7,6 +7,11 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
     [JsonObject(MemberSerialization.OptIn)]
     public class AppliedMitigation : NodeWithFacts
     {
+        internal AppliedMitigation() : base(RangeType.Percentage)
+        {
+            // Default constructor for serialization purposes.
+        }
+
         internal AppliedMitigation(MitigationCost mitigation) : base(RangeType.Percentage)
         {
             _mitigationCostId = mitigation.Id;

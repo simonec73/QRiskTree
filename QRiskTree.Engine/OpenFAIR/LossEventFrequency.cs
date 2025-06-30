@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using QRiskTree.Engine.ExtendedOpenFAIR;
 using QRiskTree.Engine.Facts;
 
 namespace QRiskTree.Engine.OpenFAIR
@@ -6,14 +7,71 @@ namespace QRiskTree.Engine.OpenFAIR
     [JsonObject(MemberSerialization.OptIn)]
     public class LossEventFrequency : NodeWithFacts
     {
-        public LossEventFrequency() : base(RangeType.Frequency)
+        internal LossEventFrequency() : base(RangeType.Frequency)
         {
         }
 
-        public LossEventFrequency(string name) : base(name, RangeType.Frequency)
+        internal LossEventFrequency(string name) : base(name, RangeType.Frequency)
         {
         }
 
+        #region Children management.
+        public ThreatEventFrequency AddThreatEventFrequency()
+        {
+            var result = new ThreatEventFrequency();
+
+            if (!Add(result))
+            { 
+                throw new InvalidOperationException("A ThreatEventFrequency node already exists as a child of this node.");
+            }
+
+            return result;
+        }
+
+        public ThreatEventFrequency AddThreatEventFrequency(string name)
+        {
+            var result = new ThreatEventFrequency(name);
+
+            if (!Add(result))
+            {
+                throw new InvalidOperationException("A ThreatEventFrequency node already exists as a child of this node.");
+            }
+
+            return result;
+        }
+
+        public ThreatEventFrequency? GetThreatEventFrequency()
+        {
+            return _children?.OfType<ThreatEventFrequency>().FirstOrDefault();
+        }
+
+        public Vulnerability AddVulnerability()
+        {
+            var result = new Vulnerability();
+            if (!Add(result))
+            {
+                throw new InvalidOperationException("A Vulnerability node already exists as a child of this node.");
+            }
+            return result;
+        }
+        
+        public Vulnerability AddVulnerability(string name)
+        {
+            var result = new Vulnerability(name);
+            if (!Add(result))
+            {
+                throw new InvalidOperationException("A Vulnerability node already exists as a child of this node.");
+            }
+            return result;
+        }
+
+        public Vulnerability? GetVulnerability()
+        {
+            return _children?.OfType<Vulnerability>().FirstOrDefault();
+        }
+        #endregion
+
+        #region Member overrides.
         protected override bool IsValidChild(Node node)
         {
             return (node is ThreatEventFrequency && !(_children?.OfType<ThreatEventFrequency>().Any() ?? false)) || 
@@ -50,5 +108,6 @@ namespace QRiskTree.Engine.OpenFAIR
 
             return result;
         }
+        #endregion
     }
 }

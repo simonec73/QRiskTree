@@ -7,52 +7,46 @@ var model = RiskModel.Instance;
 
 #region Risk1 - A simple risk calculated using only the LossEventFrequency and LossMagnitude nodes.
 var risk1 = model.AddRisk("Risk 1: Unauthorized access to sensitive data.");
-risk1.Add(new LossEventFrequency() { Perc10 = 1, Mode = 12, Perc90 = 120, Confidence = Confidence.Moderate });
-risk1.Add(new LossMagnitude() { Perc10 = 100000, Mode = 500000, Perc90 = 20000000, Confidence = Confidence.Moderate});
+risk1.AddLossEventFrequency().Set(1, 12, 120, Confidence.Moderate);
+risk1.AddLossMagnitude().Set(100000, 500000, 20000000, Confidence.Moderate);
 #endregion
 
 #region Risk2 - A more complex risk with a full, nested structure.
 var risk2 = model.AddRisk("Risk 2: Data loss due to hardware failure.");
 
 #region Calculation of the Loss Event Frequency.
-var lef = new LossEventFrequency("Data loss event frequency");
-risk2.Add(lef);
+var lef = risk2.AddLossEventFrequency("Data loss event frequency");
 
-var tef = new ThreatEventFrequency("Data loss threat event frequency");
-lef.Add(tef);
-tef.Add(new ContactFrequency("Data Loss Contact Frequency") { Perc10=52, Mode=356, Perc90=3560, Confidence = Confidence.Moderate});
-tef.Add(new ProbabilityOfAction("Data loss probability of action") { Perc10 = 0.01, Mode = 0.1, Perc90 = 0.5, Confidence = Confidence.Moderate });
+var tef = lef.AddThreatEventFrequency("Data loss threat event frequency");
+tef.AddContactFrequency("Data Loss Contact Frequency").Set(52, 356, 3560, Confidence.Moderate);
+tef.AddProbabilityOfAction("Data loss probability of action").Set(0.01, 0.1, 0.5, Confidence.Moderate);
 
-var vuln = new Vulnerability("Data loss vulnerability");
-lef.Add(vuln);
-vuln.Add(new ThreatCapability("Data loss threat capability") { Perc10 = 0.1, Mode = 0.5, Perc90 = 0.9, Confidence = Confidence.Moderate });
-vuln.Add(new ResistenceStrength("Data loss resistance strength") { Perc10 = 0.2, Mode = 0.5, Perc90 = 0.75, Confidence = Confidence.Moderate });
+var vuln = lef.AddVulnerability("Data loss vulnerability");
+vuln.AddThreatCapability("Data loss threat capability").Set(0.1, 0.5, 0.9,  Confidence.Moderate);
+vuln.AddResistenceStrength("Data loss resistance strength").Set(0.2, 0.5, 0.75, Confidence.Moderate);
 #endregion
 
 #region Calculation of the Loss Magnitude.
-var mag = new LossMagnitude("Data loss magnitude");
-risk2.Add(mag);
+var mag = risk2.AddLossMagnitude("Data loss magnitude");
 
-mag.Add(new PrimaryLoss("Primary loss: Productivity") { Form = PrimaryLossForm.Productivity, Perc10 = 0, Mode = 100000, Perc90 = 1000000, Confidence = Confidence.Low });
-mag.Add(new PrimaryLoss("Primary loss: Replacement") { Form = PrimaryLossForm.Replacement, Perc10 = 1000, Mode = 2000, Perc90 = 3000, Confidence = Confidence.High });
-mag.Add(new PrimaryLoss("Primary loss: Response") { Form = PrimaryLossForm.Response, Perc10 = 50000, Mode = 100000, Perc90 = 1000000, Confidence = Confidence.Low });
+mag.AddPrimaryLoss("Primary loss: Productivity").Set(PrimaryLossForm.Productivity).Set(0, 100000, 1000000, Confidence.Low);
+mag.AddPrimaryLoss("Primary loss: Replacement").Set(PrimaryLossForm.Replacement).Set(1000, 2000, 3000, Confidence.High);
+mag.AddPrimaryLoss("Primary loss: Response").Set(PrimaryLossForm.Response).Set(50000, 100000, 1000000, Confidence.Low);
 
-var sec1 = new SecondaryRisk("Secondary risk: Reputation") { Form = SecondaryLossForm.Reputation };
-mag.Add(sec1);
-sec1.Add(new SecondaryLossEventFrequency("Reputation event frequency") { Perc10 = 0.01, Mode = 0.02, Perc90 = 0.2, Confidence = Confidence.Moderate });
-sec1.Add(new SecondaryLossMagnitude("Reputation loss magnitude") { Perc10 = 10000, Mode = 50000, Perc90 = 200000, Confidence = Confidence.Low });
+var sec1 = mag.AddSecondaryRisk("Secondary risk: Reputation").Set(SecondaryLossForm.Reputation);
+sec1.AddSecondaryLossEventFrequency("Reputation event frequency").Set(0.01, 0.02, 0.2, Confidence.Moderate);
+sec1.AddSecondaryLossMagnitude("Reputation loss magnitude").Set(10000, 50000, 200000, Confidence.Low);
 
-var sec2 = new SecondaryRisk("Secondary risk: Competitive Advantage") { Form = SecondaryLossForm.Competitive_Advantage };
-mag.Add(sec2);
-sec2.Add(new SecondaryLossEventFrequency("Competitive Advantage event frequency") { Perc10 = 0.01, Mode = 0.02, Perc90 = 0.1, Confidence = Confidence.Moderate });
-sec2.Add(new SecondaryLossMagnitude("Competitive Advantage loss magnitude") { Perc10 = 100000, Mode = 500000, Perc90 = 2000000, Confidence = Confidence.Low });
+var sec2 = mag.AddSecondaryRisk("Secondary risk: Competitive Advantage").Set(SecondaryLossForm.Competitive_Advantage);
+sec2.AddSecondaryLossEventFrequency("Competitive Advantage event frequency").Set(0.01, 0.02, 0.1, Confidence.Moderate);
+sec2.AddSecondaryLossMagnitude("Competitive Advantage loss magnitude").Set(100000, 500000, 2000000, Confidence.Low);
 #endregion
 #endregion
 
 #region Risk3 - A third risk, using only LossEventFrequency and LossMagnitude nodes.
 var risk3 = model.AddRisk("Risk 3: Phishing attack leading to credential theft.");
-risk3.Add(new LossEventFrequency() { Perc10 = 12, Mode = 60, Perc90 = 1200, Confidence = Confidence.Moderate });
-risk3.Add(new LossMagnitude() { Perc10 = 100, Mode = 500, Perc90 = 1500, Confidence = Confidence.Low });
+risk3.AddLossEventFrequency().Set(12, 60, 1200, Confidence.Moderate);
+risk3.AddLossMagnitude().Set(100, 500, 1500, Confidence.Low);
 #endregion
 
 #region Definition of the mitigations.
@@ -117,7 +111,7 @@ var stopwatch1 = System.Diagnostics.Stopwatch.StartNew();
 var baseline = model.Simulate(iterations);
 stopwatch1.Stop();
 
-Console.WriteLine($"Residual Risk for the baseline calculated in {stopwatch1.ElapsedMilliseconds} ms ({iterations} iterations).\n");
+Console.WriteLine($"Residual Risk for the baseline calculated in {stopwatch1.ElapsedMilliseconds}ms ({Statistics.Simulations} * {iterations} samples generated).\n");
 
 if (baseline != null)
 {
@@ -130,11 +124,12 @@ if (baseline != null)
 #endregion
 
 #region Step 3 - Identification of the optimal set of mitigations.
+Statistics.ResetSimulations();
 var stopwatch2 = System.Diagnostics.Stopwatch.StartNew();
 var mitigations = model.OptimizeMitigations(out var firstYearCosts, out var followingYearsCosts, iterations: iterations);
 stopwatch2.Stop();
 
-Console.WriteLine($"\nOptimization completed in {stopwatch2.ElapsedMilliseconds} ms ({iterations} iterations).\n");
+Console.WriteLine($"\nOptimization completed in {stopwatch2.ElapsedMilliseconds}ms ({Statistics.Simulations} * {iterations} samples generated).\n");
 
 if (firstYearCosts != null)
 {
@@ -188,6 +183,44 @@ if (mitigations?.Any() ?? false)
         if (mitigation.OperationCosts != null)
         {
             Console.WriteLine($"- Operation Costs: {mitigation.OperationCosts.Perc10} - {mitigation.OperationCosts.Mode} - {mitigation.OperationCosts.Perc90} ({mitigation.OperationCosts.Confidence})");
+        }
+    }
+}
+#endregion
+
+#region Save the risk model to a file.
+Console.WriteLine("\n--- Model Serialization.");
+model.Serialize(@"c:\temp\RiskModel.json");
+Console.WriteLine("Risk model saved to c:\\temp\\RiskModel.json.");
+
+Console.WriteLine("\n--- Model reset.");
+RiskModel.Reset();
+model = RiskModel.Instance;
+if (!(model.Risks?.Any() ?? false))
+{
+    Console.WriteLine("The Risk Model has been reset successfully.");
+
+    Console.WriteLine("\n--- Model Deserialization.");
+    if (RiskModel.Load(@"c:\temp\RiskModel.json"))
+    {
+        model = RiskModel.Instance;
+        if (model.Risks?.Any() ?? false)
+        {
+            Console.WriteLine("Risk Model loaded successfully from c:\\temp\\RiskModel.json.");
+            Console.WriteLine("Risks in the loaded model:");
+            foreach (var risk in model.Risks)
+            {
+                Console.WriteLine($"- {risk.Name}");
+            }
+            Console.WriteLine("Mitigations in the loaded model:");
+            foreach (var mitigation in model.Mitigations)
+            {
+                Console.WriteLine($"- {mitigation.Name}");
+            }
+        }
+        else
+        {
+            Console.WriteLine("No risks found in the loaded Risk Model.");
         }
     }
 }

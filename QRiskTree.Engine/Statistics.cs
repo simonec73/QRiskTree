@@ -3,9 +3,18 @@ using MathNet.Numerics.Statistics;
 
 namespace QRiskTree.Engine
 {
-    internal static class Statistics
+    public static class Statistics
     {
-        public static Range? ToRange(this double[]? samples, RangeType rangeType, Confidence confidence = Confidence.Moderate)
+        private static uint _simulations = 0;
+
+        public static uint Simulations => _simulations;
+
+        public static void ResetSimulations()
+        {
+            Interlocked.Exchange(ref _simulations, 0);
+        }
+
+        internal static Range? ToRange(this double[]? samples, RangeType rangeType, Confidence confidence = Confidence.Moderate)
         {
             Range? result = null;
 
@@ -22,12 +31,12 @@ namespace QRiskTree.Engine
             return result;
         }
 
-        public static bool GenerateSamples(this Range range, uint iterations, out double[]? samples)
+        internal static bool GenerateSamples(this Range range, uint iterations, out double[]? samples)
         {
             return GenerateSamples(range.Perc10, range.Mode, range.Perc90, range.Confidence, iterations, out samples);
         }
 
-        public static bool GenerateSamples(double perc10, double mode, double perc90, Confidence confidence,
+        internal static bool GenerateSamples(double perc10, double mode, double perc90, Confidence confidence,
            uint iterations, out double[]? samples)
         {
             var result = false;
@@ -39,6 +48,7 @@ namespace QRiskTree.Engine
                 samples = new double[iterations];
                 pert.Samples(samples);
                 result = true;
+                Interlocked.Increment(ref _simulations);
             }
 
             return result;
@@ -86,7 +96,7 @@ namespace QRiskTree.Engine
             return result;
         }
 
-        public static double CalculateMode(this double[] data, uint binsCount = 0)
+        internal static double CalculateMode(this double[] data, uint binsCount = 0)
         {
             if (data == null || data.Length == 0)
                 throw new ArgumentException("Data array is null or empty.", nameof(data));

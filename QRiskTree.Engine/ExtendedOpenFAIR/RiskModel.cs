@@ -1,5 +1,6 @@
 ﻿using MathNet.Numerics.Statistics;
 using Newtonsoft.Json;
+using QRiskTree.Engine.Facts;
 using System.Data;
 using System.Runtime.Serialization;
 using System.Threading.Channels;
@@ -414,6 +415,53 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
                     m.IsEnabled = mitigations?.Any(x => x == m.Id) ?? false;
                 }
             }
+        }
+        #endregion
+
+        #region Serialization and Deserialization.
+
+        public void Serialize(string filePath)
+        {
+            var settings = new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.None,
+                DefaultValueHandling = DefaultValueHandling.Ignore,
+                SerializationBinder = new KnownTypesBinder(),
+                MaxDepth = 128,
+                Formatting = Formatting.Indented
+            };
+            var json = JsonConvert.SerializeObject(this, settings);
+            System.IO.File.WriteAllText(filePath, json);
+        }
+
+        public static bool Load(string filePath)
+        {
+            if (!System.IO.File.Exists(filePath))
+                throw new FileNotFoundException($"The file '{filePath}' does not exist.");
+
+            var result = false;
+
+            var json = System.IO.File.ReadAllText(filePath);
+
+            var settings = new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.None,
+                DefaultValueHandling = DefaultValueHandling.Ignore,
+                SerializationBinder = new KnownTypesBinder(),
+                MaxDepth = 128
+            };
+            var riskModel = JsonConvert.DeserializeObject<RiskModel>(json, settings);
+            if (riskModel != null)
+            {
+                _instance = riskModel;
+                result = true;
+            }
+            else
+            {
+                throw new InvalidOperationException($"Failed to load the Risk Model from '{filePath}'.");
+            }
+
+            return result;
         }
         #endregion
     }

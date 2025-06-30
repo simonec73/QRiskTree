@@ -7,14 +7,15 @@ namespace QRiskTree.Engine.OpenFAIR
     [JsonObject(MemberSerialization.OptIn)]
     public class ProbabilityOfAction : NodeWithFacts
     {
-        public ProbabilityOfAction() : base(RangeType.Percentage)
+        internal ProbabilityOfAction() : base(RangeType.Percentage)
         {
         }
 
-        public ProbabilityOfAction(string name) : base(name, RangeType.Percentage)
+        internal ProbabilityOfAction(string name) : base(name, RangeType.Percentage)
         {
         }
 
+        #region Member overrides.
         protected override bool IsValidChild(Node node)
         {
             return false;
@@ -26,5 +27,6 @@ namespace QRiskTree.Engine.OpenFAIR
             samples = null;
             return false;
         }
+        #endregion
     }
 }

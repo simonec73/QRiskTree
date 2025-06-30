@@ -35,12 +35,12 @@ namespace QRiskTree.Engine
         #endregion
 
         #region Properties.
-        [JsonProperty("id")]
+        [JsonProperty("id", Order = 1)]
         private Guid _id { get; set; }
 
         public Guid Id => _id;
 
-        [JsonProperty("name")]
+        [JsonProperty("name", Order = 2)]
         private string? _name { get; set; }
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace QRiskTree.Engine
             }
         }
 
-        [JsonProperty("description")]
+        [JsonProperty("description", Order = 3)]
         private string? _description { get; set; }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace QRiskTree.Engine
             }
         }
 
-        [JsonProperty("children")]
+        [JsonProperty("children", ItemTypeNameHandling = TypeNameHandling.Objects)]
         protected List<Node>? _children { get; set; }
 
         /// <summary>

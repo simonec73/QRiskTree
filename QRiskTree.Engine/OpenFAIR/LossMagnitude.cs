@@ -6,14 +6,67 @@ namespace QRiskTree.Engine.OpenFAIR
     [JsonObject(MemberSerialization.OptIn)]
     public class LossMagnitude : NodeWithFacts
     {
-        public LossMagnitude() : base(RangeType.Money)
+        internal LossMagnitude() : base(RangeType.Money)
         {
         }
 
-        public LossMagnitude(string name) : base(name, RangeType.Money)
+        internal LossMagnitude(string name) : base(name, RangeType.Money)
         {
         }
 
+        #region Children management.
+        public PrimaryLoss AddPrimaryLoss()
+        {
+            var result = new PrimaryLoss();
+            if (!Add(result))
+            {
+                throw new InvalidOperationException("PrimaryLoss node creation failed.");
+            }
+            return result;
+        }
+
+        public PrimaryLoss AddPrimaryLoss(string name)
+        {
+            var result = new PrimaryLoss(name);
+            if (!Add(result))
+            {
+                throw new InvalidOperationException("PrimaryLoss node creation failed.");
+            }
+            return result;
+        }
+
+        public PrimaryLoss? GetPrimaryLoss()
+        {
+            return _children?.OfType<PrimaryLoss>().FirstOrDefault();
+        }
+
+        public SecondaryRisk AddSecondaryRisk()
+        {
+            var result = new SecondaryRisk();
+            if (!Add(result))
+            {
+                throw new InvalidOperationException("SecondaryRisk node creation failed.");
+            }
+            return result;
+        }
+
+        public SecondaryRisk AddSecondaryRisk(string name)
+        {
+            var result = new SecondaryRisk(name);
+            if (!Add(result))
+            {
+                throw new InvalidOperationException("SecondaryRisk node creation failed.");
+            }
+            return result;
+        }
+
+        public SecondaryRisk? GetSecondaryRisk()
+        {
+            return _children?.OfType<SecondaryRisk>().FirstOrDefault();
+        }
+        #endregion
+
+        #region Member overrides.
         protected override bool IsValidChild(Node node)
         {
             return (node is PrimaryLoss) || (node is SecondaryRisk);
@@ -76,5 +129,6 @@ namespace QRiskTree.Engine.OpenFAIR
 
             return result;
         }
+        #endregion
     }
 }

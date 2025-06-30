@@ -6,14 +6,15 @@ namespace QRiskTree.Engine.OpenFAIR
     [JsonObject(MemberSerialization.OptIn)]
     public class ThreatCapability : NodeWithFacts
     {
-        public ThreatCapability() : base(RangeType.Percentage)
+        internal ThreatCapability() : base(RangeType.Percentage)
         {
         }
 
-        public ThreatCapability(string name) : base(name, RangeType.Percentage)
+        internal ThreatCapability(string name) : base(name, RangeType.Percentage)
         {
         }
 
+        #region Member overrides.
         protected override bool IsValidChild(Node node)
         {
             return false;
@@ -25,5 +26,6 @@ namespace QRiskTree.Engine.OpenFAIR
             samples = null;
             return false;
         }
+        #endregion
     }
 }

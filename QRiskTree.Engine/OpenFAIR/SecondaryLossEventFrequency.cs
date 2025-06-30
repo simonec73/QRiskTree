@@ -6,14 +6,15 @@ namespace QRiskTree.Engine.OpenFAIR
     [JsonObject(MemberSerialization.OptIn)]
     public class SecondaryLossEventFrequency : NodeWithFacts
     {
-        public SecondaryLossEventFrequency() : base(RangeType.Percentage)
+        internal SecondaryLossEventFrequency() : base(RangeType.Percentage)
         {
         }
 
-        public SecondaryLossEventFrequency(string name) : base(name, RangeType.Percentage)
+        internal SecondaryLossEventFrequency(string name) : base(name, RangeType.Percentage)
         {
         }
 
+        #region Member overrides.
         protected override bool IsValidChild(Node node)
         {
             return false;
@@ -25,5 +26,6 @@ namespace QRiskTree.Engine.OpenFAIR
             samples = null;
             return false;
         }
+        #endregion
     }
 }

@@ -19,6 +19,59 @@ namespace QRiskTree.Engine.OpenFAIR
         {
         }
 
+        #region Children management.
+        public LossEventFrequency AddLossEventFrequency()
+        {
+            var result = new LossEventFrequency();
+            if (!Add(result))
+            {
+                throw new InvalidOperationException("A LossEventFrequency node already exists as a child of this node.");
+            }
+            return result;
+        }
+
+        public LossEventFrequency AddLossEventFrequency(string name)
+        {
+            var result = new LossEventFrequency(name);
+            if (!Add(result))
+            {
+                throw new InvalidOperationException("A LossEventFrequency node already exists as a child of this node.");
+            }
+            return result;
+        }
+
+        public LossEventFrequency? GetLossEventFrequency()
+        {
+            return _children?.OfType<LossEventFrequency>().FirstOrDefault();
+        }
+
+        public LossMagnitude AddLossMagnitude()
+        {
+            var result = new LossMagnitude();
+            if (!Add(result))
+            {
+                throw new InvalidOperationException("A LossMagnitude node already exists as a child of this node.");
+            }
+            return result;
+        }
+
+        public LossMagnitude AddLossMagnitude(string name)
+        {
+            var result = new LossMagnitude(name);
+            if (!Add(result))
+            {
+                throw new InvalidOperationException("A LossMagnitude node already exists as a child of this node.");
+            }
+            return result;
+        }
+
+        public LossMagnitude? GetLossMagnitude()
+        {
+            return _children?.OfType<LossMagnitude>().FirstOrDefault();
+        }
+        #endregion
+
+        #region Member overrides.
         protected override bool IsValidChild(Node node)
         {
             return (node is LossEventFrequency && !(_children?.OfType<LossEventFrequency>().Any() ?? false)) || 
@@ -55,5 +108,6 @@ namespace QRiskTree.Engine.OpenFAIR
 
             return result;
         }
+        #endregion
     }
 }

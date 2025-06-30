@@ -6,14 +6,67 @@ namespace QRiskTree.Engine.OpenFAIR
     [JsonObject(MemberSerialization.OptIn)]
     public class ThreatEventFrequency : NodeWithFacts
     {
-        public ThreatEventFrequency() : base(RangeType.Frequency)
+        internal ThreatEventFrequency() : base(RangeType.Frequency)
         {
         }
 
-        public ThreatEventFrequency(string name) : base(name, RangeType.Frequency)
+        internal ThreatEventFrequency(string name) : base(name, RangeType.Frequency)
         {
         }
 
+        #region Children management.
+        public ContactFrequency AddContactFrequency()
+        {
+            var result = new ContactFrequency();
+            if (!Add(result))
+            {
+                throw new InvalidOperationException("ContactFrequency node creation failed.");
+            }
+            return result;
+        }
+
+        public ContactFrequency AddContactFrequency(string name)
+        {
+            var result = new ContactFrequency(name);
+            if (!Add(result))
+            {
+                throw new InvalidOperationException("ContactFrequency node creation failed.");
+            }
+            return result;
+        }
+
+        public ContactFrequency? GetContactFrequency()
+        {
+            return _children?.OfType<ContactFrequency>().FirstOrDefault();
+        }
+
+        public ProbabilityOfAction AddProbabilityOfAction()
+        {
+            var result = new ProbabilityOfAction();
+            if (!Add(result))
+            {
+                throw new InvalidOperationException("ProbabilityOfAction node creation failed.");
+            }
+            return result;
+        }
+
+        public ProbabilityOfAction AddProbabilityOfAction(string name)
+        {
+            var result = new ProbabilityOfAction(name);
+            if (!Add(result))
+            {
+                throw new InvalidOperationException("ProbabilityOfAction node creation failed.");
+            }
+            return result;
+        }
+
+        public ProbabilityOfAction? GetProbabilityOfAction()
+        {
+            return _children?.OfType<ProbabilityOfAction>().FirstOrDefault();
+        }
+        #endregion
+
+        #region Member overrides.
         protected override bool IsValidChild(Node node)
         {
             return (node is ContactFrequency && !(_children?.OfType<ContactFrequency>().Any() ?? false)) ||
@@ -50,5 +103,6 @@ namespace QRiskTree.Engine.OpenFAIR
 
             return result;
         }
+        #endregion
     }
 }

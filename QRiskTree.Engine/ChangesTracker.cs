@@ -27,16 +27,16 @@ namespace QRiskTree.Engine
             Changed?.Invoke(this, new ChangesTrackerEventArgs(tracker, eventArgs));
         }
 
-        [JsonProperty("createdBy")]
+        [JsonProperty("createdBy", Order = 100)]
         public string? CreatedBy { get; protected set; }
 
-        [JsonProperty("createdOn")]
+        [JsonProperty("createdOn", Order = 101)]
         public DateTime CreatedOn { get; protected set; }
 
-        [JsonProperty("modifiedBy")]
+        [JsonProperty("modifiedBy", Order = 102)]
         public string? ModifiedBy { get; protected set; }
 
-        [JsonProperty("modifiedOn")]
+        [JsonProperty("modifiedOn", Order = 103)]
         public DateTime ModifiedOn { get; protected set; }
     }
 }

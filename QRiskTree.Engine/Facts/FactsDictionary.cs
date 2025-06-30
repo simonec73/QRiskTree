@@ -13,7 +13,7 @@ namespace QRiskTree.Engine.Facts
 
         public static FactsDictionary Instance => _instance;
 
-        [JsonProperty("facts")]
+        [JsonProperty("facts", ItemTypeNameHandling = TypeNameHandling.Objects)]
         private List<Fact>? _facts { get; set; }
 
         /// <summary>
@@ -91,7 +91,15 @@ namespace QRiskTree.Engine.Facts
 
         public void Serialize(string filePath)
         {
-            var json = JsonConvert.SerializeObject(this, Formatting.Indented);
+            var settings = new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.None,
+                DefaultValueHandling = DefaultValueHandling.Ignore,
+                SerializationBinder = new KnownTypesBinder(),
+                MaxDepth = 128,
+                Formatting = Formatting.Indented
+            };
+            var json = JsonConvert.SerializeObject(this, settings);
             System.IO.File.WriteAllText(filePath, json);
         }
 
@@ -103,7 +111,15 @@ namespace QRiskTree.Engine.Facts
             var result = false;
 
             var json = System.IO.File.ReadAllText(filePath);
-            var factsDictionary = JsonConvert.DeserializeObject<FactsDictionary>(json);
+
+            var settings = new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.None,
+                DefaultValueHandling = DefaultValueHandling.Ignore,
+                SerializationBinder = new KnownTypesBinder(),
+                MaxDepth = 128
+            };
+            var factsDictionary = JsonConvert.DeserializeObject<FactsDictionary>(json, settings);
             if (factsDictionary != null)
             {
                 _instance = factsDictionary;

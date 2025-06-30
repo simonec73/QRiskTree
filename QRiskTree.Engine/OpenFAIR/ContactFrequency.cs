@@ -7,11 +7,11 @@ namespace QRiskTree.Engine.OpenFAIR
     [JsonObject(MemberSerialization.OptIn)]
     public class ContactFrequency : NodeWithFacts
     {
-        public ContactFrequency() : base(RangeType.Frequency)
+        internal ContactFrequency() : base(RangeType.Frequency)
         {
         }
 
-        public ContactFrequency(string name) : base(name, RangeType.Frequency)
+        internal ContactFrequency(string name) : base(name, RangeType.Frequency)
         {
         }
 
@@ -22,6 +22,7 @@ namespace QRiskTree.Engine.OpenFAIR
         [JsonConverter(typeof(StringEnumConverter))]
         public ContactType ContactType { get; set; }
 
+        #region Member overrides.
         protected override bool IsValidChild(Node node)
         {
             return false;
@@ -33,5 +34,6 @@ namespace QRiskTree.Engine.OpenFAIR
             samples = null;
             return false;
         }
+        #endregion
     }
 }

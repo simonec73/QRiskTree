@@ -6,14 +6,15 @@ namespace QRiskTree.Engine.OpenFAIR
     [JsonObject(MemberSerialization.OptIn)]
     public class SecondaryLossMagnitude : NodeWithFacts
     {
-        public SecondaryLossMagnitude() : base(RangeType.Money)
+        internal SecondaryLossMagnitude() : base(RangeType.Money)
         {
         }
 
-        public SecondaryLossMagnitude(string name) : base(name, RangeType.Money)
+        internal SecondaryLossMagnitude(string name) : base(name, RangeType.Money)
         {
         }
 
+        #region Member overrides.
         protected override bool IsValidChild(Node node)
         {
             return false;
@@ -25,5 +26,6 @@ namespace QRiskTree.Engine.OpenFAIR
             samples = null;
             return false;
         }
+        #endregion
     }
 }

@@ -11,14 +11,15 @@ namespace QRiskTree.Engine.OpenFAIR
     [JsonObject(MemberSerialization.OptIn)]
     public class ResistenceStrength : NodeWithFacts
     {
-        public ResistenceStrength() : base(RangeType.Percentage)
+        internal ResistenceStrength() : base(RangeType.Percentage)
         {
         }
 
-        public ResistenceStrength(string name) : base(name, RangeType.Percentage)
+        internal ResistenceStrength(string name) : base(name, RangeType.Percentage)
         {
         }
 
+        #region Member overrides.
         protected override bool IsValidChild(Node node)
         {
             return false;
@@ -30,5 +31,6 @@ namespace QRiskTree.Engine.OpenFAIR
             samples = null;
             return false;
         }
+        #endregion
     }
 }
