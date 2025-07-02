@@ -131,12 +131,12 @@ if (firstYearCosts != null)
         Console.WriteLine(".");
     Console.Write($"- Mode: {firstYearCosts.Mode.ToString("C0")}");
     if (baseline != null)
-        Console.WriteLine($" (saving {(baseline.Mode - firstYearCosts.Mode).ToString("C0")}), equal to {((baseline.Mode - firstYearCosts.Mode) / baseline.Mode).ToString("P2")}).");
+        Console.WriteLine($" (saving {(baseline.Mode - firstYearCosts.Mode).ToString("C0")}, equal to {((baseline.Mode - firstYearCosts.Mode) / baseline.Mode).ToString("P2")}).");
     else
         Console.WriteLine(".");
     Console.Write($"- {model.MaxPercentile}th percentile: {firstYearCosts.Max.ToString("C0")}");
     if (baseline != null)
-        Console.WriteLine($" (saving {(baseline.Max - firstYearCosts.Max).ToString("C0")}), equal to {((baseline.Max - firstYearCosts.Max) / baseline.Max).ToString("P2")}).");
+        Console.WriteLine($" (saving {(baseline.Max - firstYearCosts.Max).ToString("C0")}, equal to {((baseline.Max - firstYearCosts.Max) / baseline.Max).ToString("P2")}).");
     else
         Console.WriteLine(".");
     Console.WriteLine($"- Confidence: {firstYearCosts.Confidence}.");
@@ -147,17 +147,17 @@ if (followingYearsCosts != null)
     Console.WriteLine("\n--- Estimation of the Minimal Overall Yearly Cost for the following years:");
     Console.Write($"- {model.MinPercentile}th percentile: {followingYearsCosts.Min.ToString("C0")}");
     if (baseline != null)
-        Console.WriteLine($" (saving {(baseline.Min - followingYearsCosts.Min).ToString("C0")}), equal to {((baseline.Min - followingYearsCosts.Min) / baseline.Min).ToString("P2")}).");
+        Console.WriteLine($" (saving {(baseline.Min - followingYearsCosts.Min).ToString("C0")}, equal to {((baseline.Min - followingYearsCosts.Min) / baseline.Min).ToString("P2")}).");
     else
         Console.WriteLine(".");
     Console.Write($"- Mode: {followingYearsCosts.Mode.ToString("C0")}");
     if (baseline != null)
-        Console.WriteLine($" (saving {(baseline.Mode - followingYearsCosts.Mode).ToString("C0")}), equal to {((baseline.Mode - followingYearsCosts.Mode) / baseline.Mode).ToString("P2")}).");
+        Console.WriteLine($" (saving {(baseline.Mode - followingYearsCosts.Mode).ToString("C0")}, equal to {((baseline.Mode - followingYearsCosts.Mode) / baseline.Mode).ToString("P2")}).");
     else
         Console.WriteLine(".");
     Console.Write($"- {model.MaxPercentile}th percentile: {followingYearsCosts.Max.ToString("C0")}");
     if (baseline != null)
-        Console.WriteLine($" (saving {(baseline.Max - followingYearsCosts.Max).ToString("C0")}), equal to {((baseline.Max - followingYearsCosts.Max) / baseline.Max).ToString("P2")}).");
+        Console.WriteLine($" (saving {(baseline.Max - followingYearsCosts.Max).ToString("C0")}, equal to {((baseline.Max - followingYearsCosts.Max) / baseline.Max).ToString("P2")}).");
     else
         Console.WriteLine(".");
     Console.WriteLine($"- Confidence: {followingYearsCosts.Confidence}.");
