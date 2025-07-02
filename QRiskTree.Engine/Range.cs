@@ -86,6 +86,7 @@ namespace QRiskTree.Engine
             _min = min;
             _mode = mode;
             _max = max;
+            _confidence = confidence;
             _calculated = false;
             Update();
 
