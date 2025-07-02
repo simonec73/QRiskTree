@@ -2,8 +2,8 @@
 {
     public enum OptimizationParameter
     {
-        Perc10,
+        Min,
         Mode,
-        Perc90
+        Max
     }
 }

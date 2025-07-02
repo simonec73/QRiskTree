@@ -5,7 +5,7 @@ namespace QRiskTree.Engine.Facts
     [JsonObject(MemberSerialization.OptIn)]
     public abstract class NodeWithFacts : Node
     {
-        [JsonProperty("facts")]
+        [JsonProperty("facts", Order = 60)]
         private List<Guid>? _facts { get; set; }
 
         public NodeWithFacts(string label, RangeType rangeType) : base(label, rangeType)
@@ -16,14 +16,22 @@ namespace QRiskTree.Engine.Facts
         {
         }
 
-        public IEnumerable<Fact>? Facts => FactsDictionary.Instance.GetFacts(_facts);
+        public event Action<NodeWithFacts, Fact>? FactAdded;
+        public event Action<NodeWithFacts, Fact>? FactRemoved;
+
+        public IEnumerable<Fact>? Facts => FactsManager.Instance.GetFacts(_facts);
 
         public bool Add(Fact fact)
         {
             bool result = false;
 
-            if (_facts?.Contains(fact.Id) ?? false)
+            if (!(_facts?.Contains(fact.Id) ?? false))
             {
+                if (!FactsManager.Instance.HasFact(fact))
+                {
+                    FactsManager.Instance.Add(fact);
+                }
+
                 _facts ??= [];
                 _facts.Add(fact.Id);
                 result = true;
@@ -35,17 +43,17 @@ namespace QRiskTree.Engine.Facts
 
         public bool Remove(Fact fact)
         {
-            return Remove(fact.Id);
-        }
-
-        public bool Remove(Guid factId)
-        {
-            var result = _facts?.Remove(factId) ?? false;
+            var result = _facts?.Remove(fact.Id) ?? false;
 
             if (result)
                 Update();
 
             return result;
+        }
+
+        public bool HasFact(Guid factId)
+        {
+            return _facts?.Contains(factId) ?? false;
         }
     }
 }

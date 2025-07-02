@@ -3,15 +3,11 @@
 namespace QRiskTree.Engine.Facts
 {
     [JsonObject(MemberSerialization.OptIn)]
-    public class FactsDictionary : ChangesTracker
+    internal class FactsCollection
     {
-        private static FactsDictionary _instance = new();
-
-        private FactsDictionary() : base()
+        public FactsCollection()
         {
         }
-
-        public static FactsDictionary Instance => _instance;
 
         [JsonProperty("facts", ItemTypeNameHandling = TypeNameHandling.Objects)]
         private List<Fact>? _facts { get; set; }
@@ -44,7 +40,6 @@ namespace QRiskTree.Engine.Facts
                 {
                     _facts[index] = fact;
                     result = true;
-                    Update();
                 }
             }
             else
@@ -52,7 +47,6 @@ namespace QRiskTree.Engine.Facts
                 _facts ??= [];
                 _facts.Add(fact);
                 result = true;
-                Update();
             }
 
             return result;
@@ -60,20 +54,9 @@ namespace QRiskTree.Engine.Facts
 
         public bool Remove(Fact fact)
         {
-            var result = Remove(fact.Id);
-            if (result)
-            {
-                Update();
-            } 
-            
-            return result;
-        }
-
-        public bool Remove(Guid factId)
-        {
             bool result = false;
 
-            var existing = _facts?.FirstOrDefault(x => x.Id == factId);
+            var existing = _facts?.FirstOrDefault(x => x.Id == fact.Id);
             if (existing != null)
             {
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
@@ -81,21 +64,45 @@ namespace QRiskTree.Engine.Facts
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
             }
 
-            if (result)
+            return result;
+        }
+
+        public bool Replace(Fact newFact)
+        {
+            var oldFact = _facts?.FirstOrDefault(x => x.Id == newFact.Id);
+
+            if (oldFact == null)
+                return false;
+            else
+                return Replace(oldFact, newFact);
+        }
+
+        public bool Replace(Fact oldFact, Fact newFact)
+        {
+            var result = false;
+
+            var index = _facts?.IndexOf(oldFact) ?? -1;
+            if (index >= 0)
             {
-                Update();
+                _facts![index] = newFact;
+                result = true;
             }
 
             return result;
         }
 
-        public void Serialize(string filePath)
+        public bool HasFact(Fact fact)
+        {
+            return _facts?.Any(x => x.Id == fact.Id) ?? false;
+        }
+
+        public void Export(string filePath)
         {
             var settings = new JsonSerializerSettings
             {
                 TypeNameHandling = TypeNameHandling.None,
                 DefaultValueHandling = DefaultValueHandling.Ignore,
-                SerializationBinder = new KnownTypesBinder(),
+                SerializationBinder = new FactsTypesBinder(),
                 MaxDepth = 128,
                 Formatting = Formatting.Indented
             };
@@ -103,12 +110,10 @@ namespace QRiskTree.Engine.Facts
             System.IO.File.WriteAllText(filePath, json);
         }
 
-        public static bool Load(string filePath)
+        public static FactsCollection? Import(string filePath)
         {
             if (!System.IO.File.Exists(filePath))
                 throw new FileNotFoundException($"The file '{filePath}' does not exist.");
-
-            var result = false;
 
             var json = System.IO.File.ReadAllText(filePath);
 
@@ -119,18 +124,8 @@ namespace QRiskTree.Engine.Facts
                 SerializationBinder = new KnownTypesBinder(),
                 MaxDepth = 128
             };
-            var factsDictionary = JsonConvert.DeserializeObject<FactsDictionary>(json, settings);
-            if (factsDictionary != null)
-            {
-                _instance = factsDictionary;
-                result = true;
-            }
-            else
-            {
-                throw new InvalidOperationException($"Failed to load the Facts from '{filePath}'.");
-            }
 
-            return result;
+            return JsonConvert.DeserializeObject<FactsCollection>(json, settings);
         }
     }
 }

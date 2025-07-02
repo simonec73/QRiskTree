@@ -1,38 +1,20 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using QRiskTree.Engine.ExtendedOpenFAIR;
-using QRiskTree.Engine.Facts;
 using QRiskTree.Engine.OpenFAIR;
 
-namespace QRiskTree.Engine
+namespace QRiskTree.Engine.Facts
 {
-    public class KnownTypesBinder : ISerializationBinder
+    public class FactsTypesBinder : ISerializationBinder
     {
         private static readonly Dictionary<string, Type> _knownTypes = new Dictionary<string, Type>();
 
-        static KnownTypesBinder()
+        static FactsTypesBinder()
         {
             AddKnownType(typeof(Fact));
             AddKnownType(typeof(FactHardNumber));
             AddKnownType(typeof(FactRange));
-            AddKnownType(typeof(FactsManager));
-            AddKnownType(typeof(ContactFrequency));
-            AddKnownType(typeof(LossEventFrequency));
-            AddKnownType(typeof(LossMagnitude));
-            AddKnownType(typeof(PrimaryLoss));
-            AddKnownType(typeof(ProbabilityOfAction));
-            AddKnownType(typeof(ResistenceStrength));
-            AddKnownType(typeof(Risk));
-            AddKnownType(typeof(SecondaryLossEventFrequency));
-            AddKnownType(typeof(SecondaryLossMagnitude));
-            AddKnownType(typeof(SecondaryRisk));
-            AddKnownType(typeof(ThreatCapability));
-            AddKnownType(typeof(ThreatEventFrequency));
-            AddKnownType(typeof(Vulnerability));
-            AddKnownType(typeof(AppliedMitigation));
-            AddKnownType(typeof(MitigatedRisk));
-            AddKnownType(typeof(MitigationCost));
-            AddKnownType(typeof(RiskModel));
+            AddKnownType(typeof(FactsCollection));
         }
 
         public static void AddKnownType(Type type)
@@ -52,7 +34,7 @@ namespace QRiskTree.Engine
                 if (_knownTypes.ContainsKey(typeName))
                     result = _knownTypes[typeName];
                 else
-                {
+                {    
                     throw new JsonSerializationException($"Type '{typeName}' is not allowed for deserialization.");
                 }
             }

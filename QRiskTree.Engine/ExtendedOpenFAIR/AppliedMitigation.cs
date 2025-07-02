@@ -20,7 +20,7 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
         }
 
         #region Properties.
-        [JsonProperty("mitigationCostId")]
+        [JsonProperty("mitigationCostId", Order = 9)]
         private Guid _mitigationCostId { get; set; }
 
         public Guid MitigationCostId => _mitigationCostId;
@@ -30,6 +30,7 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
         public bool IsEnabled => MitigationCost?.IsEnabled ?? false;
         #endregion
 
+        #region Member overrides.
         protected override bool IsValidChild(Node node)
         {
             return false; // No children allowed for Applied Mitigation nodes
@@ -41,5 +42,6 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
             samples = null;
             return false;
         }
+        #endregion
     }
 }
