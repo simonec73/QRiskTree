@@ -18,9 +18,9 @@ namespace QRiskTree.Engine.OpenFAIR
         #region Loss Form management.
         [JsonProperty("form")]
         [JsonConverter(typeof(StringEnumConverter))]
-        public SecondaryLossForm Form { get; set; } = SecondaryLossForm.Undetermined;
+        public LossForm Form { get; set; } = LossForm.Undetermined;
         
-        public SecondaryRisk Set(SecondaryLossForm form)
+        public SecondaryRisk Set(LossForm form)
         {
             Form = form;
             return this;
