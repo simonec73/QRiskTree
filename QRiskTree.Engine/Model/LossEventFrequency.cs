@@ -1,8 +1,8 @@
 ﻿using Newtonsoft.Json;
-using QRiskTree.Engine.ExtendedOpenFAIR;
+using QRiskTree.Engine.ExtendedModel;
 using QRiskTree.Engine.Facts;
 
-namespace QRiskTree.Engine.OpenFAIR
+namespace QRiskTree.Engine.Model
 {
     [JsonObject(MemberSerialization.OptIn)]
     public class LossEventFrequency : NodeWithFacts

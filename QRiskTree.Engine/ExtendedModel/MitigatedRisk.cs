@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
-using QRiskTree.Engine.OpenFAIR;
+using QRiskTree.Engine.Model;
 
-namespace QRiskTree.Engine.ExtendedOpenFAIR
+namespace QRiskTree.Engine.ExtendedModel
 {
     [JsonObject(MemberSerialization.OptIn)]
     public class MitigatedRisk : Risk

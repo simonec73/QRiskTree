@@ -1,8 +1,7 @@
 ﻿using Newtonsoft.Json;
 using QRiskTree.Engine.Facts;
-using System.Xml.Linq;
 
-namespace QRiskTree.Engine.ExtendedOpenFAIR
+namespace QRiskTree.Engine.ExtendedModel
 {
     [JsonObject(MemberSerialization.OptIn)]
     public class AppliedMitigation : NodeWithFacts

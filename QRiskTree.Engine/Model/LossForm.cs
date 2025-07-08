@@ -1,4 +1,4 @@
-﻿namespace QRiskTree.Engine.OpenFAIR
+﻿namespace QRiskTree.Engine.Model
 {
     public enum LossForm
     {

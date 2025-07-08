@@ -1,6 +1,6 @@
 ﻿using QRiskTree.Engine;
-using QRiskTree.Engine.ExtendedOpenFAIR;
-using QRiskTree.Engine.OpenFAIR;
+using QRiskTree.Engine.ExtendedModel;
+using QRiskTree.Engine.Model;
 using QRiskTree.Engine.Facts;
 
 #region Step 1 - Definition of the risk model.

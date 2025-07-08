@@ -1,4 +1,4 @@
-﻿namespace QRiskTree.Engine.ExtendedOpenFAIR
+﻿namespace QRiskTree.Engine.ExtendedModel
 {
     public enum OptimizationParameter
     {

@@ -1,17 +1,16 @@
-﻿using MathNet.Numerics.Financial;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using QRiskTree.Engine.Facts;
 
-namespace QRiskTree.Engine.OpenFAIR
+namespace QRiskTree.Engine.Model
 {
     [JsonObject(MemberSerialization.OptIn)]
-    public class ProbabilityOfAction : NodeWithFacts
+    public class SecondaryLossMagnitude : NodeWithFacts
     {
-        internal ProbabilityOfAction() : base(RangeType.Percentage)
+        internal SecondaryLossMagnitude() : base(RangeType.Money)
         {
         }
 
-        internal ProbabilityOfAction(string name) : base(name, RangeType.Percentage)
+        internal SecondaryLossMagnitude(string name) : base(name, RangeType.Money)
         {
         }
 

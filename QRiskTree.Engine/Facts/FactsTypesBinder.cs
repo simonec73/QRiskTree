@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using QRiskTree.Engine.ExtendedOpenFAIR;
-using QRiskTree.Engine.OpenFAIR;
+using QRiskTree.Engine.ExtendedModel;
+using QRiskTree.Engine.Model;
 
 namespace QRiskTree.Engine.Facts
 {

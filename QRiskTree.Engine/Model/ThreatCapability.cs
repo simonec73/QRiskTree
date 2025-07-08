@@ -1,16 +1,16 @@
 ﻿using Newtonsoft.Json;
 using QRiskTree.Engine.Facts;
 
-namespace QRiskTree.Engine.OpenFAIR
+namespace QRiskTree.Engine.Model
 {
     [JsonObject(MemberSerialization.OptIn)]
-    public class SecondaryLossMagnitude : NodeWithFacts
+    public class ThreatCapability : NodeWithFacts
     {
-        internal SecondaryLossMagnitude() : base(RangeType.Money)
+        internal ThreatCapability() : base(RangeType.Percentage)
         {
         }
 
-        internal SecondaryLossMagnitude(string name) : base(name, RangeType.Money)
+        internal ThreatCapability(string name) : base(name, RangeType.Percentage)
         {
         }
 

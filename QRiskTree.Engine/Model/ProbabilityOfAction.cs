@@ -1,16 +1,17 @@
-﻿using Newtonsoft.Json;
+﻿using MathNet.Numerics.Financial;
+using Newtonsoft.Json;
 using QRiskTree.Engine.Facts;
 
-namespace QRiskTree.Engine.OpenFAIR
+namespace QRiskTree.Engine.Model
 {
     [JsonObject(MemberSerialization.OptIn)]
-    public class ThreatCapability : NodeWithFacts
+    public class ProbabilityOfAction : NodeWithFacts
     {
-        internal ThreatCapability() : base(RangeType.Percentage)
+        internal ProbabilityOfAction() : base(RangeType.Percentage)
         {
         }
 
-        internal ThreatCapability(string name) : base(name, RangeType.Percentage)
+        internal ProbabilityOfAction(string name) : base(name, RangeType.Percentage)
         {
         }
 

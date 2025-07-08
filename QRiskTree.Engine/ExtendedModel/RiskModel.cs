@@ -1,12 +1,12 @@
 ﻿using MathNet.Numerics.Statistics;
 using Newtonsoft.Json;
 using QRiskTree.Engine.Facts;
-using QRiskTree.Engine.OpenFAIR;
+using QRiskTree.Engine.Model;
 using System.Data;
 using System.Runtime.Serialization;
 using System.Threading.Channels;
 
-namespace QRiskTree.Engine.ExtendedOpenFAIR
+namespace QRiskTree.Engine.ExtendedModel
 {
     [JsonObject(MemberSerialization.OptIn)]
     public class RiskModel : ChangesTracker

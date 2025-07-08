@@ -2,7 +2,7 @@
 using Newtonsoft.Json.Converters;
 using QRiskTree.Engine.Facts;
 
-namespace QRiskTree.Engine.OpenFAIR
+namespace QRiskTree.Engine.Model
 {
     [JsonObject(MemberSerialization.OptIn)]
     public class SecondaryRisk : NodeWithFacts

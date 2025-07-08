@@ -1,4 +1,4 @@
-﻿namespace QRiskTree.Engine.OpenFAIR
+﻿namespace QRiskTree.Engine.Model
 {
     /// <summary>
     /// Types of contact.
