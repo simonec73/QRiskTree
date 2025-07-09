@@ -9,6 +9,11 @@ namespace QRiskTree.Engine.Facts
     [JsonObject(MemberSerialization.OptIn)]
     public class FactRange : Fact
     {
+        private FactRange() : base("Unknown", "Unknown", "Unknown")
+        {
+            _range = new Range(RangeType.Money);
+        }
+
         public FactRange(string context, string source, string name, Range range) : base(context, source, name)
         {
             _range = range;
@@ -26,7 +31,7 @@ namespace QRiskTree.Engine.Facts
             ReplacedBy = hn.ReplacedBy;
         }
 
-        [JsonProperty("range")]
+        [JsonProperty("range", Order = 20)]
         private Range _range { get; set; }
 
         public Range Range

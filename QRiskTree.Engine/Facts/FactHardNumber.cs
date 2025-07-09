@@ -5,6 +5,11 @@ namespace QRiskTree.Engine.Facts
     [JsonObject(MemberSerialization.OptIn)]
     public class FactHardNumber : Fact
     {
+        private FactHardNumber() : base("Unknown", "Unknown", "Unknown")
+        {
+
+        }
+
         public FactHardNumber(string context, string source, string name, double value)
             : base(context, source, name)
         {
@@ -28,7 +33,7 @@ namespace QRiskTree.Engine.Facts
             return new FactHardNumber(factRange);
         }
 
-        [JsonProperty("value")]
+        [JsonProperty("value", Order = 20)]
         private double _value { get; set; } = 0.0;
 
         public double Value

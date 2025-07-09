@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace QRiskTree.Engine.ExtendedOpenFAIR
+namespace QRiskTree.Engine.ExtendedModel
 {
     [JsonObject(MemberSerialization.OptIn)]
     public class MitigationCost : NodeWithFacts
@@ -19,8 +19,8 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
         {
         }
 
-        #region
-        [JsonProperty("enabled")]
+        #region Properties.
+        [JsonProperty("enabled", Order = 5)]
         private bool _isEnabled { get; set; } = true;
 
         public bool IsEnabled
@@ -36,7 +36,7 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
             }
         }
 
-        [JsonProperty("operationalCosts")]
+        [JsonProperty("operationalCosts", Order = 40)]
         private Range? _operationalCosts { get; set; }
 
         public Range? OperationCosts
@@ -53,6 +53,18 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
         }
         #endregion
 
+        #region Public methods.
+        public MitigationCost SetOperationCosts(double min, double mode, double max, Confidence confidence)
+        {
+            if (_operationalCosts == null)
+                _operationalCosts = new Range(RangeType.Money);
+            _operationalCosts.Set(min, mode, max, confidence);
+            Update();
+            return this;
+        }
+        #endregion
+
+        #region Member overrides.
         protected override bool IsValidChild(Node node)
         {
             return false; // No children allowed for Mitigation nodes
@@ -64,5 +76,6 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
             samples = null;
             return false;
         }
+        #endregion
     }
 }

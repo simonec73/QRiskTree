@@ -1,19 +1,21 @@
-﻿using Newtonsoft.Json;
+﻿using MathNet.Numerics.Financial;
+using Newtonsoft.Json;
 using QRiskTree.Engine.Facts;
 
-namespace QRiskTree.Engine.OpenFAIR
+namespace QRiskTree.Engine.Model
 {
     [JsonObject(MemberSerialization.OptIn)]
-    public class ThreatCapability : NodeWithFacts
+    public class ProbabilityOfAction : NodeWithFacts
     {
-        public ThreatCapability() : base(RangeType.Percentage)
+        internal ProbabilityOfAction() : base(RangeType.Percentage)
         {
         }
 
-        public ThreatCapability(string name) : base(name, RangeType.Percentage)
+        internal ProbabilityOfAction(string name) : base(name, RangeType.Percentage)
         {
         }
 
+        #region Member overrides.
         protected override bool IsValidChild(Node node)
         {
             return false;
@@ -25,5 +27,6 @@ namespace QRiskTree.Engine.OpenFAIR
             samples = null;
             return false;
         }
+        #endregion
     }
 }

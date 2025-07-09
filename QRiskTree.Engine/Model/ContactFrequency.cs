@@ -2,23 +2,27 @@
 using Newtonsoft.Json.Converters;
 using QRiskTree.Engine.Facts;
 
-namespace QRiskTree.Engine.OpenFAIR
+namespace QRiskTree.Engine.Model
 {
     [JsonObject(MemberSerialization.OptIn)]
-    public class PrimaryLoss : NodeWithFacts
+    public class ContactFrequency : NodeWithFacts
     {
-        public PrimaryLoss() : base(RangeType.Money)
+        internal ContactFrequency() : base(RangeType.Frequency)
         {
         }
 
-        public PrimaryLoss(string name) : base(name, RangeType.Money)
+        internal ContactFrequency(string name) : base(name, RangeType.Frequency)
         {
         }
 
-        [JsonProperty("form")]
+        /// <summary>
+        /// Types of contact.
+        /// </summary>
+        [JsonProperty("contactType")]
         [JsonConverter(typeof(StringEnumConverter))]
-        public PrimaryLossForm Form { get; set; } = PrimaryLossForm.Undetermined;
+        public ContactType ContactType { get; set; }
 
+        #region Member overrides.
         protected override bool IsValidChild(Node node)
         {
             return false;
@@ -30,5 +34,6 @@ namespace QRiskTree.Engine.OpenFAIR
             samples = null;
             return false;
         }
+        #endregion
     }
 }

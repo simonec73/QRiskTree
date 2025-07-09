@@ -35,12 +35,12 @@ namespace QRiskTree.Engine
         #endregion
 
         #region Properties.
-        [JsonProperty("id")]
+        [JsonProperty("id", Order = 1)]
         private Guid _id { get; set; }
 
         public Guid Id => _id;
 
-        [JsonProperty("name")]
+        [JsonProperty("name", Order = 2)]
         private string? _name { get; set; }
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace QRiskTree.Engine
             }
         }
 
-        [JsonProperty("description")]
+        [JsonProperty("description", Order = 3)]
         private string? _description { get; set; }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace QRiskTree.Engine
             }
         }
 
-        [JsonProperty("children")]
+        [JsonProperty("children", Order = 50, ItemTypeNameHandling = TypeNameHandling.Objects)]
         protected List<Node>? _children { get; set; }
 
         /// <summary>
@@ -95,6 +95,9 @@ namespace QRiskTree.Engine
         #endregion
 
         #region Member functions: child management.
+        public event Action<Node, Node>? ChildAdded;
+        public event Action<Node, Node>? ChildRemoved;
+
         /// <summary>
         /// Add a node as a child.
         /// </summary>
@@ -116,6 +119,7 @@ namespace QRiskTree.Engine
                 _children ??= [];
                 _children.Add(node);
                 result = true;
+                ChildAdded?.Invoke(this, node);
                 Update();
             }
 
@@ -137,6 +141,7 @@ namespace QRiskTree.Engine
 
             if (result)
             {
+                ChildRemoved?.Invoke(this, node);
                 Update();
             }
 
@@ -244,11 +249,11 @@ namespace QRiskTree.Engine
                 // Assign the calculated values to the current node.
 
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-                _perc10 = samples.Percentile(10);
+                _min = samples.Percentile(10);
 #pragma warning disable CS8604 // Possible null reference argument.
                 _mode = samples.CalculateMode();
 #pragma warning restore CS8604 // Possible null reference argument.
-                _perc90 = samples.Percentile(90);
+                _max = samples.Percentile(90);
                 _confidence = Confidence.Moderate;
                 _calculated = true;
                 Update();

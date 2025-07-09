@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using QRiskTree.Engine.Facts;
 
 namespace QRiskTree.Engine
@@ -7,28 +8,33 @@ namespace QRiskTree.Engine
     public class Range : ChangesTracker
     {
         #region Constructors.
+        private Range() : base()
+        {
+
+        }
+
         public Range(RangeType rangeType) : base()
         {
             RangeType = rangeType;
         }
 
-        public Range(RangeType rangeType, double perc10, double mode, double perc90, Confidence confidence)
+        public Range(RangeType rangeType, double min, double mode, double max, Confidence confidence)
             : base()
         {
             RangeType = rangeType;
 
-            if (!IsValid(perc10))
-                throw new ArgumentOutOfRangeException("perc10", $"Value '{perc10}' is not acceptable for {RangeType}.");
+            if (!IsValid(min))
+                throw new ArgumentOutOfRangeException("Min", $"Value '{min}' is not acceptable for {RangeType}.");
             if (!IsValid(mode))
                 throw new ArgumentOutOfRangeException("mode", $"Value '{mode}' is not acceptable for {RangeType}.");
-            if (!IsValid(perc90))
-                throw new ArgumentOutOfRangeException("perc90", $"Value '{perc90}' is not acceptable for {RangeType}.");
-            if (!IsValid(perc10, perc90))
-                throw new ArgumentException("Invalid range values: Perc10 must be less than or equal to Perc90.");
+            if (!IsValid(max))
+                throw new ArgumentOutOfRangeException("Max", $"Value '{max}' is not acceptable for {RangeType}.");
+            if (!IsValid(min, max))
+                throw new ArgumentException("Invalid range values: Min must be less than or equal to Max.");
 
-            _perc10 = perc10;
+            _min = min;
             _mode = mode;
-            _perc90 = perc90;
+            _max = max;
             _confidence = confidence;
         }
         #endregion
@@ -55,12 +61,50 @@ namespace QRiskTree.Engine
         }
         #endregion
 
+        #region Static properties.
+        /// <summary>
+        /// Percentile value to use for the minimum of the range.
+        /// </summary>
+        internal static int MinPercentile { get; set; } = 10;
+
+        /// <summary>
+        /// Percentile value to use for the maximum of the range.
+        /// </summary>
+        internal static int MaxPercentile { get; set; } = 90;
+        #endregion
+
+        #region Public methods.
+        public Range Set(double min, double mode, double max, Confidence confidence)
+        {
+            if (!IsValid(min))
+                throw new ArgumentOutOfRangeException(nameof(min), $"Value '{min}' is not acceptable for {RangeType}.");
+            if (!IsValid(mode))
+                throw new ArgumentOutOfRangeException(nameof(mode), $"Value '{mode}' is not acceptable for {RangeType}.");
+            if (!IsValid(max))
+                throw new ArgumentOutOfRangeException(nameof(max), $"Value '{max}' is not acceptable for {RangeType}.");
+
+            _min = min;
+            _mode = mode;
+            _max = max;
+            _confidence = confidence;
+            _calculated = false;
+            Update();
+
+            return this;
+        }
+
+        public T Set<T>(double min, double mode, double max, Confidence confidence) where T : Range
+        {
+            return (T) Set(min, mode, max, confidence);
+        }
+        #endregion
+
         #region Properties.
-        [JsonProperty("calculated")]
+        [JsonProperty("calculated", Order = 10)]
         protected bool? _calculated = null;
 
         /// <summary>
-        /// Flag howing if the node values (Perc10, Perc90, Mode and Confidence) are calculated or not.
+        /// Flag howing if the node values (Min, Max, Mode and Confidence) are calculated or not.
         /// </summary>
         /// <remarks>If it is set by a caller, it is set to false.
         /// If it is calculated, it is set to true.
@@ -72,30 +116,30 @@ namespace QRiskTree.Engine
         /// </summary>
         public readonly RangeType RangeType;
 
-        [JsonProperty("perc10")]
-        protected double _perc10 { get; set; } = 0.0;
+        [JsonProperty("Min", Order = 11)]
+        protected double _min { get; set; } = 0.0;
 
         /// <summary>
         /// 10th Percentile.
         /// </summary>
-        public double Perc10
+        public double Min
         {
-            get => _perc10;
+            get => _min;
             set
             {
-                if (value != _perc10)
+                if (value != _min)
                 {
                     if (!IsValid(value))
                         throw new ArgumentOutOfRangeException("value", $"Value '{value}' is not acceptable for {RangeType}.");
 
-                    _perc10 = value;
+                    _min = value;
                     _calculated = false;
                     Update();
                 }
             }
         }
 
-        [JsonProperty("mode")]
+        [JsonProperty("mode", Order = 12)]
         protected double _mode { get; set; } = 0.0;
 
         /// <summary>
@@ -118,30 +162,30 @@ namespace QRiskTree.Engine
             }
         }
 
-        [JsonProperty("perc90")]
-        protected double _perc90 { get; set; } = 0.0;
+        [JsonProperty("Max", Order = 13)]
+        protected double _max { get; set; } = 0.0;
 
         /// <summary>
         /// 90th Percentile.
         /// </summary>
-        public double Perc90
+        public double Max
         {
-            get => _perc90;
+            get => _max;
             set
             {
-                if (value != _perc90)
+                if (value != _max)
                 {
                     if (!IsValid(value))
                         throw new ArgumentOutOfRangeException("value", $"Value '{value}' is not acceptable for {RangeType}.");
 
-                    _perc90 = value;
+                    _max = value;
                     _calculated = false;
                     Update();
                 }
             }
         }
 
-        [JsonProperty("confidence")]
+        [JsonProperty("confidence", Order = 14)]
         [JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
         protected Confidence _confidence { get; set; } = Confidence.Low;
 
@@ -164,9 +208,9 @@ namespace QRiskTree.Engine
         #endregion
 
         #region Private methods: Validation.
-        private bool IsValid(double perc10, double perc90)
+        private bool IsValid(double min, double max)
         {
-            return perc10 <= perc90;
+            return min <= max;
         }
 
         private bool IsValid(double value)

@@ -3,65 +3,75 @@ using MathNet.Numerics.Statistics;
 
 namespace QRiskTree.Engine
 {
-    internal static class Statistics
+    public static class Statistics
     {
-        public static Range? ToRange(this double[]? samples, RangeType rangeType, Confidence confidence = Confidence.Moderate)
+        private static uint _simulations = 0;
+
+        public static uint Simulations => _simulations;
+
+        public static void ResetSimulations()
+        {
+            Interlocked.Exchange(ref _simulations, 0);
+        }
+
+        internal static Range? ToRange(this double[]? samples, RangeType rangeType, Confidence confidence = Confidence.Moderate)
         {
             Range? result = null;
 
             if ((samples?.Length ?? 0) > 0)
             {
-                var perc10 = samples.Percentile(10);
+                var min = samples.Percentile(Range.MinPercentile);
 #pragma warning disable CS8604 // Possible null reference argument.
                 var mode = samples.CalculateMode();
 #pragma warning restore CS8604 // Possible null reference argument.
-                var perc90 = samples.Percentile(90);
-                result = new Range(rangeType, perc10, mode, perc90, confidence);
+                var max = samples.Percentile(Range.MaxPercentile);
+                result = new Range(rangeType, min, mode, max, confidence);
             }
 
             return result;
         }
 
-        public static bool GenerateSamples(this Range range, uint iterations, out double[]? samples)
+        internal static bool GenerateSamples(this Range range, uint iterations, out double[]? samples)
         {
-            return GenerateSamples(range.Perc10, range.Mode, range.Perc90, range.Confidence, iterations, out samples);
+            return GenerateSamples(range.Min, range.Mode, range.Max, range.Confidence, iterations, out samples);
         }
 
-        public static bool GenerateSamples(double perc10, double mode, double perc90, Confidence confidence,
+        internal static bool GenerateSamples(double min, double mode, double max, Confidence confidence,
            uint iterations, out double[]? samples)
         {
             var result = false;
             samples = null;
 
-            var pert = GetPertDistribution(perc10, mode, perc90, confidence);
+            var pert = GetPertDistribution(min, mode, max, confidence);
             if (pert != null)
             {
                 samples = new double[iterations];
                 pert.Samples(samples);
                 result = true;
+                Interlocked.Increment(ref _simulations);
             }
 
             return result;
         }
 
-        private static BetaScaled? GetPertDistribution(double perc10, double mode, double perc90, Confidence confidence)
+        private static BetaScaled? GetPertDistribution(double min, double mode, double max, Confidence confidence)
         {
             var modepad = 0.000000001;
             var lambda = CalculateLambda(confidence);
-            var mean = (perc10 + lambda * mode + perc90) / (lambda + 2.0);
+            var mean = (min + lambda * mode + max) / (lambda + 2.0);
             var effectiveMode = mode;
             if (mode - mean == 0.0)
             {
                 effectiveMode += modepad;
-                mean = (perc10 + lambda * effectiveMode + perc90) / (lambda + 2.0);
+                mean = (min + lambda * effectiveMode + max) / (lambda + 2.0);
             }
 
-            var alpha = ((mean - perc10) * ((2.0 * effectiveMode) - perc10 - perc90)) /
-                        ((effectiveMode - mean) * (perc90 - perc10));
-            var beta = (alpha * (perc90 - mean)) / (mean - perc10);
+            var alpha = ((mean - min) * ((2.0 * effectiveMode) - min - max)) /
+                        ((effectiveMode - mean) * (max - min));
+            var beta = (alpha * (max - mean)) / (mean - min);
 
-            if (BetaScaled.IsValidParameterSet(alpha, beta, perc10, perc90 - perc10))
-                return new BetaScaled(alpha, beta, perc10, perc90 - perc10);
+            if (BetaScaled.IsValidParameterSet(alpha, beta, min, max - min))
+                return new BetaScaled(alpha, beta, min, max - min);
             else
                 return null;
         }
@@ -86,7 +96,7 @@ namespace QRiskTree.Engine
             return result;
         }
 
-        public static double CalculateMode(this double[] data, uint binsCount = 0)
+        internal static double CalculateMode(this double[] data, uint binsCount = 0)
         {
             if (data == null || data.Length == 0)
                 throw new ArgumentException("Data array is null or empty.", nameof(data));
@@ -117,7 +127,7 @@ namespace QRiskTree.Engine
             foreach (var value in data)
             {
                 int bin = (int)((value - min) / binWidth);
-                if (bin == binsCount) bin--; // Edge case: max value falls into the last bin
+                if (bin == binsCount) bin--; // Edge case: Max value falls into the last bin
                 if (bin >= 0 && bin < binsCount)
                     bins[bin]++;
             }

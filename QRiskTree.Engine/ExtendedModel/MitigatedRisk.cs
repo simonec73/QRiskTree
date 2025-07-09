@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
-using QRiskTree.Engine.OpenFAIR;
+using QRiskTree.Engine.Model;
 
-namespace QRiskTree.Engine.ExtendedOpenFAIR
+namespace QRiskTree.Engine.ExtendedModel
 {
     [JsonObject(MemberSerialization.OptIn)]
     public class MitigatedRisk : Risk
@@ -14,22 +14,25 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
         {
         }
 
-        [JsonProperty("selected")]
-        private bool _isSelected { get; set; } = true;
+        #region Properties.
+        [JsonProperty("enabled", Order = 5)]
+        private bool _isEnabled { get; set; } = true;
 
-        public bool IsSelected
+        public bool IsEnabled
         {
-            get => _isSelected;
+            get => _isEnabled;
             set
             {
-                if (_isSelected != value)
+                if (_isEnabled != value)
                 {
-                    _isSelected = value;
+                    _isEnabled = value;
                     Update();
                 }
             }
         }
+        #endregion
 
+        #region Public methods: mitigations management.
         public bool ApplyMitigation(MitigationCost mitigation, out AppliedMitigation appliedMitigation)
         {
             appliedMitigation = new AppliedMitigation(mitigation);
@@ -46,7 +49,7 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
                 foreach (var m in appliedMitigations)
                 {
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-                    result |= _children.Remove(m);
+                    result |= Remove(m);
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                 }
             }
@@ -64,14 +67,16 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
                 foreach (var m in appliedMitigations)
                 {
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-                    result |= _children.Remove(m);
+                    result |= Remove(m);
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                 }
             }
 
             return result;
         }
+        #endregion
 
+        #region Member overrides.
         protected override bool IsValidChild(Node node)
         {
             return base.IsValidChild(node) || (node is AppliedMitigation);
@@ -82,7 +87,7 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
             var result = false;
             samples = null;
 
-            if (IsSelected && base.Simulate(iterations, out samples) && (samples?.Length ?? 0) == iterations)
+            if (IsEnabled && base.Simulate(iterations, out samples) && (samples?.Length ?? 0) == iterations)
             {
                 result = true;
 
@@ -109,5 +114,6 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
 
             return result;
         }
+        #endregion
     }
 }

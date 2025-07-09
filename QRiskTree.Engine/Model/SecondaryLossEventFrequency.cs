@@ -1,19 +1,20 @@
 ﻿using Newtonsoft.Json;
 using QRiskTree.Engine.Facts;
 
-namespace QRiskTree.Engine.OpenFAIR
+namespace QRiskTree.Engine.Model
 {
     [JsonObject(MemberSerialization.OptIn)]
-    public class SecondaryLossMagnitude : NodeWithFacts
+    public class SecondaryLossEventFrequency : NodeWithFacts
     {
-        public SecondaryLossMagnitude() : base(RangeType.Money)
+        internal SecondaryLossEventFrequency() : base(RangeType.Percentage)
         {
         }
 
-        public SecondaryLossMagnitude(string name) : base(name, RangeType.Money)
+        internal SecondaryLossEventFrequency(string name) : base(name, RangeType.Percentage)
         {
         }
 
+        #region Member overrides.
         protected override bool IsValidChild(Node node)
         {
             return false;
@@ -25,5 +26,6 @@ namespace QRiskTree.Engine.OpenFAIR
             samples = null;
             return false;
         }
+        #endregion
     }
 }

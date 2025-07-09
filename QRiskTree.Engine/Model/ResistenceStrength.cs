@@ -1,27 +1,25 @@
 ﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using QRiskTree.Engine.Facts;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace QRiskTree.Engine.OpenFAIR
+namespace QRiskTree.Engine.Model
 {
     [JsonObject(MemberSerialization.OptIn)]
-    public class ContactFrequency : NodeWithFacts
+    public class ResistenceStrength : NodeWithFacts
     {
-        public ContactFrequency() : base(RangeType.Frequency)
+        internal ResistenceStrength() : base(RangeType.Percentage)
         {
         }
 
-        public ContactFrequency(string name) : base(name, RangeType.Frequency)
+        internal ResistenceStrength(string name) : base(name, RangeType.Percentage)
         {
         }
 
-        /// <summary>
-        /// Types of contact.
-        /// </summary>
-        [JsonProperty("contactType")]
-        [JsonConverter(typeof(StringEnumConverter))]
-        public ContactType ContactType { get; set; }
-
+        #region Member overrides.
         protected override bool IsValidChild(Node node)
         {
             return false;
@@ -33,5 +31,6 @@ namespace QRiskTree.Engine.OpenFAIR
             samples = null;
             return false;
         }
+        #endregion
     }
 }

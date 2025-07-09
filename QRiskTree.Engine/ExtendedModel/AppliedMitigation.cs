@@ -1,12 +1,16 @@
 ﻿using Newtonsoft.Json;
 using QRiskTree.Engine.Facts;
-using System.Xml.Linq;
 
-namespace QRiskTree.Engine.ExtendedOpenFAIR
+namespace QRiskTree.Engine.ExtendedModel
 {
     [JsonObject(MemberSerialization.OptIn)]
     public class AppliedMitigation : NodeWithFacts
     {
+        internal AppliedMitigation() : base(RangeType.Percentage)
+        {
+            // Default constructor for serialization purposes.
+        }
+
         internal AppliedMitigation(MitigationCost mitigation) : base(RangeType.Percentage)
         {
             _mitigationCostId = mitigation.Id;
@@ -15,7 +19,7 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
         }
 
         #region Properties.
-        [JsonProperty("mitigationCostId")]
+        [JsonProperty("mitigationCostId", Order = 9)]
         private Guid _mitigationCostId { get; set; }
 
         public Guid MitigationCostId => _mitigationCostId;
@@ -25,6 +29,7 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
         public bool IsEnabled => MitigationCost?.IsEnabled ?? false;
         #endregion
 
+        #region Member overrides.
         protected override bool IsValidChild(Node node)
         {
             return false; // No children allowed for Applied Mitigation nodes
@@ -36,5 +41,6 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
             samples = null;
             return false;
         }
+        #endregion
     }
 }

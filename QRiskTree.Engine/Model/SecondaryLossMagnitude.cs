@@ -1,24 +1,20 @@
 ﻿using Newtonsoft.Json;
 using QRiskTree.Engine.Facts;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace QRiskTree.Engine.OpenFAIR
+namespace QRiskTree.Engine.Model
 {
     [JsonObject(MemberSerialization.OptIn)]
-    public class ResistenceStrength : NodeWithFacts
+    public class SecondaryLossMagnitude : NodeWithFacts
     {
-        public ResistenceStrength() : base(RangeType.Percentage)
+        internal SecondaryLossMagnitude() : base(RangeType.Money)
         {
         }
 
-        public ResistenceStrength(string name) : base(name, RangeType.Percentage)
+        internal SecondaryLossMagnitude(string name) : base(name, RangeType.Money)
         {
         }
 
+        #region Member overrides.
         protected override bool IsValidChild(Node node)
         {
             return false;
@@ -30,5 +26,6 @@ namespace QRiskTree.Engine.OpenFAIR
             samples = null;
             return false;
         }
+        #endregion
     }
 }

@@ -3,7 +3,7 @@
 namespace QRiskTree.Engine.Facts
 {
     [JsonObject(MemberSerialization.OptIn)]
-    public class Fact : ChangesTracker
+    public abstract class Fact : ChangesTracker
     {
         public Fact(string context, string source, string name) : base()
         {
@@ -12,10 +12,11 @@ namespace QRiskTree.Engine.Facts
             _name = name;
         }
 
-        [JsonProperty("id")]
+        #region Properties.
+        [JsonProperty("id", Order = 1)]
         public Guid Id { get; protected set; } = Guid.NewGuid();
 
-        [JsonProperty("context")]
+        [JsonProperty("context", Order = 2)]
         private string _context;
 
         public string Context
@@ -31,7 +32,7 @@ namespace QRiskTree.Engine.Facts
             }
         }
 
-        [JsonProperty("source")]
+        [JsonProperty("source", Order = 3)]
         private string _source;
 
         public string Source
@@ -47,7 +48,23 @@ namespace QRiskTree.Engine.Facts
             }
         }
 
-        [JsonProperty("name")]
+        [JsonProperty("refDate", Order = 4)]
+        private DateTime _referenceDate { get; set; } = DateTime.Now;
+
+        public DateTime ReferenceDate
+        {
+            get => _referenceDate;
+            set
+            {
+                if (_referenceDate != value)
+                {
+                    _referenceDate = value;
+                    Update();
+                }
+            }
+        }
+
+        [JsonProperty("name", Order = 5)]
         private string _name;
 
         public string Name
@@ -63,7 +80,7 @@ namespace QRiskTree.Engine.Facts
             }
         }
 
-        [JsonProperty("details")]
+        [JsonProperty("details", Order = 6)]
         private string? _details;
 
         public string? Details
@@ -79,7 +96,7 @@ namespace QRiskTree.Engine.Facts
             }
         }
 
-        [JsonProperty("tags")]
+        [JsonProperty("tags", Order = 7)]
         private List<string>? _tags { get; set; }
 
         public IEnumerable<string>? Tags
@@ -123,8 +140,9 @@ namespace QRiskTree.Engine.Facts
             }
         }
 
-        [JsonProperty("refDate")]
-        public DateTime ReferenceDate { get; set; }
+        #endregion
+
+        #region Obsolescence.
 
         [JsonProperty("obsolete")]
         public bool Obsolete { get; protected set; }
@@ -141,5 +159,6 @@ namespace QRiskTree.Engine.Facts
             }
             Update();
         }
+        #endregion
     }
 }

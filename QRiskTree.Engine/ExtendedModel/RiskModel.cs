@@ -1,30 +1,120 @@
 ﻿using MathNet.Numerics.Statistics;
 using Newtonsoft.Json;
+using QRiskTree.Engine.Facts;
+using QRiskTree.Engine.Model;
 using System.Data;
 using System.Runtime.Serialization;
 using System.Threading.Channels;
 
-namespace QRiskTree.Engine.ExtendedOpenFAIR
+namespace QRiskTree.Engine.ExtendedModel
 {
     [JsonObject(MemberSerialization.OptIn)]
-    public class RiskModel
+    public class RiskModel : ChangesTracker
     {
         private static RiskModel _instance = new();
 
         public static RiskModel Instance => _instance;
 
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
         private RiskModel()
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
         {
-            // Private constructor to enforce singleton pattern.
+            FactsManager.Instance.FactAdded += (fact) =>
+            {
+                // Add the fact to the facts collection.
+                _facts ??= new FactsCollection();
+                _facts.Add(fact);
+            };
+
+            FactsManager.Instance.FactRemoved += (fact) =>
+            {
+                // Remove all references to the fact from the risks.
+                RecursivelyRemoveFact(fact);
+
+                // Remove the fact from the facts collection.
+                if (_facts?.Facts?.Contains(fact) ?? false)
+                {
+                    _facts.Remove(fact);
+                }
+            };
+
+            FactsManager.Instance.FactUpdated += (fact) =>
+            {
+                _facts?.Replace(fact);
+            };
         }
 
         public static void Reset()
         {
+            _instance.ClearMitigations();
+            _instance.ClearRisks();
             _instance = new RiskModel();
         }
 
+        #region Properties.
+        [JsonProperty("name", Order = 1)]
+        private string _name { get; set; } = "Risk Model";
+
+        public string Name
+        {
+            get => _name;
+            set
+            {
+                if (!string.IsNullOrWhiteSpace(value) && string.CompareOrdinal(value, _name) != 0)
+                {
+                    _name = value;
+                    Update();
+                }
+            }
+        }
+
+        [JsonProperty("description", Order = 2)]
+        private string _description { get; set; }
+
+        public string Description
+        {
+            get => _description;
+            set
+            {
+                if (!string.IsNullOrWhiteSpace(value) && string.CompareOrdinal(value, _description) != 0)
+                {
+                    _description = value;
+                    Update();
+                }
+            }
+        }
+        #endregion
+
+        #region Range management.
+        [JsonProperty("minPercentile", Order = 5)]
+        public int MinPercentile
+        {
+            get => Range.MinPercentile;
+            set
+            {
+                if (value < 0 || value > 100)
+                    throw new ArgumentOutOfRangeException(nameof(value), "Percentile must be between 0 and 100.");
+                Range.MinPercentile = value;
+                Update();
+            }
+        }
+
+        [JsonProperty("maxPercentile", Order = 6)]
+        public int MaxPercentile
+        {
+            get => Range.MaxPercentile;
+            set
+            {
+                if (value < 0 || value > 100)
+                    throw new ArgumentOutOfRangeException(nameof(value), "Percentile must be between 0 and 100.");
+                Range.MaxPercentile = value;
+                Update();
+            }
+        }
+        #endregion
+
         #region Risks management.
-        [JsonProperty("risks")]
+        [JsonProperty("risks", Order = 10)]
         private List<MitigatedRisk>? _risks { get; set; }
 
         public IEnumerable<MitigatedRisk> Risks => _risks?.AsEnumerable() ?? [];
@@ -34,6 +124,11 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
             var result = new MitigatedRisk();
             _risks ??= new List<MitigatedRisk>();
             _risks.Add(result);
+            result.ChildAdded += OnChildAdded;
+            result.ChildRemoved += OnChildRemoved;
+            result.FactAdded += OnFactAdded;
+            result.FactRemoved += OnFactRemoved;
+            Update();
             return result;
         }
 
@@ -42,6 +137,11 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
             var result = new MitigatedRisk(name);
             _risks ??= new List<MitigatedRisk>();
             _risks.Add(result);
+            result.ChildAdded += OnChildAdded;
+            result.ChildRemoved += OnChildRemoved;
+            result.FactAdded += OnFactAdded;
+            result.FactRemoved += OnFactRemoved;
+            Update();
             return result;
         }
 
@@ -53,17 +153,36 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
         public bool RemoveRisk(Guid id)
         {
             var risk = GetRisk(id);
-            return risk != null ? (_risks?.Remove(risk) ?? false) : false;
+            var result = risk != null ? (_risks?.Remove(risk) ?? false) : false;
+            if (result)
+            {
+#pragma warning disable CS8604 // Possible null reference argument.
+                RecursivelyRemoveEvents(risk);
+#pragma warning restore CS8604 // Possible null reference argument.
+                Update();
+            }
+
+            return result;
         }
 
         public void ClearRisks()
         {
-            _risks?.Clear();
+            var risks = _risks?.ToArray();
+            if (risks?.Any() ?? false)
+            {
+                foreach (var risk in risks)
+                {
+                    RecursivelyRemoveEvents(risk);
+                }
+
+                _risks?.Clear();
+                Update();
+            }
         }
         #endregion
 
         #region Mitigations management.
-        [JsonProperty("mitigations")]
+        [JsonProperty("mitigations", Order = 11)]
         private List<MitigationCost>? _mitigations { get; set; }
 
         public IEnumerable<MitigationCost> Mitigations => _mitigations?.AsEnumerable() ?? [];
@@ -73,6 +192,11 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
             var result = new MitigationCost();
             _mitigations ??= new List<MitigationCost>();
             _mitigations.Add(result);
+            result.ChildAdded += OnChildAdded;
+            result.ChildRemoved += OnChildRemoved;
+            result.FactAdded += OnFactAdded;
+            result.FactRemoved += OnFactRemoved;
+            Update();
             return result;
         }
 
@@ -81,6 +205,11 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
             var result = new MitigationCost(name);
             _mitigations ??= new List<MitigationCost>();
             _mitigations.Add(result);
+            result.ChildAdded += OnChildAdded;
+            result.ChildRemoved += OnChildRemoved;
+            result.FactAdded += OnFactAdded;
+            result.FactRemoved += OnFactRemoved;
+            Update();
             return result;
         }
 
@@ -102,6 +231,14 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
                 result = _mitigations.Remove(mitigation);
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
+
+                if (result)
+                {
+#pragma warning disable CS8604 // Possible null reference argument.
+                    RecursivelyRemoveEvents(mitigation);
+#pragma warning restore CS8604 // Possible null reference argument.
+                    Update();
+                }
             }
 
             return result;
@@ -110,7 +247,139 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
         public void ClearMitigations()
         {
             _risks?.Select(x => x.RemoveMitigations());
-            _mitigations?.Clear();
+
+            var mitigations = _mitigations?.ToArray();
+            if (mitigations?.Any() ?? false)
+            {
+                foreach (var mitigation in mitigations)
+                {
+                    RecursivelyRemoveEvents(mitigation);
+                }
+
+                _mitigations?.Clear();
+                Update();
+            }
+        }
+        #endregion
+
+        #region Events management.
+        private void OnChildAdded(Node parent, Node child)
+        {
+            RecursivelyAddEvents(child);
+        }
+
+        private void OnChildRemoved(Node parent, Node child)
+        {
+            RecursivelyRemoveEvents(child);
+        }
+
+        private void OnFactAdded(NodeWithFacts node, Fact fact)
+        {
+            // Add the fact to the facts collection.
+            _facts ??= new FactsCollection();
+            _facts?.Add(fact);
+            Update();
+        }
+
+        private void OnFactRemoved(NodeWithFacts node, Fact fact)
+        {
+            // Remove the fact from the facts collection.
+            if (IsUnnecessary(fact))
+            {
+                _facts?.Remove(fact);
+                Update();
+            }
+        }
+
+        private void RecursivelyAddEvents(Node node)
+        {
+            node.ChildAdded += OnChildAdded;
+            node.ChildRemoved += OnChildRemoved;
+            if (node is NodeWithFacts nodeWithFacts)
+            {
+                nodeWithFacts.FactAdded += OnFactAdded;
+                nodeWithFacts.FactRemoved += OnFactRemoved;
+            }
+
+            var children = node.Children?.ToArray();
+            if (children?.Any() ?? false)
+            {
+                foreach (var child in children)
+                {
+                    RecursivelyAddEvents(child);
+                }
+            }
+        }
+
+        private void RecursivelyRemoveEvents(Node node)
+        {
+            node.ChildAdded -= OnChildAdded;
+            node.ChildRemoved -= OnChildRemoved;
+
+            if (node is NodeWithFacts nodeWithFacts)
+            {
+                nodeWithFacts.FactAdded -= OnFactAdded;
+                nodeWithFacts.FactRemoved -= OnFactRemoved;
+            }
+
+            var children = node.Children?.ToArray();
+            if (children?.Any() ?? false)
+            {
+                foreach (var child in children)
+                {
+                    RecursivelyRemoveEvents(child);
+                }
+            }
+        }
+
+        private bool IsUnnecessary(Fact fact)
+        {
+            var result = true;
+
+            var risks = _risks?.ToArray();
+            if (risks?.Any() ?? false)
+            {
+                foreach (var risk in risks)
+                {
+                    if (!RecursivelyCheckIsUnnecessary(risk, fact))
+                    {
+                        result = false;
+                        break;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public bool RecursivelyCheckIsUnnecessary(Node node, Fact fact)
+        {
+            var result = true;
+
+            if (node is NodeWithFacts nodeWithFacts)
+            {
+                if (nodeWithFacts.HasFact(fact.Id))
+                {
+                    result = false;
+                }
+            }
+
+            if (result)
+            {
+                var children = node.Children?.ToArray();
+                if (children?.Any() ?? false)
+                {
+                    // Check all children recursively.
+                    foreach (var child in children)
+                    {
+                        result = RecursivelyCheckIsUnnecessary(child, fact);
+                        if (!result)
+                            break;
+                    }
+                }
+            }
+
+            return result;
         }
         #endregion
 
@@ -148,7 +417,7 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
             double[] result = new double[iterations];
             confidence = Confidence.High;
 
-            var risks = _risks?.Where(x => x.IsSelected).ToArray();
+            var risks = _risks?.Where(x => x.IsEnabled).ToArray();
             if (risks?.Any() ?? false)
             {
                 foreach (var risk in risks)
@@ -310,16 +579,16 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
                                     result = combination;
                                 }
                                 break;
-                            case OptimizationParameter.Perc10:
-                                if (costFollowingYears == null || simulatedCostFollowingYears.Perc10 < costFollowingYears.Perc10)
+                            case OptimizationParameter.Min:
+                                if (costFollowingYears == null || simulatedCostFollowingYears.Min < costFollowingYears.Min)
                                 {
                                     costFirstYear = simulatedCostFirstYear;
                                     costFollowingYears = simulatedCostFollowingYears;
                                     result = combination;
                                 }
                                 break;
-                            case OptimizationParameter.Perc90:
-                                if (costFollowingYears == null || simulatedCostFollowingYears.Perc90 < costFollowingYears.Perc90)
+                            case OptimizationParameter.Max:
+                                if (costFollowingYears == null || simulatedCostFollowingYears.Max < costFollowingYears.Max)
                                 {
                                     costFirstYear = simulatedCostFirstYear;
                                     costFollowingYears = simulatedCostFollowingYears;
@@ -340,16 +609,16 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
                                     result = combination;
                                 }
                                 break;
-                            case OptimizationParameter.Perc10:
-                                if (costFirstYear == null || simulatedCostFirstYear.Perc10 < costFirstYear.Perc10)
+                            case OptimizationParameter.Min:
+                                if (costFirstYear == null || simulatedCostFirstYear.Min < costFirstYear.Min)
                                 {
                                     costFirstYear = simulatedCostFirstYear;
                                     costFollowingYears = simulatedCostFollowingYears;
                                     result = combination;
                                 }
                                 break;
-                            case OptimizationParameter.Perc90:
-                                if (costFirstYear == null || simulatedCostFirstYear.Perc90 < costFirstYear.Perc90)
+                            case OptimizationParameter.Max:
+                                if (costFirstYear == null || simulatedCostFirstYear.Max < costFirstYear.Max)
                                 {
                                     costFirstYear = simulatedCostFirstYear;
                                     costFollowingYears = simulatedCostFollowingYears;
@@ -412,6 +681,84 @@ namespace QRiskTree.Engine.ExtendedOpenFAIR
                 foreach (var m in allMitigations)
                 {
                     m.IsEnabled = mitigations?.Any(x => x == m.Id) ?? false;
+                }
+            }
+        }
+        #endregion
+
+        #region Serialization and Deserialization.
+
+        public void Serialize(string filePath)
+        {
+            var settings = new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.None,
+                DefaultValueHandling = DefaultValueHandling.Ignore,
+                SerializationBinder = new KnownTypesBinder(),
+                MaxDepth = 128,
+                Formatting = Formatting.Indented
+            };
+            var json = JsonConvert.SerializeObject(this, settings);
+            System.IO.File.WriteAllText(filePath, json);
+        }
+
+        public static bool Load(string filePath)
+        {
+            if (!System.IO.File.Exists(filePath))
+                throw new FileNotFoundException($"The file '{filePath}' does not exist.");
+
+            var result = false;
+
+            var json = System.IO.File.ReadAllText(filePath);
+
+            var settings = new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.None,
+                DefaultValueHandling = DefaultValueHandling.Ignore,
+                SerializationBinder = new KnownTypesBinder(),
+                MaxDepth = 128
+            };
+            var riskModel = JsonConvert.DeserializeObject<RiskModel>(json, settings);
+            if (riskModel != null)
+            {
+                _instance = riskModel;
+                result = true;
+            }
+            else
+            {
+                throw new InvalidOperationException($"Failed to load the Risk Model from '{filePath}'.");
+            }
+
+            return result;
+        }
+        #endregion
+
+        #region Facts management.
+        [JsonProperty("facts", Order = 12)]
+        private FactsCollection _facts { get; set; }
+
+        private void RecursivelyRemoveFact(Fact fact)
+        {
+            // Remove the fact from all risks and their children.
+            _risks?.ForEach(r => RemoveFact(r, fact));
+        }
+
+        private void RemoveFact(NodeWithFacts node, Fact fact)
+        {
+            if (node.HasFact(fact.Id))
+            {
+                // Remove the fact from the node.
+                node.Remove(fact);
+                Update();
+            }
+
+            var children = node.Children?.OfType<NodeWithFacts>().ToArray();
+            if (children?.Any() ?? false)
+            {
+                // Recursively remove the fact from all children.
+                foreach (var child in children)
+                {
+                    RemoveFact(child, fact);
                 }
             }
         }
