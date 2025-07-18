@@ -1,8 +1,6 @@
-﻿using Newtonsoft.Json;
-
-namespace QRiskTree.Engine.Facts
+﻿namespace QRiskTree.Engine.Facts
 {
-    internal class FactsManager
+    public class FactsManager
     {
         private static FactsManager _instance = new();
 
@@ -49,6 +47,19 @@ namespace QRiskTree.Engine.Facts
             }
 
             return result;
+        }
+
+        public void Clear()
+        {
+            var facts = _facts.Facts?.ToArray();
+            if (facts?.Any() ?? false)
+            {
+                foreach (var fact in facts)
+                {
+                    if (Remove(fact))
+                        FactRemoved?.Invoke(fact);
+                }
+            }
         }
 
         public bool HasFact(Fact fact)
