@@ -391,9 +391,7 @@ namespace QRiskTree.Engine.ExtendedModel
         /// <returns>Residual risk.</returns>
         public Range? Simulate(uint iterations = Node.DefaultIterations)
         {
-#pragma warning disable CS8604 // Possible null reference argument.
-            var enabledMitigations = _mitigations.Where(x => x.IsEnabled).Select(x => x.Id).ToArray();
-#pragma warning restore CS8604 // Possible null reference argument.
+            var enabledMitigations = _mitigations?.Where(x => x.IsEnabled).Select(x => x.Id).ToArray();
             SetEnabledState();
             var samples = CalculateResidualRisk(iterations, out var confidence);
             SetEnabledState(enabledMitigations);
@@ -529,9 +527,7 @@ namespace QRiskTree.Engine.ExtendedModel
 
             if (mitigationIds?.Any() ?? false)
             {
-#pragma warning disable CS8604 // Possible null reference argument.
-                var enabledMitigations = _mitigations.Where(x => x.IsEnabled).Select(x => x.Id).ToArray();
-#pragma warning restore CS8604 // Possible null reference argument.
+                var enabledMitigations = _mitigations?.Where(x => x.IsEnabled).Select(x => x.Id).ToArray();
 
                 // Calculates the best combination of mitigations based on the optimization parameter.
                 var combinations = GetAllCombinations(mitigationIds).ToArray();
@@ -541,7 +537,7 @@ namespace QRiskTree.Engine.ExtendedModel
                 {
                     optimalCostFirstYear = costFirstYear;
                     optimalCostFollowingYears = costFollowingYears;
-                    result = _mitigations.Where(x => bestCombination.Contains(x.Id));
+                    result = _mitigations?.Where(x => bestCombination.Contains(x.Id));
                 }
 
                 // Restore the original enabled state of mitigations.

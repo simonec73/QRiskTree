@@ -78,10 +78,11 @@ namespace QRiskTree.Engine.Model
                 (node is Vulnerability && !(_children?.OfType<Vulnerability>().Any() ?? false));
         }
 
-        protected override bool Simulate(uint iterations, out double[]? samples)
+        protected override bool Simulate(uint iterations, out double[]? samples, out Confidence confidence)
         {
             var result = false;
             samples = null;
+            confidence = Confidence;
 
             var threatEventFrequency = _children?.OfType<ThreatEventFrequency>().FirstOrDefault();
             var vulnerability = _children?.OfType<Vulnerability>().FirstOrDefault();
@@ -101,6 +102,10 @@ namespace QRiskTree.Engine.Model
                         samples[i] = tefSamples[i] * vSamples[i];
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                     }
+
+                    confidence = threatEventFrequency.Confidence < vulnerability.Confidence
+                        ? threatEventFrequency.Confidence
+                        : vulnerability.Confidence;
 
                     result = true;
                 }

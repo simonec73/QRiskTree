@@ -73,10 +73,11 @@ namespace QRiskTree.Engine.Model
                 (node is ProbabilityOfAction && !(_children?.OfType<ProbabilityOfAction>().Any() ?? false));
         }
 
-        protected override bool Simulate(uint iterations, out double[]? samples)
+        protected override bool Simulate(uint iterations, out double[]? samples, out Confidence confidence)
         {
             var result = false;
             samples = null;
+            confidence = Confidence;
 
             var contactFrequency = _children?.OfType<ContactFrequency>().FirstOrDefault();
             var probabilityOfAction = _children?.OfType<ProbabilityOfAction>().FirstOrDefault();
@@ -96,6 +97,10 @@ namespace QRiskTree.Engine.Model
                         samples[i] = cSamples[i] * pSamples[i];
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                     }
+
+                    confidence = contactFrequency.Confidence < probabilityOfAction.Confidence
+                        ? contactFrequency.Confidence
+                        : probabilityOfAction.Confidence;
 
                     result = true;
                 }
