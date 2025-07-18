@@ -78,10 +78,11 @@ namespace QRiskTree.Engine.Model
                 (node is LossMagnitude && !(_children?.OfType<LossMagnitude>().Any() ?? false));
         }
 
-        protected override bool Simulate(uint iterations, out double[]? samples)
+        protected override bool Simulate(uint iterations, out double[]? samples, out Confidence confidence)
         {
             var result = false;
             samples = null;
+            confidence = Confidence;
 
             var lossEventFrequency = _children?.OfType<LossEventFrequency>().FirstOrDefault();
             var lossMagnitude = _children?.OfType<LossMagnitude>().FirstOrDefault();
@@ -101,6 +102,10 @@ namespace QRiskTree.Engine.Model
                         samples[i] = lefSamples[i] * lmSamples[i];
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                     }
+
+                    confidence = lossEventFrequency.Confidence < lossMagnitude.Confidence
+                        ? lossEventFrequency.Confidence
+                        : lossMagnitude.Confidence;
 
                     result = true;
                 }

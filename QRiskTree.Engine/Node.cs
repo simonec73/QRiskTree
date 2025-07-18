@@ -175,9 +175,9 @@ namespace QRiskTree.Engine
             // The cached samples cannot be used, so we must simulate the node.
             if (!Calculated.HasValue || Calculated.Value)
             {
-                if (Simulate(iterations, out samples) && (samples?.Any() ?? false))
+                if (Simulate(iterations, out samples, out var confidence) && (samples?.Any() ?? false))
                 {
-                    UpdateStatistics(samples, iterations);
+                    UpdateStatistics(samples, iterations, confidence);
                     result = true;
                 }
             }
@@ -208,9 +208,10 @@ namespace QRiskTree.Engine
         /// Determine the statistics for the current node by simulating it based on the information collected for its children.
         /// </summary>
         /// <param name="iterations">Number of iterations which must be performed.</param>
-        /// <param name="samples">Calculated samples.</param>
+        /// <param name="samples">[out] Calculated samples.</param>
+        /// <param name="confidence">[out] Calculated confidence.</param>
         /// <returns>True if the simulation has succeeded, false otherwise.</returns>
-        protected abstract bool Simulate(uint iterations, out double[]? samples);
+        protected abstract bool Simulate(uint iterations, out double[]? samples, out Confidence confidence);
 
         /// <summary>
         /// Simulate a child node.
@@ -227,10 +228,10 @@ namespace QRiskTree.Engine
             if (!node.Calculated.HasValue || node.Calculated.Value)
             {
                 // The values have not been set by the user, so we shall calculate them.
-                result = node.Simulate(iterations, out samples);
+                result = node.Simulate(iterations, out samples, out var confidence);
                 if (result && (samples?.Length ?? 0) > 0)
                 {
-                    node.UpdateStatistics(samples, iterations);
+                    node.UpdateStatistics(samples, iterations, confidence);
                 }
             }
             else
@@ -242,7 +243,7 @@ namespace QRiskTree.Engine
             return result;
         }
 
-        private void UpdateStatistics(double[]? samples, uint iterations)
+        private void UpdateStatistics(double[]? samples, uint iterations, Confidence confidence)
         {
             if (samples != null && samples.Length == iterations)
             {
@@ -254,7 +255,7 @@ namespace QRiskTree.Engine
                 _mode = samples.CalculateMode();
 #pragma warning restore CS8604 // Possible null reference argument.
                 _max = samples.Percentile(90);
-                _confidence = Confidence.Moderate;
+                _confidence = confidence;
                 _calculated = true;
                 Update();
 #pragma warning restore CS8602 // Dereference of a possibly null reference.

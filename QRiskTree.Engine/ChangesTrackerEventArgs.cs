@@ -8,7 +8,7 @@
             InnerArgs = args;
         }
 
-        public ChangesTracker InnerTracker { get; private set; }
-        public EventArgs InnerArgs { get; private set; }
+        public ChangesTracker InnerTracker { get; }
+        public EventArgs InnerArgs { get; }
     }
 }

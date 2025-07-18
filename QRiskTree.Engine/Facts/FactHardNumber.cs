@@ -1,4 +1,6 @@
 ﻿using Newtonsoft.Json;
+using System;
+using System.Runtime.Serialization;
 
 namespace QRiskTree.Engine.Facts
 {
@@ -47,6 +49,12 @@ namespace QRiskTree.Engine.Facts
                     Update();
                 }
             }
+        }
+
+        [OnDeserialized]
+        internal void OnDeserializedMethod(StreamingContext context)
+        {
+            FactsManager.Instance.Add(this);
         }
     }
 }

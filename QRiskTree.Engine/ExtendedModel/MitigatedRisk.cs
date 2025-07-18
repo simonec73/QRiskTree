@@ -82,12 +82,13 @@ namespace QRiskTree.Engine.ExtendedModel
             return base.IsValidChild(node) || (node is AppliedMitigation);
         }
 
-        protected override bool Simulate(uint iterations, out double[]? samples)
+        protected override bool Simulate(uint iterations, out double[]? samples, out Confidence confidence)
         {
             var result = false;
             samples = null;
+            confidence = Confidence;
 
-            if (IsEnabled && base.Simulate(iterations, out samples) && (samples?.Length ?? 0) == iterations)
+            if (IsEnabled && base.Simulate(iterations, out samples, out confidence) && (samples?.Length ?? 0) == iterations)
             {
                 result = true;
 
@@ -107,6 +108,9 @@ namespace QRiskTree.Engine.ExtendedModel
                                 samples[i] *= (1 - amSamples[i]);
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                             }
+
+                            if (appliedMitigation.Confidence < confidence)
+                                confidence = appliedMitigation.Confidence;
                         }
                     }
                 }
