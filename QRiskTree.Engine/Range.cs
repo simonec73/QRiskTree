@@ -97,6 +97,19 @@ namespace QRiskTree.Engine
         {
             return (T) Set(min, mode, max, confidence);
         }
+
+        /// <summary>
+        /// Resets the range to its default values.
+        /// </summary>
+        public void Reset()
+        {
+            _min = GetMinAllowed(RangeType);
+            _mode = _min;
+            _max = GetMinAllowed(RangeType);
+            _confidence = Confidence.Low;
+            _calculated = null;
+            Update();
+        }
         #endregion
 
         #region Properties.
