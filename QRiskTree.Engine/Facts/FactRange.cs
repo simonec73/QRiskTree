@@ -63,6 +63,7 @@ namespace QRiskTree.Engine.Facts
         [OnDeserialized]
         internal void OnDeserializedMethod(StreamingContext context)
         {
+            FactsManager.Instance.Add(this);
             _range.Changed += _range_Changed;
         }
     }
