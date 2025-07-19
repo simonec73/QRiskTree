@@ -16,8 +16,10 @@ namespace QRiskTree.Engine.Facts
         {
         }
 
+#pragma warning disable CS0067 // The events are never used.
         public event Action<NodeWithFacts, Fact>? FactAdded;
         public event Action<NodeWithFacts, Fact>? FactRemoved;
+#pragma warning restore CS0067 // The events are never used.
 
         public IEnumerable<Fact>? Facts => FactsManager.Instance.GetFacts(_facts);
 
