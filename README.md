@@ -18,7 +18,7 @@ QRiskTree aligns with the ideas described in:
 - [Using Quantitative Analysis with System Threat Modeling Adopting Open FAIR™ Analysis with Threat Modeling to Maximize Return on Security Investment](https://publications.opengroup.org/w245)
 
 > **IMPORTANT**
-> The work implements a very personal take on the ideas introduced in the above material. It does not implement any specific standard or risk management framework. If you decide to use it as a tool to support your Compliance requirements, it is your responsibility to ensure that QRiskTree fits those requirements and aligns with your standards of reference, by eventually make the necessary changes to the code.
+> The work implements a very personal take on the ideas introduced with the above material. It does not implement any specific standard or risk management framework. If you decide to use it as a tool to support your Compliance requirements, it is your responsibility to ensure that QRiskTree fits those requirements and aligns with your standards of reference, by eventually making the necessary changes to the code.
 
 QRiskTree is provided under [MIT license](https://github.com/simonec73/QRiskTree?tab=MIT-1-ov-file#readme) AS-IS, with no guarantee of any sort. You can use it for any lawful purpose, for free, including creating commercial software.
 
