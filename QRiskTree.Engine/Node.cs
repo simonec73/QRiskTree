@@ -78,6 +78,9 @@ namespace QRiskTree.Engine
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Security",
+            "SCS0028:TypeNameHandling is set to the other value than 'None'. It may lead to deserialization vulnerability.",
+            Justification = "We use SerializationBinders (KnownTypesBinder and FactsTypesBinder) to ensure that we deserialize only known and approved objects.")]
         [JsonProperty("children", Order = 50, ItemTypeNameHandling = TypeNameHandling.Objects)]
         protected List<Node>? _children { get; set; }
 

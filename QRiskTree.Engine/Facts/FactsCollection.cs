@@ -9,6 +9,9 @@ namespace QRiskTree.Engine.Facts
         {
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", 
+            "SCS0028:TypeNameHandling is set to the other value than 'None'. It may lead to deserialization vulnerability.", 
+            Justification = "We use SerializationBinders (KnownTypesBinder and FactsTypesBinder) to ensure that we deserialize only known and approved objects.")]
         [JsonProperty("facts", ItemTypeNameHandling = TypeNameHandling.Objects)]
         private List<Fact>? _facts { get; set; }
 
