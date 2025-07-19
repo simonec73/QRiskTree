@@ -20,7 +20,9 @@ QRiskTree aligns with the ideas described in:
 > **IMPORTANT**
 > The work implements a very personal take on the ideas introduced with the above material. It does not implement any specific standard or risk management framework. If you decide to use it as a tool to support your Compliance requirements, it is your responsibility to ensure that QRiskTree fits those requirements and aligns with your standards of reference, by eventually making the necessary changes to the code.
 
-QRiskTree is provided under [MIT license](https://github.com/simonec73/QRiskTree?tab=MIT-1-ov-file#readme) AS-IS, with no guarantee of any sort. You can use it for any lawful purpose, for free, including creating commercial software.
+This is a project developed by a single person as a passion project, and is shared with you with the intent of providing the Security and Business communities a better way to communicate with each other and collaborate in creating better, more secure products.
+
+With this intent of allowing the widest adoption, I've decided to provide QRiskTree under [MIT license](https://github.com/simonec73/QRiskTree?tab=MIT-1-ov-file#readme). You can use it for any lawful purpose, for free, including creating commercial software.
 
 ## What is QRiskTree composed of?
 
@@ -36,7 +38,7 @@ The most immediate way to use QRiskTree is to simply use QRiskTreeEditor, but th
 
 ### Interactive scripting
 
-Do you want to use it to use with some interactive scripting? You can do that, for example using [LINQPad](https://www.linqpad.net/). Here is the receipt:
+Do you want to use it to run scripts interactively? You can do that, for example using [LINQPad](https://www.linqpad.net/). Here is the receipt:
 
 1. Open LINQPad and add QRiskTree.Engine.dll as a reference using **Reference and Properties** command from the **Query** menu. 
 2. Insert the code you want to execute in the Query pane. You might take the code included in [Program.cs](https://github.com/simonec73/QRiskTree/blob/main/QRiskTreeTest/Program.cs) for testing purposes. You might need to make some simple adjustments, like removing the lines starting with **#region** and **#endregion**.
@@ -57,7 +59,7 @@ QRiskTree has been designed to be well structured and easily understandable. At 
 
 ## Do you have some guidance on how to use QRiskTree Editor?
 
-As of today, there is no available guidance. If you know some concepts of Risk Management, it should be easy enough for you to use it. 
+As of today, there is no available guidance. If you know some concepts of Risk Management, it should be easy enough for you to use it. If not, the documentation listed above should give you at least a starting point.
 
 That said, it is a priority for me to prepare and share a recording with a short demo. I will link it here as soon as it is available.
 
