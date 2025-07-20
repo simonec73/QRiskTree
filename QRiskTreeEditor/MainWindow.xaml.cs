@@ -25,6 +25,7 @@ namespace QRiskTreeEditor
     {
         private string _fileName = string.Empty;
         private QRiskTree.Engine.Range? _baseline;
+        private double _outputHeight;
 
         public MainWindow()
         {
@@ -84,6 +85,7 @@ namespace QRiskTreeEditor
         #endregion
 
         #region Menu handlers.
+        #region File menu handlers.
         private void _fileNew_Click(object sender, RoutedEventArgs e)
         {
             if (MessageBox.Show("Are you sure you want to create a new model?\nUnsaved changes will be lost.", "Confirm New Model", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
@@ -175,7 +177,9 @@ namespace QRiskTreeEditor
                 Application.Current.Shutdown();
             }
         }
+        #endregion
 
+        #region Edit menu handlers.
         private void _editCreateRisk_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is RiskModelViewModel modelVM)
@@ -227,6 +231,13 @@ namespace QRiskTreeEditor
             }
         }
 
+        private void _clearOutput_Click(object sender, RoutedEventArgs e)
+        {
+            _output.Text = string.Empty;
+        }
+        #endregion
+
+        #region View menu handlers.
         private void _viewToggleRiskProperties_Click(object sender, RoutedEventArgs e)
         {
             switch (_riskProperties.Visibility)
@@ -272,6 +283,30 @@ namespace QRiskTreeEditor
             }
         }
 
+        private void _viewToggleOutput_Click(object sender, RoutedEventArgs e)
+        {
+            var grid = (Grid)_tabControl.Parent;
+
+            switch (_output.Visibility)
+            {
+                case Visibility.Visible:
+                    _viewToggleOutput.Header = "Show Output";
+                    _splitter.Visibility = Visibility.Collapsed;
+                    _output.Visibility = Visibility.Collapsed;
+                    _outputHeight = grid.RowDefinitions[3].Height.Value;
+                    grid.RowDefinitions[2].Height = new GridLength(0);              // Splitter row
+                    grid.RowDefinitions[3].Height = new GridLength(0);              // Output row
+                    break;
+                default:
+                    _viewToggleOutput.Header = "Hide Output";
+                    _splitter.Visibility = Visibility.Visible;
+                    _output.Visibility = Visibility.Visible;
+                    grid.RowDefinitions[2].Height = GridLength.Auto;                // Splitter row
+                    grid.RowDefinitions[3].Height = new GridLength(_outputHeight);  // Output row
+                    break;
+            }
+        }
+
         private void _viewHide_Click(object sender, RoutedEventArgs e)
         {
             _viewToggleRiskProperties.Header = "Show Risk Properties";
@@ -280,6 +315,13 @@ namespace QRiskTreeEditor
             _mitigationProperties.Visibility = Visibility.Collapsed;
             _viewToggleFactsProperties.Header = "Show Fact Properties";
             _factProperties.Visibility = Visibility.Collapsed;
+            var grid = (Grid)_tabControl.Parent;
+            _viewToggleOutput.Header = "Show Output";
+            _splitter.Visibility = Visibility.Collapsed;
+            _output.Visibility = Visibility.Collapsed;
+            _outputHeight = grid.RowDefinitions[3].Height.Value;
+            grid.RowDefinitions[2].Height = new GridLength(0);              // Splitter row
+            grid.RowDefinitions[3].Height = new GridLength(0);              // Output row
         }
 
         private void _viewShow_Click(object sender, RoutedEventArgs e)
@@ -290,8 +332,17 @@ namespace QRiskTreeEditor
             _mitigationProperties.Visibility = Visibility.Visible;
             _viewToggleFactsProperties.Header = "Hide Fact Properties";
             _factProperties.Visibility = Visibility.Visible;
+            var grid = (Grid)_tabControl.Parent;
+            _viewToggleOutput.Header = "Hide Output";
+            _splitter.Visibility = Visibility.Visible;
+            _output.Visibility = Visibility.Visible;
+            grid.RowDefinitions[2].Height = GridLength.Auto;                // Splitter row
+            if (_outputHeight > 0)
+                grid.RowDefinitions[3].Height = new GridLength(_outputHeight);  // Output row
         }
+        #endregion
 
+        #region Import menu handlers.
         private void _importFacts_Click(object sender, RoutedEventArgs e)
         {
             var openFileDialog = new Microsoft.Win32.OpenFileDialog
@@ -360,12 +411,56 @@ namespace QRiskTreeEditor
                 }
             }
         }
+        #endregion
 
-        private void _clearOutput_Click(object sender, RoutedEventArgs e)
+        #region Export menu handlers.
+
+        private void _exportFacts_Click(object sender, RoutedEventArgs e)
         {
-            _output.Text = string.Empty;
+            var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "Export Facts",
+                Filter = "Facts files (*.json)|*.json|All files (*.*)|*.*",
+                DefaultExt = ".json"
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    FactsManager.Instance.Export(saveFileDialog.FileName);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error saving file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
         }
 
+        private void _exportOutput_Click(object sender, RoutedEventArgs e)
+        {
+            var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "Save Output",
+                Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
+                DefaultExt = ".txt"
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    File.WriteAllText(saveFileDialog.FileName, _output.Text);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error saving file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+        #endregion
+
+        #region Calculation menu handlers.
         private void _calculateBaseline_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is RiskModelViewModel modelVM)
@@ -457,14 +552,21 @@ namespace QRiskTreeEditor
                         uint iterations = modelVM.Properties.Iterations;
                         Statistics.ResetSimulations();
 
+                        var optParameter = modelVM.Properties.OptimizationParameter;
+                        var ignoreImplementationCosts = modelVM.Properties.IgnoreImplementationCosts;
+                        var notText = ignoreImplementationCosts ? "not " : "";
+                        _output.AppendText($"Optimization has been calculated on the {optParameter} parameter, and has {notText}considered the Implementation costs.\n");
+
                         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
                         IEnumerable<MitigationCost>? optimized = null;
                         QRiskTree.Engine.Range? firstYearCosts = null;
                         QRiskTree.Engine.Range? followingYearsCosts = null;
+
                         try
                         {
                             Mouse.OverrideCursor = Cursors.Wait;
-                            optimized = modelVM.Model.OptimizeMitigations(out firstYearCosts, out followingYearsCosts, iterations: iterations);
+                            optimized = modelVM.Model.OptimizeMitigations(out firstYearCosts, out followingYearsCosts, 
+                                iterations: iterations, optimizationParameter: optParameter, optimizeForFollowingYears: ignoreImplementationCosts);
                         }
                         finally
                         {
@@ -476,7 +578,7 @@ namespace QRiskTreeEditor
 
                         if (firstYearCosts != null)
                         {
-                            _output.AppendText("Estimation of the Minimal Overall Yearly Cost for the first year:\n");
+                            _output.AppendText("\nEstimation of the Minimal Overall Yearly Cost for the first year:\n");
                             _output.AppendText($"- {modelVM.Properties.MinPercentile}th percentile: {firstYearCosts.Min.ToString("C0")}");
                             if (_baseline != null)
                                 _output.AppendText($" (saving {(_baseline.Min - firstYearCosts.Min).ToString("C0")}, equal to {((_baseline.Min - firstYearCosts.Min) / _baseline.Min).ToString("P2")})\n");
@@ -497,7 +599,7 @@ namespace QRiskTreeEditor
 
                         if (followingYearsCosts != null)
                         {
-                            _output.AppendText("Estimation of the Minimal Overall Yearly Cost for the following years:\n");
+                            _output.AppendText("\nEstimation of the Minimal Overall Yearly Cost for the following years:\n");
                             _output.AppendText($"- {modelVM.Properties.MinPercentile}th percentile: {followingYearsCosts.Min.ToString("C0")}");
                             if (_baseline != null)
                                 _output.AppendText($" (saving {(_baseline.Min - followingYearsCosts.Min).ToString("C0")}, equal to {((_baseline.Min - followingYearsCosts.Min) / _baseline.Min).ToString("P2")})\n");
@@ -518,7 +620,7 @@ namespace QRiskTreeEditor
 
                         if (optimized?.Any() ?? false)
                         {
-                            _output.AppendText("Mitigations to be applied:\n");
+                            _output.AppendText("\nMitigations to be applied:\n");
                             foreach (var mitigation in optimized)
                             {
                                 _output.AppendText($"- {mitigation.Name}\n");
@@ -560,50 +662,7 @@ namespace QRiskTreeEditor
 
             return count;
         }
-
-        private void _exportFacts_Click(object sender, RoutedEventArgs e)
-        {
-            var saveFileDialog = new Microsoft.Win32.SaveFileDialog
-            {
-                Title = "Export Facts",
-                Filter = "Facts files (*.json)|*.json|All files (*.*)|*.*",
-                DefaultExt = ".json"
-            };
-
-            if (saveFileDialog.ShowDialog() == true)
-            {
-                try
-                {
-                    FactsManager.Instance.Export(saveFileDialog.FileName);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error saving file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-        }
-
-        private void _exportOutput_Click(object sender, RoutedEventArgs e)
-        {
-            var saveFileDialog = new Microsoft.Win32.SaveFileDialog
-            {
-                Title = "Save Output",
-                Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
-                DefaultExt = ".txt"
-            };
-
-            if (saveFileDialog.ShowDialog() == true)
-            {
-                try
-                {
-                    File.WriteAllText(saveFileDialog.FileName, _output.Text);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error saving file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-        }
+        #endregion
         #endregion
 
         private void ToggleRowDetails(object sender, RoutedEventArgs e)

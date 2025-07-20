@@ -1,6 +1,7 @@
 ﻿using QRiskTree.Engine;
 using QRiskTree.Engine.ExtendedModel;
 using System.ComponentModel;
+using PT = PropertyTools.DataAnnotations;
 
 namespace QRiskTreeEditor.ViewModels
 {
@@ -67,6 +68,13 @@ namespace QRiskTreeEditor.ViewModels
         }
 
         public uint Iterations { get; set; } = Node.DefaultIterations;
+
+        [DisplayName("Optimize for")]
+        [PT.SelectorStyle(PT.SelectorStyle.ComboBox)]
+        public OptimizationParameter OptimizationParameter { get; set; } = OptimizationParameter.Mode;
+
+        [DisplayName("Ignore implementation costs")]
+        public bool IgnoreImplementationCosts { get; set; } = false;
         #endregion
 
         public event PropertyChangedEventHandler? PropertyChanged;

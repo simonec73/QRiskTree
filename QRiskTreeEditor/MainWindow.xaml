@@ -100,6 +100,7 @@
                 <MenuItem x:Name="_viewToggleRiskProperties" Header="Hide Risk Properties" Click="_viewToggleRiskProperties_Click"/>
                 <MenuItem x:Name="_viewToggleMitigationProperties" Header="Hide Mitigation Properties" Click="_viewToggleMitigationProperties_Click"/>
                 <MenuItem x:Name="_viewToggleFactsProperties" Header="Hide Fact Properties" Click="_viewToggleFactsProperties_Click"/>
+                <MenuItem x:Name="_viewToggleOutput" Header="Hide Output" Click="_viewToggleOutput_Click"/>
                 <Separator/>
                 <MenuItem x:Name="_viewHide" Header="Hide All" Click="_viewHide_Click"/>
                 <MenuItem x:Name="_viewShow" Header="Show All" Click="_viewShow_Click"/>
