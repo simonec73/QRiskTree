@@ -13,6 +13,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Xaml;
+using System.Xml.XPath;
 using TMFileParser;
 using TMFileParser.Models.output;
 
@@ -32,7 +33,10 @@ namespace QRiskTreeEditor
             InitializeComponent();
 
             DataContext = new RiskModelViewModel(RiskModel.Instance);
-            _risks.AddHandler(DataGridRow.ContextMenuOpeningEvent, new ContextMenuEventHandler(DataGridRow_ContextMenuOpening), false);
+            _risks.AddHandler(DataGridRow.ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
+            _risksContainer.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
+            _mitigationsContainer.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
+            _factsContainer.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
             SubscribeMitigatedRisks();
         }
 
@@ -707,40 +711,39 @@ namespace QRiskTreeEditor
         }
 
         #region Context menu management.
-        private void DataGridRow_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        private void OpeningContextMenu(object sender, ContextMenuEventArgs e)
         {
+            var result = false;
+
             var row = GetDataGridRow(e.OriginalSource as DependencyObject);
-            if (row == null) return;
+            if (row != null)
+            {
+                result = OpenContextMenuForRow(row);
+            }
+            else
+            {
+                var grid = GetRootDataGrid(e.OriginalSource as DependencyObject);
+                if (grid != null)
+                {                     
+                    // If the context menu is opened on the grid itself, we can open a context menu for the grid.
+                    result = OpenContextMenuForGrid(grid);
+                }
+            }
+
+            if (result)
+            {
+                e.Handled = true;
+            }
+        }
+
+        private bool OpenContextMenuForRow(DataGridRow row)
+        {
+            var result = false;
 
             ContextMenu? contextMenu = row.ContextMenu;
             if (contextMenu != null)
             {
-                // Clear the existing context menu items.
-                var menuItems = contextMenu.Items;
-                foreach (var current in menuItems)
-                {
-                    if (current is MenuItem menuItem)
-                    {
-                        menuItem.Click -= Item_Delete;
-                        menuItem.Click -= Item_AssociateFact;
-                        menuItem.Click -= Item_AddThreatEventFrequency;
-                        menuItem.Click -= Item_AddVulnerability;
-                        menuItem.Click -= Item_AddPrimaryLoss;
-                        menuItem.Click -= Item_AddSecondaryRisk;
-                        menuItem.Click -= Item_AddLossEventFrequency;
-                        menuItem.Click -= Item_AddLossMagnitude;
-                        menuItem.Click -= Item_AssociateMitigation;
-                        menuItem.Click -= Item_AddSecondaryLossEventFrequency;
-                        menuItem.Click -= Item_AddSecondaryLossMagnitude;
-                        menuItem.Click -= Item_AddContactFrequency;
-                        menuItem.Click -= Item_AddProbabilityOfAction;
-                        menuItem.Click -= Item_AddThreatCapability;
-                        menuItem.Click -= Item_AddResistenceStrength;
-                        menuItem.Click -= Item_ResetRange;
-                        menuItem.Click -= Item_ResetOperationCostsRange;
-                        menuItem.Click -= Item_CloneRisk;
-                    }
-                }
+                ClearContextMenu(contextMenu);
             }
 
             contextMenu = new ContextMenu();
@@ -803,7 +806,7 @@ namespace QRiskTreeEditor
                 }
 
                 if (DataContext is RiskModelViewModel modelVM)
-                { 
+                {
                     var totalMitigations = modelVM.Mitigations?.OfType<MitigationCostViewModel>()?.Count() ?? 0;
                     var appliedMitigations = mrVM.Mitigations?.OfType<AppliedMitigationViewModel>()?.Count() ?? 0;
                     if (totalMitigations > appliedMitigations)
@@ -946,9 +949,101 @@ namespace QRiskTreeEditor
             contextMenu.PlacementTarget = row;
             contextMenu.IsOpen = true;
 
-            e.Handled = true;
+            return result;
         }
 
+        private bool OpenContextMenuForGrid(DataGrid grid)
+        {
+            var result = false;
+
+            ContextMenu? contextMenu = grid.ContextMenu;
+            if (contextMenu != null)
+            {
+                ClearContextMenu(contextMenu);
+            }
+
+            contextMenu = new ContextMenu();
+            MenuItem item;
+            switch (grid.Name)
+            {
+                case "_risks":
+                    item = new MenuItem { Header = "Create a new Risk" };
+                    item.Click += Item_CreateRisk;
+                    contextMenu.Items.Add(item);
+                    result = true;
+                    break;
+                case "_mitigations":
+                    item = new MenuItem { Header = "Create a new Mitigation" };
+                    item.Click += Item_CreateMitigation;
+                    contextMenu.Items.Add(item);
+                    result = true;
+                    break;
+                case "_facts":
+                    item = new MenuItem { Header = "Create a simple Fact" };
+                    item.Click += Item_CreateFact;
+                    contextMenu.Items.Add(item);
+                    item = new MenuItem { Header = "Create a Fact based on a monetary range" };
+                    item.Click += Item_CreateFactWithMonetaryRange;
+                    contextMenu.Items.Add(item);
+                    item = new MenuItem { Header = "Create a Fact based on a frequency range" };
+                    item.Click += Item_CreateFactWithFrequencyRange;
+                    contextMenu.Items.Add(item);
+                    item = new MenuItem { Header = "Create a Fact based on a percentage range" };
+                    item.Click += Item_CreateFactWithPercentageRange;
+                    contextMenu.Items.Add(item);
+                    result = true;
+                    break;
+            }
+
+            if (result)
+            {
+                grid.ContextMenu = contextMenu;
+
+                // Open the menu manually
+                contextMenu.PlacementTarget = grid;
+                contextMenu.IsOpen = true;
+            }
+
+            return result;
+        }
+
+        private void ClearContextMenu(ContextMenu contextMenu)
+        {
+            // Clear the existing context menu items.
+            var menuItems = contextMenu.Items;
+            foreach (var current in menuItems)
+            {
+                if (current is MenuItem menuItem)
+                {
+                    menuItem.Click -= Item_Delete;
+                    menuItem.Click -= Item_AssociateFact;
+                    menuItem.Click -= Item_AddThreatEventFrequency;
+                    menuItem.Click -= Item_AddVulnerability;
+                    menuItem.Click -= Item_AddPrimaryLoss;
+                    menuItem.Click -= Item_AddSecondaryRisk;
+                    menuItem.Click -= Item_AddLossEventFrequency;
+                    menuItem.Click -= Item_AddLossMagnitude;
+                    menuItem.Click -= Item_AssociateMitigation;
+                    menuItem.Click -= Item_AddSecondaryLossEventFrequency;
+                    menuItem.Click -= Item_AddSecondaryLossMagnitude;
+                    menuItem.Click -= Item_AddContactFrequency;
+                    menuItem.Click -= Item_AddProbabilityOfAction;
+                    menuItem.Click -= Item_AddThreatCapability;
+                    menuItem.Click -= Item_AddResistenceStrength;
+                    menuItem.Click -= Item_ResetRange;
+                    menuItem.Click -= Item_ResetOperationCostsRange;
+                    menuItem.Click -= Item_CloneRisk;
+                    menuItem.Click -= Item_CreateRisk;
+                    menuItem.Click -= Item_CreateMitigation;
+                    menuItem.Click -= Item_CreateFact;
+                    menuItem.Click -= Item_CreateFactWithMonetaryRange;
+                    menuItem.Click -= Item_CreateFactWithFrequencyRange;
+                    menuItem.Click -= Item_CreateFactWithPercentageRange;
+                }
+            }
+        }
+
+        #region Actions on the grid rows.
         private void Item_CloneRisk(object sender, RoutedEventArgs e)
         {
             if (sender is MenuItem menuItem && menuItem.Tag is MitigatedRiskViewModel riskVM)
@@ -1182,12 +1277,61 @@ namespace QRiskTreeEditor
                 }
             }
         }
+        #endregion
+
+        #region Actions on the grids.
+        private void Item_CreateRisk(object sender, RoutedEventArgs e)
+        {
+            _editCreateRisk_Click(sender, e);
+        }
+
+        private void Item_CreateMitigation(object sender, RoutedEventArgs e)
+        {
+            _editCreateMitigation_Click(sender, e);
+        }
+
+        private void Item_CreateFact(object sender, RoutedEventArgs e)
+        {
+            _editCreateFact_Click(sender, e);
+        }
+
+        private void Item_CreateFactWithMonetaryRange(object sender, RoutedEventArgs e)
+        {
+            _editCreateFactWithMonetaryRange_Click(sender, e);
+        }
+
+        private void Item_CreateFactWithFrequencyRange(object sender, RoutedEventArgs e)
+        {
+            _editCreateFactWithFrequencyRange_Click(sender, e);
+        }
+
+        private void Item_CreateFactWithPercentageRange(object sender, RoutedEventArgs e)
+        {
+            _editCreateFactWithPercentageRange_Click(sender, e);
+        }
+        #endregion
 
         private DataGridRow? GetDataGridRow(DependencyObject? current)
         {
             while (current != null && current is not DataGridRow)
                 current = VisualTreeHelper.GetParent(current);
             return current as DataGridRow;
+        }
+
+        private DataGrid? GetRootDataGrid(DependencyObject? current)
+        {
+            if (current is Grid container && !string.IsNullOrEmpty(container.Name))
+            {
+                current = GetRootDataGrid(container.Children.OfType<DataGrid>().FirstOrDefault());
+            }
+            else
+            {
+                while (current != null &&
+                    (current is not DataGrid || (current is DataGrid grid && string.IsNullOrEmpty(grid.Name))))
+                    current = VisualTreeHelper.GetParent(current);
+            }
+
+            return current as DataGrid;
         }
 
         private void DataGridRow_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
@@ -1203,7 +1347,7 @@ namespace QRiskTreeEditor
         {
             if (sender is DataGrid grid)
             {
-                grid.AddHandler(DataGridRow.ContextMenuOpeningEvent, new ContextMenuEventHandler(DataGridRow_ContextMenuOpening), false);
+                grid.AddHandler(DataGridRow.ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
             }
         }
         #endregion

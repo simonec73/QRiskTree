@@ -138,7 +138,7 @@
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" 
                                 CanContentScroll="false" Focusable="True" 
                                 PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
-                        <Grid Background="#FFE5E5E5">
+                        <Grid x:Name="_risksContainer" Background="#FFE5E5E5">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
@@ -379,7 +379,7 @@
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" 
                                 CanContentScroll="false" Focusable="True" 
                                 PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
-                        <Grid Background="#FFE5E5E5">
+                        <Grid x:Name="_mitigationsContainer" Background="#FFE5E5E5">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
@@ -461,7 +461,7 @@
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" 
                                 CanContentScroll="false" Focusable="True" 
                                 PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
-                        <Grid Background="#FFE5E5E5">
+                        <Grid x:Name="_factsContainer" Background="#FFE5E5E5">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
