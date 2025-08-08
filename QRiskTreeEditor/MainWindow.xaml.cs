@@ -2,6 +2,7 @@
 using QRiskTree.Engine.ExtendedModel;
 using QRiskTree.Engine.Facts;
 using QRiskTree.Engine.Model;
+using QRiskTreeEditor.Importers;
 using QRiskTreeEditor.SecondaryWindows;
 using QRiskTreeEditor.ViewModels;
 using System.Collections.Specialized;
@@ -408,6 +409,136 @@ namespace QRiskTreeEditor
                                 if (risk != null)
                                 {
                                     risk.Description = sb.ToString();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private void _importFromOpenTM_Click(object sender, RoutedEventArgs e)
+        {
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Import Open Threat Model file",
+                Filter = "Open Threat Model files (*.json)|*.json|All files (*.*)|*.*",
+                DefaultExt = ".json",
+                CheckFileExists = true
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                var model = OpenThreatModelImporter.Import(openFileDialog.FileName);
+
+                if (model != null)
+                {
+                    if (DataContext is RiskModelViewModel modelVM)
+                    {
+                        var threats = model.Threats?.ToArray();
+                        if (threats?.Any() ?? false)
+                        {
+                            foreach (var threat in threats)
+                            {
+                                if (threat != null)
+                                {
+                                    var risk = modelVM.AddRisk(threat.Name);
+
+                                    var builder = new StringBuilder();
+                                    if (!string.IsNullOrWhiteSpace(threat.Description))
+                                    {
+                                        builder.AppendLine(threat.Description);
+                                    }
+
+                                    var categories = threat.Categories?.ToArray();
+                                    bool first = true;
+                                    if (categories?.Any() ?? false)
+                                    {
+                                        if (builder.Length > 0)
+                                            builder.AppendLine();
+
+                                        builder.Append("Categories: ");
+                                        foreach (var category in categories)
+                                        {
+                                            if (!first)
+                                                builder.Append(", ");
+                                            else
+                                                first = false;
+                                            builder.Append(category);
+                                        }
+                                        builder.AppendLine();
+                                    }
+
+                                    var cwes = threat.Cwes?.ToArray();
+                                    first = true;
+                                    if (cwes?.Any() ?? false)
+                                    {
+                                        if (builder.Length > 0)
+                                            builder.AppendLine();
+
+                                        builder.Append("CWEs: ");
+                                        foreach (var cwe in cwes)
+                                        {
+                                            if (!first)
+                                                builder.Append(", ");
+                                            else
+                                                first = false;
+                                            builder.Append(cwe);
+                                        }
+                                        builder.AppendLine();
+                                    }
+
+                                    if (threat.Risk != null)
+                                    {
+                                        if (builder.Length > 0)
+                                            builder.AppendLine();
+
+                                        if (threat.Risk.Likelihood != null && threat.Risk.Likelihood > 0.0)
+                                        {
+                                            builder.AppendLine($"Likelihood: {threat.Risk.Likelihood}%.");
+                                            if (!string.IsNullOrWhiteSpace(threat.Risk.LikelihoodComment))
+                                                builder.AppendLine(threat.Risk.LikelihoodComment);
+                                        }
+
+                                        if (builder.Length > 0)
+                                            builder.AppendLine();
+
+                                        if (threat.Risk.Impact != 0.0)
+                                        {
+                                            builder.AppendLine($"Impact: {threat.Risk.Impact}%.");
+                                            builder.AppendLine(threat.Risk.ImpactComment);
+                                        }
+                                    }
+
+                                    risk.Description = builder.ToString();
+                                }
+                            }
+                        }
+
+                        var mitigations = model.Mitigations?.ToArray();
+                        if (mitigations?.Any() ?? false)
+                        {
+                            foreach (var mitigation in mitigations)
+                            {
+                                if (mitigation != null)
+                                {
+                                    var mitigationVM = modelVM.AddMitigation(mitigation.Name);
+                                    if (mitigationVM != null)
+                                    {
+                                        var builder = new StringBuilder();
+                                        if (!string.IsNullOrWhiteSpace(mitigation.Description))
+                                        {
+                                            builder.AppendLine(mitigation.Description);
+                                        }
+                                        if (mitigation.RiskReduction > 0.0)
+                                        {
+                                            if (builder.Length > 0)
+                                                builder.AppendLine();
+
+                                            builder.Append($"Risk Reduction: {mitigation.RiskReduction}%.");
+                                        }
+                                        mitigationVM.Description = builder.ToString();
+                                    }
                                 }
                             }
                         }
