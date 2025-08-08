@@ -154,12 +154,15 @@ namespace QRiskTreeEditor.ViewModels
 
         public bool HasMitigations => _mitigations.Any();
 
-        public void AddMitigation(string name)
+        public MitigationCostViewModel AddMitigation(string name)
         {
             var mitigation = _model.AddMitigation(name);
-            _mitigations.Add(new MitigationCostViewModel(mitigation, null, this));
+            var result = new MitigationCostViewModel(mitigation, null, this);
+            _mitigations.Add(result);
             OnPropertyChanged(nameof(_mitigations)); 
             OnPropertyChanged(nameof(HasMitigations));
+
+            return result;
         }
 
         public void RemoveMitigation(MitigationCostViewModel mitigation)
