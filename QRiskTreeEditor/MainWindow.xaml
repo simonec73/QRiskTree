@@ -110,9 +110,10 @@
                 <MenuItem x:Name="_calculateOptimalMitigations" Header="Calculate Optimal Mitigations" Click="_calculateOptimalMitigations_Click"/>
             </MenuItem>
             <MenuItem x:Name="_menuImport" Header="Import">
-                <MenuItem x:Name="_importFacts" Header="Import Facts" Click="_importFacts_Click"/>
+                <MenuItem x:Name="_importFacts" Header="Import Facts..." Click="_importFacts_Click"/>
                 <Separator/>
-                <MenuItem x:Name="_importFromTMT" Header="Import from Microsoft Threat Modeling Tool" Click="_importFromTMT_Click"/>
+                <MenuItem x:Name="_importFromTMT" Header="Import from Microsoft Threat Modeling Tool..." Click="_importFromTMT_Click"/>
+                <MenuItem x:Name="_importFromOpenTM" Header="Import from Open Threat Model file..." Click="_importFromOpenTM_Click"/>
             </MenuItem>
             <MenuItem x:Name="_menuExport" Header="Export">
                 <MenuItem x:Name="_exportFacts" Header="Export Facts" Click="_exportFacts_Click"/>
