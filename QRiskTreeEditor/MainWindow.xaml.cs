@@ -34,7 +34,6 @@ namespace QRiskTreeEditor
             InitializeComponent();
 
             DataContext = new RiskModelViewModel(RiskModel.Instance);
-            _risks.AddHandler(DataGridRow.ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
             _risksContainer.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
             _mitigationsContainer.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
             _factsContainer.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
@@ -855,16 +854,13 @@ namespace QRiskTreeEditor
             {
                 var grid = GetRootDataGrid(e.OriginalSource as DependencyObject);
                 if (grid != null)
-                {                     
+                {
                     // If the context menu is opened on the grid itself, we can open a context menu for the grid.
                     result = OpenContextMenuForGrid(grid);
                 }
             }
 
-            if (result)
-            {
-                e.Handled = true;
-            }
+            e.Handled = true;
         }
 
         private bool OpenContextMenuForRow(DataGridRow row)
