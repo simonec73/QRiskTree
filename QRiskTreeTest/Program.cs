@@ -8,6 +8,28 @@ var model = RiskModel.Instance;
 model.MinPercentile = 5;
 model.MaxPercentile = 95;
 
+#region Registration to get some events.
+model.RiskSimulationCompleted += (risk, mitigations, samples) =>
+{
+   Console.WriteLine($"   Simulation completed for risk '{risk.Name}' with {mitigations?.Count() ?? 0} mitigations generating {samples?.Length ?? 0} samples.");
+};
+
+model.SimulationCompleted += (mitigations, samples) =>
+{
+    Console.WriteLine($"   Simulation completed with {mitigations?.Count() ?? 0} mitigations generating {samples?.Length ?? 0} samples.");
+};
+
+model.FirstYearSimulationCompleted += (mitigations, samples) =>
+{
+    Console.WriteLine($"   First year simulation completed with {mitigations?.Count() ?? 0} mitigations generating {samples?.Length ?? 0} samples.");
+};
+
+model.FollowingYearsSimulationCompleted += (mitigations, samples) =>
+{
+    Console.WriteLine($"   Following years simulation completed with {mitigations?.Count() ?? 0} mitigations generating {samples?.Length ?? 0} samples.");
+};
+#endregion
+
 #region Risk1 - A simple risk calculated using only the LossEventFrequency and LossMagnitude nodes.
 var risk1 = model.AddRisk("Risk 1: Unauthorized access to sensitive data.");
 risk1.AddLossEventFrequency().Set(1, 12, 120, Confidence.Moderate);
