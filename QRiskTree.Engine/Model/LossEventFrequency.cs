@@ -78,6 +78,12 @@ namespace QRiskTree.Engine.Model
                 (node is Vulnerability && !(_children?.OfType<Vulnerability>().Any() ?? false));
         }
 
+        protected override bool HasAllChildren()
+        {
+            return (_children?.OfType<ThreatEventFrequency>().Any() ?? false) &&
+                   (_children?.OfType<Vulnerability>().Any() ?? false);
+        }
+
         protected override bool Simulate(uint iterations, out double[]? samples, out Confidence confidence)
         {
             var result = false;

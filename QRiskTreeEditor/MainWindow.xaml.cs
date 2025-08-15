@@ -602,40 +602,66 @@ namespace QRiskTreeEditor
                 var risks = modelVM.Risks?.OfType<MitigatedRiskViewModel>()?.Where(x => x.IsEnabled).ToArray();
                 if (risks?.Any() ?? false)
                 {
-                    _output.AppendText("--- Calculating Baseline Risk ---\n");
-
-                    _output.AppendText("Included Risks:\n");
+                    string? invalidRiskName = null;
+                    Node? violatingNode = null;
                     foreach (var risk in risks)
                     {
-                        _output.AppendText($"- Risk: {risk.Name}\n");
+                        if (!risk.Node.CanBeSimulated(out var node))
+                        {
+                            violatingNode = node;
+                            invalidRiskName = risk.Name;
+                            break;
+                        }
                     }
 
-                    uint iterations = modelVM.Properties.Iterations;
-                    Statistics.ResetSimulations();
-
-                    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-                    try
+                    if (invalidRiskName == null)
                     {
-                        Mouse.OverrideCursor = Cursors.Wait;
-                        _baseline = modelVM.Model.Simulate(iterations);
+                        _output.AppendText("--- Calculating Baseline Risk ---\n");
+
+                        _output.AppendText("Included Risks:\n");
+                        foreach (var risk in risks)
+                        {
+                            _output.AppendText($"- Risk: {risk.Name}\n");
+                        }
+
+                        uint iterations = modelVM.Properties.Iterations;
+                        Statistics.ResetSimulations();
+
+                        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                        try
+                        {
+                            Mouse.OverrideCursor = Cursors.Wait;
+                            _baseline = modelVM.Model.Simulate(iterations);
+                        }
+                        finally
+                        {
+                            Mouse.OverrideCursor = null;
+                            stopwatch.Stop();
+                        }
+
+                        _output.AppendText($"Risk for the baseline calculated in {stopwatch.ElapsedMilliseconds}ms ({Statistics.Simulations} * {iterations} samples generated).\n");
+
+                        if (_baseline != null)
+                        {
+                            _output.AppendText($"- {modelVM.Properties.MinPercentile}th percentile: {_baseline.Min.ToString("C0")}\n");
+                            _output.AppendText($"- Mode: {_baseline.Mode.ToString("C0")}\n");
+                            _output.AppendText($"- {modelVM.Properties.MaxPercentile}th percentile: {_baseline.Max.ToString("C0")}\n");
+                            _output.AppendText($"- Confidence: {_baseline.Confidence}\n");
+                        }
+
+                        _output.AppendText("--- Baseline Risk Calculation Completed ---\n\n");
                     }
-                    finally
+                    else
                     {
-                        Mouse.OverrideCursor = null;
-                        stopwatch.Stop();
+                        if (violatingNode != null && !(violatingNode is MitigatedRisk))
+                        {
+                            MessageBox.Show($"Risk '{invalidRiskName}' is not valid for baseline risk calculation because {violatingNode.GetType().Name.AddSpacesToCamelCase()} '{violatingNode.Name}' is not set.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                        else
+                        {
+                            MessageBox.Show($"Risk '{invalidRiskName}' is not valid for baseline risk calculation.\nPlease check if it has all required children, or if you still must set its range.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
                     }
-
-                    _output.AppendText($"Risk for the baseline calculated in {stopwatch.ElapsedMilliseconds}ms ({Statistics.Simulations} * {iterations} samples generated).\n");
-
-                    if (_baseline != null)
-                    {
-                        _output.AppendText($"- {modelVM.Properties.MinPercentile}th percentile: {_baseline.Min.ToString("C0")}\n");
-                        _output.AppendText($"- Mode: {_baseline.Mode.ToString("C0")}\n");
-                        _output.AppendText($"- {modelVM.Properties.MaxPercentile}th percentile: {_baseline.Max.ToString("C0")}\n");
-                        _output.AppendText($"- Confidence: {_baseline.Confidence}\n");
-                    }
-
-                    _output.AppendText("--- Baseline Risk Calculation Completed ---\n\n");
                 }
                 else
                 {
@@ -652,121 +678,147 @@ namespace QRiskTreeEditor
                 var mitigations = modelVM.Mitigations?.OfType<MitigationCostViewModel>()?.Where(x => x.IsEnabled).ToArray();
                 if ((risks?.Any() ?? false) && (mitigations?.Any() ?? false))
                 {
-                    int countTreeSize = RecursiveCount(risks);
-                    int countMitigations = mitigations.Length;
-                    int countIterations = (countTreeSize + countMitigations) * ((1 << countMitigations) - 1);
-                    int estimatedRequiredTime = countIterations * 20;
-                    bool proceed;
-                    if (estimatedRequiredTime > 30000)
+                    string? invalidRiskName = null;
+                    Node? violatingNode = null;
+                    foreach (var risk in risks)
                     {
-                        proceed = MessageBox.Show($"The calculation of the optimal mitigations might require about {(estimatedRequiredTime / 60000).ToString("N1")} minutes. Do you want to proceed?", 
-                            "Long running calculation", MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK;
+                        if (!risk.Node.CanBeSimulated(out var node))
+                        {
+                            violatingNode = node;
+                            invalidRiskName = risk.Name;
+                            break;
+                        }
+                    }
+
+                    if (invalidRiskName == null)
+                    {
+                        int countTreeSize = RecursiveCount(risks);
+                        int countMitigations = mitigations.Length;
+                        int countIterations = (countTreeSize + countMitigations + 3) * ((1 << countMitigations) - 1);
+                        int estimatedRequiredTime = countIterations * 20;
+                        bool proceed;
+                        if (estimatedRequiredTime > 30000)
+                        {
+                            proceed = MessageBox.Show($"The calculation of the optimal mitigations might require about {(estimatedRequiredTime / 60000).ToString("N1")} minutes. Do you want to proceed?",
+                                "Long running calculation", MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK;
+                        }
+                        else
+                        {
+                            proceed = true;
+                        }
+
+                        if (proceed)
+                        {
+                            _output.AppendText("--- Calculating Optimal Mitigations Set ---\n");
+
+                            _output.AppendText("Included Risks:\n");
+                            foreach (var risk in risks)
+                            {
+                                _output.AppendText($"- Risk: {risk.Name}\n");
+                            }
+
+                            _output.AppendText("Included Mitigations:\n");
+                            foreach (var mitigation in mitigations)
+                            {
+                                _output.AppendText($"- Mitigation: {mitigation.Name}\n");
+                            }
+
+                            uint iterations = modelVM.Properties.Iterations;
+                            Statistics.ResetSimulations();
+
+                            var optParameter = modelVM.Properties.OptimizationParameter;
+                            var ignoreImplementationCosts = modelVM.Properties.IgnoreImplementationCosts;
+                            var notText = ignoreImplementationCosts ? "not " : "";
+                            _output.AppendText($"Optimization has been calculated on the {optParameter} parameter, and has {notText}considered the Implementation costs.\n");
+
+                            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                            IEnumerable<MitigationCost>? optimized = null;
+                            QRiskTree.Engine.Range? firstYearCosts = null;
+                            QRiskTree.Engine.Range? followingYearsCosts = null;
+
+                            try
+                            {
+                                Mouse.OverrideCursor = Cursors.Wait;
+                                optimized = modelVM.Model.OptimizeMitigations(out firstYearCosts, out followingYearsCosts,
+                                    iterations: iterations, optimizationParameter: optParameter, optimizeForFollowingYears: ignoreImplementationCosts);
+                            }
+                            finally
+                            {
+                                Mouse.OverrideCursor = null;
+                                stopwatch.Stop();
+                            }
+
+                            _output.AppendText($"Optimization completed in {stopwatch.ElapsedMilliseconds}ms ({Statistics.Simulations} * {iterations} samples generated).\n");
+
+                            if (firstYearCosts != null)
+                            {
+                                _output.AppendText("\nEstimation of the Minimal Overall Yearly Cost for the first year:\n");
+                                _output.AppendText($"- {modelVM.Properties.MinPercentile}th percentile: {firstYearCosts.Min.ToString("C0")}");
+                                if (_baseline != null)
+                                    _output.AppendText($" (saving {(_baseline.Min - firstYearCosts.Min).ToString("C0")}, equal to {((_baseline.Min - firstYearCosts.Min) / _baseline.Min).ToString("P2")})\n");
+                                else
+                                    _output.AppendText("\n");
+                                _output.AppendText($"- Mode: {firstYearCosts.Mode.ToString("C0")}");
+                                if (_baseline != null)
+                                    _output.AppendText($" (saving {(_baseline.Mode - firstYearCosts.Mode).ToString("C0")}, equal to {((_baseline.Mode - firstYearCosts.Mode) / _baseline.Mode).ToString("P2")})\n");
+                                else
+                                    _output.AppendText("\n");
+                                _output.AppendText($"- {modelVM.Properties.MaxPercentile}th percentile: {firstYearCosts.Max.ToString("C0")}");
+                                if (_baseline != null)
+                                    _output.AppendText($" (saving {(_baseline.Max - firstYearCosts.Max).ToString("C0")}, equal to {((_baseline.Max - firstYearCosts.Max) / _baseline.Max).ToString("P2")})\n");
+                                else
+                                    _output.AppendText("\n");
+                                _output.AppendText($"- Confidence: {firstYearCosts.Confidence}\n");
+                            }
+
+                            if (followingYearsCosts != null)
+                            {
+                                _output.AppendText("\nEstimation of the Minimal Overall Yearly Cost for the following years:\n");
+                                _output.AppendText($"- {modelVM.Properties.MinPercentile}th percentile: {followingYearsCosts.Min.ToString("C0")}");
+                                if (_baseline != null)
+                                    _output.AppendText($" (saving {(_baseline.Min - followingYearsCosts.Min).ToString("C0")}, equal to {((_baseline.Min - followingYearsCosts.Min) / _baseline.Min).ToString("P2")})\n");
+                                else
+                                    _output.AppendText("\n");
+                                _output.AppendText($"- Mode: {followingYearsCosts.Mode.ToString("C0")}");
+                                if (_baseline != null)
+                                    _output.AppendText($" (saving {(_baseline.Mode - followingYearsCosts.Mode).ToString("C0")}, equal to {((_baseline.Mode - followingYearsCosts.Mode) / _baseline.Mode).ToString("P2")})\n");
+                                else
+                                    _output.AppendText("\n");
+                                _output.AppendText($"- {modelVM.Properties.MaxPercentile}th percentile: {followingYearsCosts.Max.ToString("C0")}");
+                                if (_baseline != null)
+                                    _output.AppendText($" (saving {(_baseline.Max - followingYearsCosts.Max).ToString("C0")}, equal to {((_baseline.Max - followingYearsCosts.Max) / _baseline.Max).ToString("P2")})\n");
+                                else
+                                    _output.AppendText("\n");
+                                _output.AppendText($"- Confidence: {followingYearsCosts.Confidence}\n");
+                            }
+
+                            if (optimized?.Any() ?? false)
+                            {
+                                _output.AppendText("\nMitigations to be applied:\n");
+                                foreach (var mitigation in optimized)
+                                {
+                                    _output.AppendText($"- {mitigation.Name}\n");
+                                    _output.AppendText($"  - Implementation Costs: {mitigation.Min} - {mitigation.Mode} - {mitigation.Max} ({mitigation.Confidence})\n");
+                                    if (mitigation.OperationCosts != null)
+                                    {
+                                        _output.AppendText($"  - Operation Costs: {mitigation.OperationCosts.Min} - {mitigation.OperationCosts.Mode} - {mitigation.OperationCosts.Max} ({mitigation.OperationCosts.Confidence})\n");
+                                    }
+                                }
+                            }
+
+                            _output.AppendText("--- Calculation of the Optimal Set of Mitigations Completed ---\n\n");
+                        }
                     }
                     else
                     {
-                        proceed = true;
-                    }
-
-                    if (proceed)
-                    {
-                        _output.AppendText("--- Calculating Optimal Mitigations Set ---\n");
-
-                        _output.AppendText("Included Risks:\n");
-                        foreach (var risk in risks)
+                        if (violatingNode != null && !(violatingNode is MitigatedRisk))
                         {
-                            _output.AppendText($"- Risk: {risk.Name}\n");
+                            MessageBox.Show($"Risk '{invalidRiskName}' is not valid for optimal mitigations calculation because {violatingNode.GetType().Name.AddSpacesToCamelCase()} '{violatingNode.Name}' is not set.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
-
-                        _output.AppendText("Included Mitigations:\n");
-                        foreach (var mitigation in mitigations)
+                        else
                         {
-                            _output.AppendText($"- Mitigation: {mitigation.Name}\n");
+                            MessageBox.Show($"Risk '{invalidRiskName}' is not valid for optimal mitigations calculation.\nPlease check if it has all required children, or if you still must set its range.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
-
-                        uint iterations = modelVM.Properties.Iterations;
-                        Statistics.ResetSimulations();
-
-                        var optParameter = modelVM.Properties.OptimizationParameter;
-                        var ignoreImplementationCosts = modelVM.Properties.IgnoreImplementationCosts;
-                        var notText = ignoreImplementationCosts ? "not " : "";
-                        _output.AppendText($"Optimization has been calculated on the {optParameter} parameter, and has {notText}considered the Implementation costs.\n");
-
-                        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-                        IEnumerable<MitigationCost>? optimized = null;
-                        QRiskTree.Engine.Range? firstYearCosts = null;
-                        QRiskTree.Engine.Range? followingYearsCosts = null;
-
-                        try
-                        {
-                            Mouse.OverrideCursor = Cursors.Wait;
-                            optimized = modelVM.Model.OptimizeMitigations(out firstYearCosts, out followingYearsCosts, 
-                                iterations: iterations, optimizationParameter: optParameter, optimizeForFollowingYears: ignoreImplementationCosts);
-                        }
-                        finally
-                        {
-                            Mouse.OverrideCursor = null;
-                            stopwatch.Stop();
-                        }
-
-                        _output.AppendText($"Optimization completed in {stopwatch.ElapsedMilliseconds}ms ({Statistics.Simulations} * {iterations} samples generated).\n");
-
-                        if (firstYearCosts != null)
-                        {
-                            _output.AppendText("\nEstimation of the Minimal Overall Yearly Cost for the first year:\n");
-                            _output.AppendText($"- {modelVM.Properties.MinPercentile}th percentile: {firstYearCosts.Min.ToString("C0")}");
-                            if (_baseline != null)
-                                _output.AppendText($" (saving {(_baseline.Min - firstYearCosts.Min).ToString("C0")}, equal to {((_baseline.Min - firstYearCosts.Min) / _baseline.Min).ToString("P2")})\n");
-                            else
-                                _output.AppendText("\n");
-                            _output.AppendText($"- Mode: {firstYearCosts.Mode.ToString("C0")}");
-                            if (_baseline != null)
-                                _output.AppendText($" (saving {(_baseline.Mode - firstYearCosts.Mode).ToString("C0")}, equal to {((_baseline.Mode - firstYearCosts.Mode) / _baseline.Mode).ToString("P2")})\n");
-                            else
-                                _output.AppendText("\n");
-                            _output.AppendText($"- {modelVM.Properties.MaxPercentile}th percentile: {firstYearCosts.Max.ToString("C0")}");
-                            if (_baseline != null)
-                                _output.AppendText($" (saving {(_baseline.Max - firstYearCosts.Max).ToString("C0")}, equal to {((_baseline.Max - firstYearCosts.Max) / _baseline.Max).ToString("P2")})\n");
-                            else
-                                _output.AppendText("\n");
-                            _output.AppendText($"- Confidence: {firstYearCosts.Confidence}\n");
-                        }
-
-                        if (followingYearsCosts != null)
-                        {
-                            _output.AppendText("\nEstimation of the Minimal Overall Yearly Cost for the following years:\n");
-                            _output.AppendText($"- {modelVM.Properties.MinPercentile}th percentile: {followingYearsCosts.Min.ToString("C0")}");
-                            if (_baseline != null)
-                                _output.AppendText($" (saving {(_baseline.Min - followingYearsCosts.Min).ToString("C0")}, equal to {((_baseline.Min - followingYearsCosts.Min) / _baseline.Min).ToString("P2")})\n");
-                            else
-                                _output.AppendText("\n");
-                            _output.AppendText($"- Mode: {followingYearsCosts.Mode.ToString("C0")}");
-                            if (_baseline != null)
-                                _output.AppendText($" (saving {(_baseline.Mode - followingYearsCosts.Mode).ToString("C0")}, equal to {((_baseline.Mode - followingYearsCosts.Mode) / _baseline.Mode).ToString("P2")})\n");
-                            else
-                                _output.AppendText("\n");
-                            _output.AppendText($"- {modelVM.Properties.MaxPercentile}th percentile: {followingYearsCosts.Max.ToString("C0")}");
-                            if (_baseline != null)
-                                _output.AppendText($" (saving {(_baseline.Max - followingYearsCosts.Max).ToString("C0")}, equal to {((_baseline.Max - followingYearsCosts.Max) / _baseline.Max).ToString("P2")})\n");
-                            else
-                                _output.AppendText("\n");
-                            _output.AppendText($"- Confidence: {followingYearsCosts.Confidence}\n");
-                        }
-
-                        if (optimized?.Any() ?? false)
-                        {
-                            _output.AppendText("\nMitigations to be applied:\n");
-                            foreach (var mitigation in optimized)
-                            {
-                                _output.AppendText($"- {mitigation.Name}\n");
-                                _output.AppendText($"  - Implementation Costs: {mitigation.Min} - {mitigation.Mode} - {mitigation.Max} ({mitigation.Confidence})\n");
-                                if (mitigation.OperationCosts != null)
-                                {
-                                    _output.AppendText($"  - Operation Costs: {mitigation.OperationCosts.Min} - {mitigation.OperationCosts.Mode} - {mitigation.OperationCosts.Max} ({mitigation.OperationCosts.Confidence})\n");
-                                }
-                            }
-                        }
-
-                        _output.AppendText("--- Calculation of the Optimal Set of Mitigations Completed ---\n\n");
                     }
                 }
                 else

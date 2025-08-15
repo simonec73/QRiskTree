@@ -161,6 +161,48 @@ namespace QRiskTree.Engine
 
         #region Member functions: simulation and statistics.
         /// <summary>
+        /// Verifies if the node can be simulated.
+        /// </summary>
+        /// <param name="node">[out] Eventual node that cannot be simulated.</param>
+        /// <returns>True if the node can be simulated, false otherwise.</returns>
+        public bool CanBeSimulated(out Node? node)
+        {
+            var result = Calculated.HasValue && !Calculated.Value;
+            node = null;
+
+            if (!result)
+            {
+                node = this;
+
+                if (HasAllChildren() && (_children?.Any() ?? false))
+                {
+                    result = true;
+                    var children = _children.ToArray();
+                    foreach (var child in children)
+                    {
+                        if (!child.CanBeSimulated(out var violatingNode))
+                        {
+                            node = violatingNode;
+                            result = false;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// When overridden in a derived class, it determines if the node has all derived children.
+        /// </summary>
+        /// <returns>True if all children are present, false if any required child is missing.</returns>
+        protected virtual bool HasAllChildren()
+        {
+            return true;
+        }
+
+        /// <summary>
         /// Performs a Monte Carlo simulation for the node.
         /// </summary>
         /// <param name="samples">Calculated samples.</param>
