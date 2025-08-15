@@ -72,6 +72,12 @@ namespace QRiskTree.Engine.Model
             return (node is PrimaryLoss) || (node is SecondaryRisk);
         }
 
+        protected override bool HasAllChildren()
+        {
+            return (_children?.OfType<PrimaryLoss>().Any() ?? false) || 
+                (_children?.OfType<SecondaryRisk>().Any() ?? false);
+        }
+
         protected override bool Simulate(uint iterations, out double[]? samples, out Confidence confidence)
         {
             var result = true;

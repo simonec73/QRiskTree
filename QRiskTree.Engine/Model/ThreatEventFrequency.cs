@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using QRiskTree.Engine.Facts;
+using System.Xml.Linq;
 
 namespace QRiskTree.Engine.Model
 {
@@ -71,6 +72,12 @@ namespace QRiskTree.Engine.Model
         {
             return (node is ContactFrequency && !(_children?.OfType<ContactFrequency>().Any() ?? false)) ||
                 (node is ProbabilityOfAction && !(_children?.OfType<ProbabilityOfAction>().Any() ?? false));
+        }
+
+        protected override bool HasAllChildren()
+        {
+            return (_children?.OfType<ContactFrequency>().Any() ?? false) &&
+                (_children?.OfType<ProbabilityOfAction>().Any() ?? false);
         }
 
         protected override bool Simulate(uint iterations, out double[]? samples, out Confidence confidence)

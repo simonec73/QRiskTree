@@ -15,9 +15,7 @@ namespace QRiskTree.Engine.ExtendedModel
 
         public static RiskModel Instance => _instance;
 
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
         private RiskModel()
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
         {
             FactsManager.Instance.FactAdded += (fact) =>
             {
@@ -69,9 +67,9 @@ namespace QRiskTree.Engine.ExtendedModel
         }
 
         [JsonProperty("description", Order = 2)]
-        private string _description { get; set; }
+        private string? _description { get; set; }
 
-        public string Description
+        public string? Description
         {
             get => _description;
             set
@@ -385,6 +383,36 @@ namespace QRiskTree.Engine.ExtendedModel
 
         #region Simulation.
         /// <summary>
+        /// Event raised when the simulation of a risk is completed.
+        /// It includes the effects of the Mitigations, but not their cost.
+        /// </summary>
+        /// <remarks>The first parameter is the simulated Risk,
+        /// the second is the enumeration of the identifiers of the Mitigations considered during the generation,
+        /// and the third is an array containing the generated samples.</remarks>
+        public event Action<MitigatedRisk, IEnumerable<Guid>?, double[]>? RiskSimulationCompleted;
+        /// <summary>
+        /// Event raised when the simulation of the model is completed.
+        /// It includes the effects of the Mitigations, but not their cost.
+        /// </summary>
+        /// <remarks>The first parameter is the enumeration of the identifiers of the mitigations considered during the generation,
+        /// and the third is an array containing the generated samples.</remarks>
+        public event Action<IEnumerable<Guid>?, double[]>? SimulationCompleted;
+        /// <summary>
+        /// Event raised when the simulation of the first year is completed.
+        /// It includes the effects of the Mitigations and their implementation and operation costs.
+        /// </summary>
+        /// <remarks>The first parameter is the enumeration of the identifiers of the mitigations considered during the generation,
+        /// and the third is an array containing the generated samples.</remarks>
+        public event Action<IEnumerable<Guid>?, double[]>? FirstYearSimulationCompleted;
+        /// <summary>
+        /// Event raised when the simulation of the following years is completed.
+        /// It includes the effects of the Mitigations and their operation costs.
+        /// </summary>
+        /// <remarks>The first parameter is the enumeration of the identifiers of the mitigations considered during the generation,
+        /// and the third is an array containing the generated samples.</remarks>
+        public event Action<IEnumerable<Guid>?, double[]>? FollowingYearsSimulationCompleted;
+
+        /// <summary>
         /// Simulation of the model considering only the selected risks, without factoring in the selected mitigations.
         /// </summary>
         /// <param name="iterations">Number of iterations.</param>
@@ -393,8 +421,25 @@ namespace QRiskTree.Engine.ExtendedModel
         {
             var enabledMitigations = _mitigations?.Where(x => x.IsEnabled).Select(x => x.Id).ToArray();
             SetEnabledState();
-            var samples = CalculateResidualRisk(iterations, out var confidence);
-            SetEnabledState(enabledMitigations);
+
+            double[]? samples = null;
+            Confidence confidence = Confidence.Moderate;
+
+            try
+            {
+                samples = CalculateResidualRisk(iterations, out confidence);
+                SimulationCompleted?.Invoke(null, samples);
+            }
+            catch 
+            {
+                // Ignore exceptions.
+            }
+            finally
+            {                 
+                // Restore the original enabled state of mitigations.
+                SetEnabledState(enabledMitigations);
+            }
+
             return samples?.ToRange(RangeType.Money, confidence);
         }
 
@@ -407,6 +452,16 @@ namespace QRiskTree.Engine.ExtendedModel
         public Range? Simulate(out Range? costFollowingYears, uint iterations = Node.DefaultIterations)
         {
             var samples = CalculateResidualRisk(iterations, out var confidence);
+
+            try
+            {
+                SimulationCompleted?.Invoke(_mitigations?.Where(x => x.IsEnabled).Select(x => x.Id), samples);
+            }
+            catch
+            {
+                // Ignore exceptions from the event handler.
+            }
+
             return CalculateCosts(iterations, samples, confidence, out costFollowingYears);
         }
 
@@ -434,6 +489,18 @@ namespace QRiskTree.Engine.ExtendedModel
                             result[i] += riskSamples[i];
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                         }
+
+                        try
+                        {
+#pragma warning disable CS8604 // Possible null reference argument.
+                            RiskSimulationCompleted?.Invoke(risk, 
+                                _mitigations?.Where(x => x.IsEnabled).Select(x => x.Id), riskSamples);
+#pragma warning restore CS8604 // Possible null reference argument.
+                        }
+                        catch
+                        {
+                            // Ignore exceptions from the event handler.
+                        }
                     }
                 }
             }
@@ -457,6 +524,17 @@ namespace QRiskTree.Engine.ExtendedModel
                     foreach (var mitigation in mitigations)
                     {
                         confidence = CalculateCosts(mitigation, iterations, confidence, firstYearSamples, followingYearsSamples);
+                    }
+
+                    try
+                    {
+                        var mitigationIds = mitigations.Select(x => x.Id);
+                        FirstYearSimulationCompleted?.Invoke(mitigationIds, firstYearSamples);
+                        FollowingYearsSimulationCompleted?.Invoke(mitigationIds, followingYearsSamples);
+                    }
+                    catch
+                    {
+                        // Ignore exceptions from the event handler.
                     }
 
                     result = firstYearSamples.ToRange(RangeType.Money, confidence);
@@ -731,7 +809,7 @@ namespace QRiskTree.Engine.ExtendedModel
 
         #region Facts management.
         [JsonProperty("facts", Order = 12)]
-        private FactsCollection _facts { get; set; }
+        private FactsCollection? _facts { get; set; }
 
         private void RecursivelyRemoveFact(Fact fact)
         {

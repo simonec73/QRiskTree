@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace QRiskTree.Engine.Model
 {
@@ -76,6 +77,12 @@ namespace QRiskTree.Engine.Model
         {
             return (node is LossEventFrequency && !(_children?.OfType<LossEventFrequency>().Any() ?? false)) || 
                 (node is LossMagnitude && !(_children?.OfType<LossMagnitude>().Any() ?? false));
+        }
+
+        protected override bool HasAllChildren()
+        {
+            return (_children?.OfType<LossEventFrequency>().Any() ?? false) &&
+                (_children?.OfType<LossMagnitude>().Any() ?? false);
         }
 
         protected override bool Simulate(uint iterations, out double[]? samples, out Confidence confidence)

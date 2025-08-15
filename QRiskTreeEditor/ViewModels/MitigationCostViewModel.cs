@@ -286,6 +286,7 @@ namespace QRiskTreeEditor.ViewModels
             _related.Add(new LinkedNodeViewModel(node, this));
             OnPropertyChanged(nameof(Related));
             OnPropertyChanged(nameof(HasRelated));
+            OnPropertyChanged(nameof(HasChildren));
         }
 
         internal void RemoveRelated(NodeViewModel node)

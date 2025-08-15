@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using QRiskTree.Engine.Facts;
+using System.Xml.Linq;
 
 namespace QRiskTree.Engine.Model
 {
@@ -84,6 +85,12 @@ namespace QRiskTree.Engine.Model
         {
             return (node is SecondaryLossEventFrequency && !(_children?.OfType<SecondaryLossEventFrequency>().Any() ?? false)) || 
                 (node is SecondaryLossMagnitude && !(_children?.OfType<SecondaryLossMagnitude>().Any() ?? false));
+        }
+
+        protected override bool HasAllChildren()
+        {
+            return (_children?.OfType<SecondaryLossEventFrequency>().Any() ?? false) &&
+                (_children?.OfType<SecondaryLossMagnitude>().Any() ?? false);
         }
 
         protected override bool Simulate(uint iterations, out double[]? samples, out Confidence confidence)
