@@ -125,6 +125,32 @@ namespace QRiskTreeEditor.ViewModels
         
         public void RemoveRisk(MitigatedRiskViewModel risk)
         {
+            // Remove all components of the Risk.
+            var components = risk.Components.OfType<NodeViewModel>().ToArray();
+            if (components.Any())
+            {
+                foreach (var child in components)
+                {
+                    child.Delete();
+                }
+            }
+            var facts = risk.Facts?.OfType<LinkedFactViewModel>().ToArray();
+            if (facts?.Any() ?? false)
+            {
+                foreach (var fact in facts)
+                {
+                    risk.RemoveFact(fact.LinkedFact);
+                }
+            }
+            var mitigations = risk.Mitigations?.OfType<AppliedMitigationViewModel>().ToArray();
+            if (mitigations?.Any() ?? false)
+            {
+                foreach (var mitigation in mitigations)
+                {
+                    mitigation.Delete();
+                }
+            }
+
             _model.RemoveRisk(risk.Id);
             _risks.Remove(risk);
             OnPropertyChanged(nameof(_risks));

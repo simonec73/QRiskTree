@@ -2,6 +2,7 @@
 using QRiskTree.Engine.ExtendedModel;
 using QRiskTree.Engine.Facts;
 using QRiskTree.Engine.Model;
+using QRiskTreeEditor.Importers;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Data;
@@ -115,6 +116,23 @@ namespace QRiskTreeEditor.ViewModels
         {
             if (_parent != null)
             {
+                var components = Components.OfType<NodeViewModel>().ToArray();
+                if (components.Any())
+                {
+                    foreach (var child in components)
+                    {
+                        child.Delete();
+                    }
+                }
+                var facts = Facts?.OfType<LinkedFactViewModel>().ToArray();
+                if (facts?.Any() ?? false)
+                {
+                    foreach (var fact in facts)
+                    {
+                        RemoveFact(fact.LinkedFact);
+                    }
+                }
+
                 _parent.RemoveChild(this);
             }
         }
