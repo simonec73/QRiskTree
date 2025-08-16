@@ -20,7 +20,7 @@
             <StackPanel>
                 <TextBlock Text="QRiskTree Editor" FontSize="24" FontWeight="Bold"/>
                 <TextBlock Text="Bridging Security and Business Decisions" FontSize="14" FontStyle="Italic"/>
-                <TextBlock Text="Version 0.1.0" FontSize="16" FontWeight="SemiBold" Margin="0 5"/>
+                <TextBlock Text="Version 0.1.1" FontSize="16" FontWeight="SemiBold" Margin="0 5"/>
                 <TextBlock Text="Developed by Simone Curzi" FontSize="14" Margin="0 5"/>
                 <TextBlock>
                 <Hyperlink NavigateUri="https://github.com/simonec73/QRiskTree/blob/main/LICENSE" RequestNavigate="Hyperlink_RequestNavigate">
