@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using QRiskTreeEditor.Importers;
+using System.ComponentModel;
 
 namespace QRiskTreeEditor.ViewModels
 {
@@ -49,8 +50,27 @@ namespace QRiskTreeEditor.ViewModels
 
         public void Delete()
         {
-            _fact?.RemoveRelated(this);
-            _mitigationCost?.RemoveRelated(this);
+            if (_node is MitigatedRiskViewModel mitigatedRisk && _mitigationCost != null)
+            {
+                var appliedMitigation = mitigatedRisk.Mitigations.OfType<AppliedMitigationViewModel>()
+                    .FirstOrDefault(x => x.MitigationCostId == _mitigationCost.Id);
+                if (appliedMitigation != null)
+                {
+                    appliedMitigation.Delete();
+                }
+            }
+            else if (_node is FactsContainerViewModel factsContainer && _fact != null)
+            {
+                var linkedFact = factsContainer?.Facts?.OfType<LinkedFactViewModel>()
+                    .FirstOrDefault(x => x.LinkedFact.Id == _fact.Id);
+                if (linkedFact != null)
+                {
+                    linkedFact.Delete();
+                }
+            }
+
+            //_fact?.RemoveRelated(this);
+            //_mitigationCost?.RemoveRelated(this);
         }
 
         #region Properties.

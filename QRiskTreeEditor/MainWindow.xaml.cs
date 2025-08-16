@@ -1446,6 +1446,14 @@ namespace QRiskTreeEditor
                         lfVM.Delete();
                     }
                 }
+                else if (menuItem.Tag is AppliedMitigationViewModel amVM)
+                {
+                    if (MessageBox.Show($"Are you sure you want to delete applied Mitigation '{amVM.Name}'?",
+                        "Confirm Disassociation", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                    {
+                        amVM.Delete();
+                    }
+                }
                 else if (menuItem.Tag is NodeViewModel nodeVM)
                 {
                     if (MessageBox.Show($"Are you sure you want to delete {nodeVM.NodeType} '{nodeVM.Name}'?",

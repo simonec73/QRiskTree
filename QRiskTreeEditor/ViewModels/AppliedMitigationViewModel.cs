@@ -1,6 +1,7 @@
 ﻿using QRiskTree.Engine;
 using QRiskTree.Engine.ExtendedModel;
 using QRiskTree.Engine.Facts;
+using QRiskTreeEditor.Importers;
 using System.ComponentModel;
 using PT = PropertyTools.DataAnnotations;
 
@@ -77,6 +78,8 @@ namespace QRiskTreeEditor.ViewModels
         {
             if (_parent != null)
             {
+                _model.Mitigations?.OfType<MitigationCostViewModel>()
+                    .FirstOrDefault(m => m.Id == MitigationCostId)?.RemoveRelated(_parent);
                 _parent.RemoveChild(this);
             }
         }
