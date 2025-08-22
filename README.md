@@ -65,11 +65,8 @@ A computer based on AMD Ryzen 9 8945HS is able to optimize a model with 10 risks
 
 ## Do you have some guidance on how to use QRiskTree Editor?
 
-As of today, there is no available guidance. If you know some concepts of Risk Management, it should be easy enough for you to use it. If not, the documentation listed above should give you at least a starting point.
-
-That said, it is a priority for me to prepare and share a recording with a short demo. I will link it here as soon as it is available.
-[![Watch the video](https://raw.githubusercontent.com/simonec73/QRiskTree/dev/Recordings/Welcome.jpg)](https://raw.githubusercontent.com/simonec73/QRiskTree/dev/Recordings/Welcome.mp4)
-
+Please watch this video to get a quick introduction to QRiskTree Editor.
+[![Welcome to QRiskTree Editor!](https://img.youtube.com/vi/u9vN_SIq5KY/maxresdefault.jpg)](https://youtu.be/u9vN_SIq5KY)
 
 ## Can I customize QRiskTree for my purposes?
 
