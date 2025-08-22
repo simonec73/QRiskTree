@@ -57,11 +57,16 @@ You are welcome to fork QRiskTree and make the changes that are required for you
 
 QRiskTree has been designed to be well structured and easily understandable. At least, I hope that it will be easily understandable. It currently lack comments, but that's a priority for the future.
 
+## What are the requirements for QRiskTree Editor?
+
+QRiskTree Editor requires a computer with Windows 10 x64 or Windows 11 and runs with minimal hardware. As of today, the QRiskTree library is single thread: this means that you might get better execution times with CPUs having better single-core performance.
+
+A computer based on AMD Ryzen 9 8945HS is able to optimize a model with 10 risks defined at the Loss Event Frequency and Loss Magnitude level, and the same 10 mitigations assigned to every threat in over 30 minutes. During the execution, the process has consistently used around 250 MBytes of RAM and has fully used a little more than one core (around 7-8% of the CPU). As it is, the behavior is ideal for being incorporated in server applications serving multiple requests at the same time. Moreover, you can start an optimization job while you can safely continue to use your PC. For these reasons, I will not change it to support multi-threaded execution anytime soon.
+
 ## Do you have some guidance on how to use QRiskTree Editor?
 
-As of today, there is no available guidance. If you know some concepts of Risk Management, it should be easy enough for you to use it. If not, the documentation listed above should give you at least a starting point.
-
-That said, it is a priority for me to prepare and share a recording with a short demo. I will link it here as soon as it is available.
+Please watch this video to get a quick introduction to QRiskTree Editor.
+[![Welcome to QRiskTree Editor!](https://img.youtube.com/vi/u9vN_SIq5KY/maxresdefault.jpg)](https://youtu.be/u9vN_SIq5KY)
 
 ## Can I customize QRiskTree for my purposes?
 
