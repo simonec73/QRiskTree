@@ -1,30 +1,33 @@
-﻿using MathNet.Numerics.Statistics;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using QRiskTree.Engine.Facts;
-using QRiskTree.Engine.Model;
 using System.Data;
-using System.Runtime.Serialization;
-using System.Threading.Channels;
 
 namespace QRiskTree.Engine.ExtendedModel
 {
+    /// <summary>
+    /// Risk model containing mitigated risks and their associated mitigations.
+    /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class RiskModel : ChangesTracker
+    public class RiskModel : ChangesTracker, IDisposable
     {
-        private static RiskModel _instance = new();
+        private static readonly Dictionary<Guid, RiskModel> _instances = new();
+        private readonly FactsManager _factsManager = new FactsManager();
+        private const double CurrentSchemaVersion = 0.2;
+        private const double MinSchemaVersion = 0.0;
 
-        public static RiskModel Instance => _instance;
-
+        /// <summary>
+        /// Default constructor.
+        /// </summary>
         private RiskModel()
         {
-            FactsManager.Instance.FactAdded += (fact) =>
+            _factsManager.FactAdded += (fact) =>
             {
                 // Add the fact to the facts collection.
                 _facts ??= new FactsCollection();
                 _facts.Add(fact);
             };
 
-            FactsManager.Instance.FactRemoved += (fact) =>
+            _factsManager.FactRemoved += (fact) =>
             {
                 // Remove all references to the fact from the risks.
                 RecursivelyRemoveFact(fact);
@@ -36,23 +39,71 @@ namespace QRiskTree.Engine.ExtendedModel
                 }
             };
 
-            FactsManager.Instance.FactUpdated += (fact) =>
+            _factsManager.FactUpdated += (fact) =>
             {
                 _facts?.Replace(fact);
             };
         }
 
-        public static void Reset()
+        /// <summary>
+        /// Create a new instance of the RiskModel.
+        /// </summary>
+        /// <returns></returns>
+        public static RiskModel Create()
         {
-            _instance.ClearMitigations();
-            _instance.ClearRisks();
-            _instance = new RiskModel();
+            var result = new RiskModel();
+            _instances.Add(result.Id, result);
+            return result;
         }
 
+        /// <summary>
+        /// Retrieves a <see cref="RiskModel"/> instance by its unique identifier.
+        /// </summary>
+        /// <param name="id">The unique identifier of the <see cref="RiskModel"/> to retrieve.</param>
+        /// <returns>The <see cref="RiskModel"/> instance associated with the specified <paramref name="id"/>,  or <see
+        /// langword="null"/> if no instance with the given identifier exists.</returns>
+        public static RiskModel? Get(Guid id)
+        {
+            if (_instances.TryGetValue(id, out var result))
+            {
+                return result;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        #region IDisposable implementation.
+        /// <summary>
+        /// Releases all resources used by the current instance of the class.
+        /// </summary>
+        /// <remarks>This method should be called when the instance is no longer needed to free up
+        /// resources.  After calling <see cref="Dispose"/>, the instance should not be used.</remarks>
+        public void Dispose()
+        {
+            _factsManager.Clear();
+            _instances.Remove(Id);
+        }
+        #endregion
+
         #region Properties.
-        [JsonProperty("name", Order = 1)]
+        [JsonProperty("schemaVersion", Order = 0)]
+        private double SchemaVersion { get; set; }
+
+        /// <summary>
+        /// Model unique identifier.
+        /// </summary>
+        [JsonProperty("id", Order = 1)]
+        public Guid Id { get; set; } = Guid.NewGuid();
+
+        [JsonProperty("name", Order = 2)]
         private string _name { get; set; } = "Risk Model";
 
+        /// <summary>
+        /// Name of the model.
+        /// </summary>
+        /// <remarks>Default is "Risk Model".</remarks>
         public string Name
         {
             get => _name;
@@ -66,9 +117,12 @@ namespace QRiskTree.Engine.ExtendedModel
             }
         }
 
-        [JsonProperty("description", Order = 2)]
+        [JsonProperty("description", Order = 3)]
         private string? _description { get; set; }
 
+        /// <summary>
+        /// Description of the model.
+        /// </summary>
         public string? Description
         {
             get => _description;
@@ -85,27 +139,37 @@ namespace QRiskTree.Engine.ExtendedModel
 
         #region Range management.
         [JsonProperty("minPercentile", Order = 5)]
+        private int _minPercentile { get; set; } = 10;
+
+        /// <summary>
+        /// Percentile value to use for the minimum of the range.
+        /// </summary>
         public int MinPercentile
         {
-            get => Range.MinPercentile;
+            get => _minPercentile;
             set
             {
                 if (value < 0 || value > 100)
                     throw new ArgumentOutOfRangeException(nameof(value), "Percentile must be between 0 and 100.");
-                Range.MinPercentile = value;
+                _minPercentile = value;
                 Update();
             }
         }
 
         [JsonProperty("maxPercentile", Order = 6)]
+        private int _maxPercentile { get; set; } = 90;
+
+        /// <summary>
+        /// Percentile value to use for the maximum of the range.
+        /// </summary>
         public int MaxPercentile
         {
-            get => Range.MaxPercentile;
+            get => _maxPercentile;
             set
             {
                 if (value < 0 || value > 100)
                     throw new ArgumentOutOfRangeException(nameof(value), "Percentile must be between 0 and 100.");
-                Range.MaxPercentile = value;
+                _maxPercentile = value;
                 Update();
             }
         }
@@ -120,6 +184,8 @@ namespace QRiskTree.Engine.ExtendedModel
         public MitigatedRisk AddRisk()
         {
             var result = new MitigatedRisk();
+            result.AssignModel(this);
+            result.AssignFactsManager(_factsManager);
             _risks ??= new List<MitigatedRisk>();
             _risks.Add(result);
             result.ChildAdded += OnChildAdded;
@@ -133,6 +199,8 @@ namespace QRiskTree.Engine.ExtendedModel
         public MitigatedRisk AddRisk(string name)
         {
             var result = new MitigatedRisk(name);
+            result.AssignModel(this);
+            result.AssignFactsManager(_factsManager);
             _risks ??= new List<MitigatedRisk>();
             _risks.Add(result);
             result.ChildAdded += OnChildAdded;
@@ -440,7 +508,7 @@ namespace QRiskTree.Engine.ExtendedModel
                 SetEnabledState(enabledMitigations);
             }
 
-            return samples?.ToRange(RangeType.Money, confidence);
+            return samples?.ToRange(RangeType.Money, _minPercentile, _maxPercentile, confidence);
         }
 
         /// <summary>
@@ -537,8 +605,10 @@ namespace QRiskTree.Engine.ExtendedModel
                         // Ignore exceptions from the event handler.
                     }
 
-                    result = firstYearSamples.ToRange(RangeType.Money, confidence);
-                    followingYearsCosts = followingYearsSamples.ToRange(RangeType.Money, confidence);
+                    result = firstYearSamples.ToRange(RangeType.Money, 
+                        _minPercentile, _maxPercentile, confidence);
+                    followingYearsCosts = followingYearsSamples.ToRange(RangeType.Money, 
+                        _minPercentile, _maxPercentile, confidence);
                 }
             }
 
@@ -567,7 +637,6 @@ namespace QRiskTree.Engine.ExtendedModel
                     mitigation.OperationCosts.GenerateSamples(iterations, out var operationalCostSamples) &&
                     (operationalCostSamples?.Length ?? 0) == iterations)
                 {
-
                     for (int i = 0; i < iterations; i++)
                     {
                         // Operational costs affect both the first year and following years.
@@ -761,9 +830,9 @@ namespace QRiskTree.Engine.ExtendedModel
         #endregion
 
         #region Serialization and Deserialization.
-
         public void Serialize(string filePath)
         {
+            SchemaVersion = CurrentSchemaVersion;
             var settings = new JsonSerializerSettings
             {
                 TypeNameHandling = TypeNameHandling.None,
@@ -776,12 +845,12 @@ namespace QRiskTree.Engine.ExtendedModel
             System.IO.File.WriteAllText(filePath, json);
         }
 
-        public static bool Load(string filePath)
+        public static RiskModel? Load(string filePath)
         {
             if (!System.IO.File.Exists(filePath))
                 throw new FileNotFoundException($"The file '{filePath}' does not exist.");
 
-            var result = false;
+            RiskModel? result = null;
 
             var json = System.IO.File.ReadAllText(filePath);
 
@@ -792,24 +861,98 @@ namespace QRiskTree.Engine.ExtendedModel
                 SerializationBinder = new KnownTypesBinder(),
                 MaxDepth = 128
             };
-            var riskModel = JsonConvert.DeserializeObject<RiskModel>(json, settings);
-            if (riskModel != null)
-            {
-                _instance = riskModel;
-                result = true;
-            }
-            else
+            result = JsonConvert.DeserializeObject<RiskModel>(json, settings);
+            if (result == null)
             {
                 throw new InvalidOperationException($"Failed to load the Risk Model from '{filePath}'.");
             }
+            else
+            {
+                // Check the model file version.
+                if (result.SchemaVersion < MinSchemaVersion)
+                {
+                    throw new NotSupportedException($"The model file version {result.SchemaVersion} is not supported.");
+                }
+
+                _instances.Add(result.Id, result);
+
+                // Register all the Facts in the FactsManager.
+                var facts = result._facts?.Facts?.ToArray();
+                if (facts?.Any() ?? false)
+                {
+                    foreach (var fact in facts)
+                    {
+                        result._factsManager?.Add(fact);
+                    }
+                }
+
+                // Register all NodeWithFacts with the FactsManager.
+                var risks = result._risks?.ToArray();
+                if (risks?.Any() ?? false)
+                {
+                    foreach (var risk in risks)
+                    {
+                        risk.AssignModel(result);
+                        var mitigations = risk.Children?.OfType<AppliedMitigation>().ToArray();
+                        if (mitigations?.Any() ?? false)
+                        {
+                            foreach (var mitigation in mitigations)
+                            {
+                                mitigation.AssignModel(result);
+                            }
+                        }
+                        RecursiveRegisterWithFactsManager(risk, result._factsManager);
+                    }
+                }
+            }
 
             return result;
+        }
+
+        private static void RecursiveRegisterWithFactsManager(Node node, FactsManager? factsManager)
+        {
+            if (factsManager == null)
+                return;
+
+            if (node is NodeWithFacts nodeWithFacts)
+            {
+                nodeWithFacts.AssignFactsManager(factsManager);
+            }
+
+            var children = node.Children?.ToArray();
+            if (children?.Any() ?? false)
+            {
+                foreach (var child in children)
+                {
+                    RecursiveRegisterWithFactsManager(child, factsManager);
+                }
+            }
         }
         #endregion
 
         #region Facts management.
         [JsonProperty("facts", Order = 12)]
         private FactsCollection? _facts { get; set; }
+
+        /// <summary>
+        /// Adds a fact to the collection managed by the system.
+        /// </summary>
+        /// <param name="fact">The fact to add. Cannot be <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the fact was successfully added; otherwise, <see langword="false"/>.</returns>
+        public bool AddFact(Fact fact)
+        {
+            return _factsManager.Add(fact);
+        }
+
+        /// <summary>
+        /// Removes the specified fact from the collection.
+        /// </summary>
+        /// <param name="fact">The fact to remove from the collection. Cannot be <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the fact was successfully removed; otherwise, <see langword="false"/>.</returns>
+        public bool RemoveFact(Fact fact)
+        {
+            return _factsManager.Remove(fact);
+        }
 
         private void RecursivelyRemoveFact(Fact fact)
         {
@@ -835,6 +978,33 @@ namespace QRiskTree.Engine.ExtendedModel
                     RemoveFact(child, fact);
                 }
             }
+        }
+
+        /// <summary>
+        /// Gets the collection of available facts managed by the system.
+        /// </summary>
+        public IEnumerable<Fact>? AvailableFacts => _factsManager.Facts;
+
+        /// <summary>
+        /// Import the facts in the embedded FactsManager from a JSON file.
+        /// </summary>
+        /// <param name="filePath">Path of the file containing the Facts to be imported.</param>
+        /// <param name="overwrite">True if eventual existing facts must be overwritten, false otherwise.</param>
+        public void ImportFacts(string filePath, bool overwrite = false)
+        {
+            _factsManager.Import(filePath, overwrite);
+        }
+
+        /// <summary>
+        /// Exports the current set of facts to the specified file.
+        /// </summary>
+        /// <remarks>This method writes the facts managed by the internal facts manager to the specified
+        /// file.  Ensure the application has the necessary permissions to write to the specified file path.</remarks>
+        /// <param name="filePath">The path of the file to which the facts will be exported. The path must be a valid file path and cannot be
+        /// null or empty.</param>
+        public void ExportFacts(string filePath)
+        {
+            _factsManager.Export(filePath);
         }
         #endregion
     }

@@ -12,6 +12,7 @@ namespace QRiskTree.Engine.Facts
         private FactRange() : base("Unknown", "Unknown", "Unknown")
         {
             _range = new Range(RangeType.Money);
+            _range.Changed += _range_Changed;
         }
 
         public FactRange(string context, string source, string name, Range range) : base(context, source, name)
@@ -58,13 +59,6 @@ namespace QRiskTree.Engine.Facts
             {
                 Update(tracker, e);
             }
-        }
-
-        [OnDeserialized]
-        internal void OnDeserializedMethod(StreamingContext context)
-        {
-            FactsManager.Instance.Add(this);
-            _range.Changed += _range_Changed;
         }
     }
 }

@@ -26,7 +26,7 @@ namespace QRiskTreeEditor.ViewModels
             _properties = new RiskModelProperties(model);
 
             #region Load the whole list of the Facts.
-            var facts = FactsManager.Instance.Facts?.Select(x => new FactViewModel(x, this)).ToArray();
+            var facts = model.AvailableFacts?.Select(x => new FactViewModel(x, this)).ToArray();
             if (facts?.Any() ?? false)
             {
                 Facts = new ObservableCollection<FactViewModel>(facts);
@@ -222,7 +222,7 @@ namespace QRiskTreeEditor.ViewModels
         {
             FactViewModel? result = null;
 
-            if (FactsManager.Instance.Add(fact))
+            if (Model.AddFact(fact))
             {
                 result = new FactViewModel(fact, this);
                 Facts.Add(result);
@@ -234,7 +234,7 @@ namespace QRiskTreeEditor.ViewModels
 
         public void RemoveFact(FactViewModel fact)
         {
-            FactsManager.Instance.Remove(fact.Fact);
+            Model.RemoveFact(fact.Fact);
             Facts.Remove(fact);
             OnPropertyChanged(nameof(Facts));
         }

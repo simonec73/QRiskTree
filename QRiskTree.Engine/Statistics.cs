@@ -5,26 +5,23 @@ namespace QRiskTree.Engine
 {
     public static class Statistics
     {
-        private static uint _simulations = 0;
-
-        public static uint Simulations => _simulations;
-
-        public static void ResetSimulations()
+        internal static Range? ToRange(this double[]? samples, RangeType rangeType, 
+            int minPercentile, int maxPercentile, Confidence confidence = Confidence.Moderate)
         {
-            Interlocked.Exchange(ref _simulations, 0);
-        }
+            if (minPercentile < 0 || minPercentile > 100)
+                throw new ArgumentOutOfRangeException(nameof(minPercentile));
+            if (maxPercentile < 0 || maxPercentile > 100)
+                throw new ArgumentOutOfRangeException(nameof(maxPercentile));
 
-        internal static Range? ToRange(this double[]? samples, RangeType rangeType, Confidence confidence = Confidence.Moderate)
-        {
             Range? result = null;
 
             if ((samples?.Length ?? 0) > 0)
             {
-                var min = samples.Percentile(Range.MinPercentile);
+                var min = samples.Percentile(minPercentile);
 #pragma warning disable CS8604 // Possible null reference argument.
                 var mode = samples.CalculateMode();
 #pragma warning restore CS8604 // Possible null reference argument.
-                var max = samples.Percentile(Range.MaxPercentile);
+                var max = samples.Percentile(maxPercentile);
                 result = new Range(rangeType, min, mode, max, confidence);
             }
 
@@ -48,7 +45,6 @@ namespace QRiskTree.Engine
                 samples = new double[iterations];
                 pert.Samples(samples);
                 result = true;
-                Interlocked.Increment(ref _simulations);
             }
 
             return result;

@@ -61,18 +61,6 @@ namespace QRiskTree.Engine
         }
         #endregion
 
-        #region Static properties.
-        /// <summary>
-        /// Percentile value to use for the minimum of the range.
-        /// </summary>
-        internal static int MinPercentile { get; set; } = 10;
-
-        /// <summary>
-        /// Percentile value to use for the maximum of the range.
-        /// </summary>
-        internal static int MaxPercentile { get; set; } = 90;
-        #endregion
-
         #region Public methods.
         public Range Set(double min, double mode, double max, Confidence confidence)
         {

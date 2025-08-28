@@ -108,7 +108,7 @@ namespace QRiskTree.Engine
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">The node cannot be null.</exception>
         /// <exception cref="ArgumentException">The node is not a valid child.</exception>
-        public bool Add(Node node)
+        public virtual bool Add(Node node)
         {
             if (node == null)
                 throw new ArgumentNullException(nameof(node), "Node cannot be null.");
@@ -135,7 +135,7 @@ namespace QRiskTree.Engine
         /// <param name="node">Node to be removed</param>
         /// <returns>True if the node was removed successfully, false otherwise.</returns>
         /// <exception cref="ArgumentNullException">The node cannot be null.</exception>
-        public bool Remove(Node node)
+        public virtual bool Remove(Node node)
         {
             if (node == null)
                 throw new ArgumentNullException(nameof(node), "Node cannot be null.");
