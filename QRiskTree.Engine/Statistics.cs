@@ -5,7 +5,7 @@ namespace QRiskTree.Engine
 {
     public static class Statistics
     {
-        internal static Range? ToRange(this double[]? samples, RangeType rangeType, 
+        public static Range? ToRange(this double[]? samples, RangeType rangeType, 
             int minPercentile, int maxPercentile, Confidence confidence = Confidence.Moderate)
         {
             if (minPercentile < 0 || minPercentile > 100)

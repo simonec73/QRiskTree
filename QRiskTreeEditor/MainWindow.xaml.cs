@@ -724,6 +724,10 @@ namespace QRiskTreeEditor
                         {
                             _output.AppendText("--- Calculating Optimal Mitigations Set ---\n");
 
+#if DEBUG
+                            modelVM.Model.FirstYearSimulationCompleted += Model_FirstYearSimulationCompleted;
+#endif
+
                             _output.AppendText("Included Risks:\n");
                             foreach (var risk in risks)
                             {
@@ -757,6 +761,10 @@ namespace QRiskTreeEditor
                             {
                                 Mouse.OverrideCursor = null;
                                 stopwatch.Stop();
+
+#if DEBUG
+                                modelVM.Model.FirstYearSimulationCompleted -= Model_FirstYearSimulationCompleted;
+#endif
                             }
 
                             _output.AppendText($"Optimization completed in {stopwatch.ElapsedMilliseconds}ms.\n");
@@ -838,6 +846,19 @@ namespace QRiskTreeEditor
                 }
             }
         }
+
+#if DEBUG
+        private void Model_FirstYearSimulationCompleted(IEnumerable<Guid>? selectedMitigations, double[] samples)
+        {
+            if (DataContext is RiskModelViewModel modelVM)
+            {
+                var range = samples.ToRange(RangeType.Money, 
+                    modelVM.Properties.MinPercentile, modelVM.Properties.MaxPercentile, 
+                    Confidence.Moderate);
+                _output.AppendText($"Simulation with {selectedMitigations?.Count() ?? 0} mitigations - Min: {(range?.Min ?? 0).ToString("C0")} - Mode: {(range?.Mode ?? 0).ToString("C0")} - Max: {(range?.Max ?? 0).ToString("C0")}\n");
+            }
+        }
+#endif
 
         private int RecursiveCount(IEnumerable<NodeViewModel> nodes)
         {
