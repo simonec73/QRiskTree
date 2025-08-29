@@ -685,6 +685,7 @@ namespace QRiskTree.Engine.ExtendedModel
                     optimalCostFirstYear = costFirstYear;
                     optimalCostFollowingYears = costFollowingYears;
                     result = _mitigations?.Where(x => bestCombination.Contains(x.Id));
+                    RestoreRanges();
                 }
 
                 // Restore the original enabled state of mitigations.
@@ -720,6 +721,7 @@ namespace QRiskTree.Engine.ExtendedModel
                                     costFirstYear = simulatedCostFirstYear;
                                     costFollowingYears = simulatedCostFollowingYears;
                                     result = combination;
+                                    StoreRanges();
                                 }
                                 break;
                             case OptimizationParameter.Min:
@@ -728,6 +730,7 @@ namespace QRiskTree.Engine.ExtendedModel
                                     costFirstYear = simulatedCostFirstYear;
                                     costFollowingYears = simulatedCostFollowingYears;
                                     result = combination;
+                                    StoreRanges();
                                 }
                                 break;
                             case OptimizationParameter.Max:
@@ -736,6 +739,7 @@ namespace QRiskTree.Engine.ExtendedModel
                                     costFirstYear = simulatedCostFirstYear;
                                     costFollowingYears = simulatedCostFollowingYears;
                                     result = combination;
+                                    StoreRanges();
                                 }
                                 break;
                         }
@@ -750,6 +754,7 @@ namespace QRiskTree.Engine.ExtendedModel
                                     costFirstYear = simulatedCostFirstYear;
                                     costFollowingYears = simulatedCostFollowingYears;
                                     result = combination;
+                                    StoreRanges();
                                 }
                                 break;
                             case OptimizationParameter.Min:
@@ -758,6 +763,7 @@ namespace QRiskTree.Engine.ExtendedModel
                                     costFirstYear = simulatedCostFirstYear;
                                     costFollowingYears = simulatedCostFollowingYears;
                                     result = combination;
+                                    StoreRanges();
                                 }
                                 break;
                             case OptimizationParameter.Max:
@@ -766,6 +772,7 @@ namespace QRiskTree.Engine.ExtendedModel
                                     costFirstYear = simulatedCostFirstYear;
                                     costFollowingYears = simulatedCostFollowingYears;
                                     result = combination;
+                                    StoreRanges();
                                 }
                                 break;
                         }
@@ -774,6 +781,30 @@ namespace QRiskTree.Engine.ExtendedModel
             }
 
             return result;
+        }
+
+        private void StoreRanges()
+        {
+            var risks = _risks?.Where(x => x.IsEnabled).ToArray();
+            if (risks?.Any() ?? false)
+            {
+                foreach (var risk in risks)
+                {
+                    risk.StoreRange();
+                }
+            }
+        }
+
+        private void RestoreRanges()
+        {
+            var risks = _risks?.Where(x => x.IsEnabled).ToArray();
+            if (risks?.Any() ?? false)
+            {
+                foreach (var risk in risks)
+                {
+                    risk.RestoreRange();
+                }
+            }
         }
 
         private static IEnumerable<IEnumerable<Guid>> GetAllCombinations(IEnumerable<Guid> guids)

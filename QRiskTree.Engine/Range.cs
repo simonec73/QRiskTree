@@ -18,6 +18,23 @@ namespace QRiskTree.Engine
             RangeType = rangeType;
         }
 
+        /// <summary>
+        /// Internal constructor used to clone a Range object.
+        /// </summary>
+        /// <param name="range">Source range object</param>
+        /// <exception cref="ArgumentNullException">The source range object cannot be null.</exception>
+        internal Range(Range range) : base()
+        {
+            if (range == null)
+                throw new ArgumentNullException(nameof(range));
+            RangeType = range.RangeType;
+            _min = range.Min;
+            _mode = range.Mode;
+            _max = range.Max;
+            _confidence = range.Confidence;
+            _calculated = range.Calculated;
+        }
+
         public Range(RangeType rangeType, double min, double mode, double max, Confidence confidence)
             : base()
         {

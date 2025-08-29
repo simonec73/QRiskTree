@@ -312,5 +312,48 @@ namespace QRiskTree.Engine
             base.Update();
         }
         #endregion
+
+        #region Range value storing and retrieval.
+        private Range? _storedRange;
+
+        internal void StoreRange()
+        {
+            if (_calculated.HasValue && _calculated.Value)
+            {
+                _storedRange = new Range(this);
+
+                var children = _children?.ToArray();
+                if (children?.Any() ?? false)
+                {
+                    foreach (var child in children)
+                    {
+                        child.StoreRange();
+                    }
+                }
+            }
+        }
+
+        internal void RestoreRange()
+        {
+            if (_storedRange != null)
+            {
+                _min = _storedRange.Min;
+                _mode = _storedRange.Mode;
+                _max = _storedRange.Max;
+                _confidence = _storedRange.Confidence;
+                _calculated = _storedRange.Calculated;
+                Update();
+            }
+
+            var children = _children?.ToArray();
+            if (children?.Any() ?? false)
+            {
+                foreach (var child in children)
+                {
+                    child.RestoreRange();
+                }
+            }
+        }
+        #endregion
     }
 }
