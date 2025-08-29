@@ -30,7 +30,7 @@ QRiskTree is first and foremost a library you can use in your own applications: 
 
 Another component is [QRiskTreeEditor](https://github.com/simonec73/QRiskTree/tree/main/QRiskTree.Editor), a simple Windows Desktop application exposing QRiskTree functionalities.
 
-The final part is represented by [QRiskTreeTest](https://github.com/simonec73/QRiskTree/tree/main/QRiskTreeTest), a test application used to verify the main functionalities implemented by QRiskTree.Engine.
+The remaining projects, [QRiskTreeTest](https://github.com/simonec73/QRiskTree/tree/main/QRiskTreeTest) and [QRiskTreeParallelTest](https://github.com/simonec73/QRiskTree/tree/main/QRiskTreeParallelTest), are test applications respectively used to verify the main functionalities implemented by QRiskTree.Engine and how well it can execute multiple simulations and optimizations at the same time.
 
 ## How can I use QRiskTree?
 
@@ -51,6 +51,8 @@ Do you want to integrate it in your existing application? If it supports .NET 8.
 
 You can also reuse some of the code provided with QRiskTreeEditor. For example, the View Models could be easily reused in a Web Application based on Blazor.
 
+Starting from version 0.2.0 of the QRiskTree.Engine, you can host it in server applications shared among multiple users. This is because this version removes static variables which would have not allowed to configure the various models independently.
+
 ### Modifying it to fit your specific requirements
 
 You are welcome to fork QRiskTree and make the changes that are required for you. Do you need to comply with a specific Quantitative Risk Analysis standard? Or integrate it with some Risk Management tool is in use by your Company? Feel free to do so. If you feel like the changes you have made might be of interest for the QRiskTree users community, please feel free to provide them to the main repo with a Pull Request (but I cannot guarantee they will be actually included), otherwise you are welcome to keep them for your own.
@@ -61,7 +63,9 @@ QRiskTree has been designed to be well structured and easily understandable. At 
 
 QRiskTree Editor requires a computer with Windows 10 x64 or Windows 11 and runs with minimal hardware. As of today, the QRiskTree library is single thread: this means that you might get better execution times with CPUs having better single-core performance.
 
-A computer based on AMD Ryzen 9 8945HS is able to optimize a model with 10 risks defined at the Loss Event Frequency and Loss Magnitude level, and the same 10 mitigations assigned to every threat in over 30 minutes. During the execution, the process has consistently used around 250 MBytes of RAM and has fully used a little more than one core (around 7-8% of the CPU). As it is, the behavior is ideal for being incorporated in server applications serving multiple requests at the same time. Moreover, you can start an optimization job while you can safely continue to use your PC. For these reasons, I will not change it to support multi-threaded execution anytime soon.
+A computer based on AMD Ryzen 9 8945HS is able to optimize a model with 10 risks defined at the Loss Event Frequency and Loss Magnitude level, and the same 10 mitigations assigned to every threat in over 30 minutes. During the execution, the process has consistently used around 250 MBytes of RAM and has fully used a little more than one core (around 7-8% of the CPU). As it is, the behavior is ideal for being incorporated in server applications serving multiple requests at the same time. Moreover, you can start an optimization job while you can safely continue to use your PC. For these reasons, I will not change it to support parallel execution of the simulation anytime soon. 
+
+Note: this doesn't mean that you cannot execute multiple simulations on different models at the same time on server applications. You can do that since version 0.2.0. The above limitation is only related to a single model simulation: given that the model is a tree, you might execute the simulation splitting it on multiple threads, potentially cutting the time by executing multiple parallel sub-tasks. While possible, this is not a goal for this version of the QRiskTree Engine, as I want to prioritize the possibility to execute models on server applications shared by multiple users at the same time.
 
 ## Do you have some guidance on how to use QRiskTree Editor?
 
