@@ -33,7 +33,8 @@ namespace QRiskTreeEditor
         {
             InitializeComponent();
 
-            DataContext = new RiskModelViewModel(RiskModel.Instance);
+            var riskModel = RiskModel.Create();
+            DataContext = new RiskModelViewModel(riskModel);
             _risksContainer.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
             _mitigationsContainer.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
             _factsContainer.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
@@ -92,12 +93,20 @@ namespace QRiskTreeEditor
         #region File menu handlers.
         private void _fileNew_Click(object sender, RoutedEventArgs e)
         {
-            if (MessageBox.Show("Are you sure you want to create a new model?\nUnsaved changes will be lost.", "Confirm New Model", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            if (DataContext is RiskModelViewModel modelVM)
             {
-                RiskModel.Reset();
-                FactsManager.Instance.Clear();
+                if (MessageBox.Show("Are you sure you want to create a new model?\nUnsaved changes will be lost.", "Confirm New Model", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                {
+                    var riskModel = modelVM.Model;
+                    riskModel.Dispose();
+                    _fileName = string.Empty;
+                    DataContext = new RiskModelViewModel(RiskModel.Create());
+                }
+            }
+            else
+            {
                 _fileName = string.Empty;
-                DataContext = new RiskModelViewModel(RiskModel.Instance);
+                DataContext = new RiskModelViewModel(RiskModel.Create());
             }
         }
 
@@ -116,10 +125,10 @@ namespace QRiskTreeEditor
                 try
                 {
                     _fileName = openFileDialog.FileName;
-                    FactsManager.Instance.Clear();
-                    if (RiskModel.Load(_fileName))
+                    var riskModel = RiskModel.Load(_fileName);
+                    if (riskModel != null)
                     {
-                        DataContext = new RiskModelViewModel(RiskModel.Instance);
+                        DataContext = new RiskModelViewModel(riskModel);
                         SubscribeMitigatedRisks();
 
                         MessageBox.Show("File loaded successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -139,9 +148,9 @@ namespace QRiskTreeEditor
                 _fileSaveAs_Click(sender, e);
                 return;
             }
-            else
+            else if (DataContext is RiskModelViewModel modelVM)
             {
-                RiskModel.Instance.Serialize(_fileName);
+                modelVM.Model.Serialize(_fileName);
                 MessageBox.Show("File saved successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
@@ -159,8 +168,11 @@ namespace QRiskTreeEditor
             {
                 try
                 {
-                    _fileName = saveFileDialog.FileName;
-                    RiskModel.Instance.Serialize(_fileName);
+                    if (DataContext is RiskModelViewModel modelVM)
+                    {
+                        _fileName = saveFileDialog.FileName;
+                        modelVM.Model.Serialize(_fileName);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -359,7 +371,8 @@ namespace QRiskTreeEditor
 
             if (openFileDialog.ShowDialog() == true)
             {
-                FactsManager.Instance.Import(openFileDialog.FileName);
+                if (DataContext is RiskModelViewModel modelVM)
+                    modelVM.Model.ImportFacts(openFileDialog.FileName);
             }
         }
 
@@ -562,7 +575,8 @@ namespace QRiskTreeEditor
             {
                 try
                 {
-                    FactsManager.Instance.Export(saveFileDialog.FileName);
+                    if (DataContext is RiskModelViewModel modelVM)
+                        modelVM.Model.ExportFacts(saveFileDialog.FileName);
                 }
                 catch (Exception ex)
                 {
@@ -625,7 +639,6 @@ namespace QRiskTreeEditor
                         }
 
                         uint iterations = modelVM.Properties.Iterations;
-                        Statistics.ResetSimulations();
 
                         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
                         try
@@ -639,7 +652,7 @@ namespace QRiskTreeEditor
                             stopwatch.Stop();
                         }
 
-                        _output.AppendText($"Risk for the baseline calculated in {stopwatch.ElapsedMilliseconds}ms ({Statistics.Simulations} * {iterations} samples generated).\n");
+                        _output.AppendText($"Risk for the baseline calculated in {stopwatch.ElapsedMilliseconds}ms.\n");
 
                         if (_baseline != null)
                         {
@@ -711,6 +724,10 @@ namespace QRiskTreeEditor
                         {
                             _output.AppendText("--- Calculating Optimal Mitigations Set ---\n");
 
+#if DEBUG
+                            modelVM.Model.FirstYearSimulationCompleted += Model_FirstYearSimulationCompleted;
+#endif
+
                             _output.AppendText("Included Risks:\n");
                             foreach (var risk in risks)
                             {
@@ -724,8 +741,6 @@ namespace QRiskTreeEditor
                             }
 
                             uint iterations = modelVM.Properties.Iterations;
-                            Statistics.ResetSimulations();
-
                             var optParameter = modelVM.Properties.OptimizationParameter;
                             var ignoreImplementationCosts = modelVM.Properties.IgnoreImplementationCosts;
                             var notText = ignoreImplementationCosts ? "not " : "";
@@ -746,9 +761,13 @@ namespace QRiskTreeEditor
                             {
                                 Mouse.OverrideCursor = null;
                                 stopwatch.Stop();
+
+#if DEBUG
+                                modelVM.Model.FirstYearSimulationCompleted -= Model_FirstYearSimulationCompleted;
+#endif
                             }
 
-                            _output.AppendText($"Optimization completed in {stopwatch.ElapsedMilliseconds}ms ({Statistics.Simulations} * {iterations} samples generated).\n");
+                            _output.AppendText($"Optimization completed in {stopwatch.ElapsedMilliseconds}ms.\n");
 
                             if (firstYearCosts != null)
                             {
@@ -827,6 +846,19 @@ namespace QRiskTreeEditor
                 }
             }
         }
+
+#if DEBUG
+        private void Model_FirstYearSimulationCompleted(IEnumerable<Guid>? selectedMitigations, double[] samples)
+        {
+            if (DataContext is RiskModelViewModel modelVM)
+            {
+                var range = samples.ToRange(RangeType.Money, 
+                    modelVM.Properties.MinPercentile, modelVM.Properties.MaxPercentile, 
+                    Confidence.Moderate);
+                _output.AppendText($"Simulation with {selectedMitigations?.Count() ?? 0} mitigations - Min: {(range?.Min ?? 0).ToString("C0")} - Mode: {(range?.Mode ?? 0).ToString("C0")} - Max: {(range?.Max ?? 0).ToString("C0")}\n");
+            }
+        }
+#endif
 
         private int RecursiveCount(IEnumerable<NodeViewModel> nodes)
         {
@@ -919,6 +951,8 @@ namespace QRiskTreeEditor
         {
             var result = false;
 
+            var modelVM = DataContext as RiskModelViewModel;
+
             ContextMenu? contextMenu = row.ContextMenu;
             if (contextMenu != null)
             {
@@ -984,7 +1018,7 @@ namespace QRiskTreeEditor
                     }
                 }
 
-                if (DataContext is RiskModelViewModel modelVM)
+                if (modelVM != null)
                 {
                     var totalMitigations = modelVM.Mitigations?.OfType<MitigationCostViewModel>()?.Count() ?? 0;
                     var appliedMitigations = mrVM.Mitigations?.OfType<AppliedMitigationViewModel>()?.Count() ?? 0;
@@ -1071,9 +1105,9 @@ namespace QRiskTreeEditor
                 contextMenu.Items.Add(new Separator());
             }
 
-            if (row.DataContext is NodeViewModel nodeVM)
+            if (row.DataContext is NodeViewModel nodeVM && modelVM != null)
             {
-                var totalFacts = FactsManager.Instance.Facts?.Count() ?? 0;
+                var totalFacts = modelVM.Model.AvailableFacts?.Count() ?? 0;
                 var associatedFacts = nodeVM.Facts?.OfType<LinkedFactViewModel>().Count() ?? 0;
                 if (totalFacts > associatedFacts)
                 {

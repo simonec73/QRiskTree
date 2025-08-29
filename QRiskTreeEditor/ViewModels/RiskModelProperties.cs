@@ -30,7 +30,7 @@ namespace QRiskTreeEditor.ViewModels
 
         public string Description
         {
-            get => _model.Description;
+            get => _model.Description ?? string.Empty;
             set
             {
                 if (_model.Description != value)

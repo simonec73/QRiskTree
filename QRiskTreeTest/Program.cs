@@ -4,7 +4,7 @@ using QRiskTree.Engine.Model;
 using QRiskTree.Engine.Facts;
 
 #region Step 1 - Definition of the risk model.
-var model = RiskModel.Instance;
+var model = RiskModel.Create();
 model.MinPercentile = 5;
 model.MaxPercentile = 95;
 
@@ -123,7 +123,7 @@ var stopwatch1 = System.Diagnostics.Stopwatch.StartNew();
 var baseline = model.Simulate(iterations);
 stopwatch1.Stop();
 
-Console.WriteLine($"Residual Risk for the baseline calculated in {stopwatch1.ElapsedMilliseconds}ms ({Statistics.Simulations} * {iterations} samples generated).\n");
+Console.WriteLine($"Residual Risk for the baseline calculated in {stopwatch1.ElapsedMilliseconds}ms.\n");
 
 if (baseline != null)
 {
@@ -136,12 +136,11 @@ if (baseline != null)
 #endregion
 
 #region Step 3 - Identification of the optimal set of mitigations.
-Statistics.ResetSimulations();
 var stopwatch2 = System.Diagnostics.Stopwatch.StartNew();
 var mitigations = model.OptimizeMitigations(out var firstYearCosts, out var followingYearsCosts, iterations: iterations);
 stopwatch2.Stop();
 
-Console.WriteLine($"\nOptimization completed in {stopwatch2.ElapsedMilliseconds}ms ({Statistics.Simulations} * {iterations} samples generated).\n");
+Console.WriteLine($"\nOptimization completed in {stopwatch2.ElapsedMilliseconds}ms.\n");
 
 if (firstYearCosts != null)
 {
@@ -206,16 +205,16 @@ model.Serialize(@"c:\temp\RiskModel.json");
 Console.WriteLine("Risk model saved to c:\\temp\\RiskModel.json.");
 
 Console.WriteLine("\n--- Model reset.");
-RiskModel.Reset();
-model = RiskModel.Instance;
+model.Dispose();
+model = RiskModel.Create();
 if (!(model.Risks?.Any() ?? false))
 {
     Console.WriteLine("The Risk Model has been reset successfully.");
 
     Console.WriteLine("\n--- Model Deserialization.");
-    if (RiskModel.Load(@"c:\temp\RiskModel.json"))
+    model = RiskModel.Load(@"c:\temp\RiskModel.json");
+    if (model != null)
     {
-        model = RiskModel.Instance;
         if (model.Risks?.Any() ?? false)
         {
             Console.WriteLine("Risk Model loaded successfully from c:\\temp\\RiskModel.json.");

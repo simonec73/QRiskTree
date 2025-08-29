@@ -54,19 +54,13 @@ namespace QRiskTreeEditor.ViewModels
             {
                 var appliedMitigation = mitigatedRisk.Mitigations.OfType<AppliedMitigationViewModel>()
                     .FirstOrDefault(x => x.MitigationCostId == _mitigationCost.Id);
-                if (appliedMitigation != null)
-                {
-                    appliedMitigation.Delete();
-                }
+                appliedMitigation?.Delete();
             }
             else if (_node is FactsContainerViewModel factsContainer && _fact != null)
             {
                 var linkedFact = factsContainer?.Facts?.OfType<LinkedFactViewModel>()
                     .FirstOrDefault(x => x.LinkedFact.Id == _fact.Id);
-                if (linkedFact != null)
-                {
-                    linkedFact.Delete();
-                }
+                linkedFact?.Delete();
             }
 
             //_fact?.RemoveRelated(this);

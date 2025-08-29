@@ -2,13 +2,9 @@
 {
     public class FactsManager
     {
-        private static FactsManager _instance = new();
-
-        private FactsManager() : base()
+        internal FactsManager() : base()
         {
         }
-
-        public static FactsManager Instance => _instance;
 
         private FactsCollection _facts = new();
 

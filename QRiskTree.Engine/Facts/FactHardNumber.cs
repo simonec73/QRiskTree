@@ -1,9 +1,10 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Runtime.Serialization;
 
 namespace QRiskTree.Engine.Facts
 {
+    /// <summary>
+    /// Represents a numerical fact with a specific value.
+    /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
     public class FactHardNumber : Fact
     {
@@ -49,12 +50,6 @@ namespace QRiskTree.Engine.Facts
                     Update();
                 }
             }
-        }
-
-        [OnDeserialized]
-        internal void OnDeserializedMethod(StreamingContext context)
-        {
-            FactsManager.Instance.Add(this);
         }
     }
 }

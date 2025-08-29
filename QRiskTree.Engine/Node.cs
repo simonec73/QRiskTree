@@ -108,7 +108,7 @@ namespace QRiskTree.Engine
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">The node cannot be null.</exception>
         /// <exception cref="ArgumentException">The node is not a valid child.</exception>
-        public bool Add(Node node)
+        public virtual bool Add(Node node)
         {
             if (node == null)
                 throw new ArgumentNullException(nameof(node), "Node cannot be null.");
@@ -135,7 +135,7 @@ namespace QRiskTree.Engine
         /// <param name="node">Node to be removed</param>
         /// <returns>True if the node was removed successfully, false otherwise.</returns>
         /// <exception cref="ArgumentNullException">The node cannot be null.</exception>
-        public bool Remove(Node node)
+        public virtual bool Remove(Node node)
         {
             if (node == null)
                 throw new ArgumentNullException(nameof(node), "Node cannot be null.");
@@ -310,6 +310,49 @@ namespace QRiskTree.Engine
         internal override void Update()
         {
             base.Update();
+        }
+        #endregion
+
+        #region Range value storing and retrieval.
+        private Range? _storedRange;
+
+        internal void StoreRange()
+        {
+            if (_calculated.HasValue && _calculated.Value)
+            {
+                _storedRange = new Range(this);
+
+                var children = _children?.ToArray();
+                if (children?.Any() ?? false)
+                {
+                    foreach (var child in children)
+                    {
+                        child.StoreRange();
+                    }
+                }
+            }
+        }
+
+        internal void RestoreRange()
+        {
+            if (_storedRange != null)
+            {
+                _min = _storedRange.Min;
+                _mode = _storedRange.Mode;
+                _max = _storedRange.Max;
+                _confidence = _storedRange.Confidence;
+                _calculated = _storedRange.Calculated;
+                Update();
+            }
+
+            var children = _children?.ToArray();
+            if (children?.Any() ?? false)
+            {
+                foreach (var child in children)
+                {
+                    child.RestoreRange();
+                }
+            }
         }
         #endregion
     }

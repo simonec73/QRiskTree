@@ -14,7 +14,18 @@ namespace QRiskTree.Engine.ExtendedModel
         {
         }
 
+        public void AssignModel(RiskModel model)
+        {
+            if (model != null)
+            {
+                _riskModelId = model.Id;
+            }
+        }
+
         #region Properties.
+        [JsonProperty("riskModelId", Order = 4)]
+        private Guid _riskModelId { get; set; }
+
         [JsonProperty("enabled", Order = 5)]
         private bool _isEnabled { get; set; } = true;
 
@@ -33,12 +44,32 @@ namespace QRiskTree.Engine.ExtendedModel
         #endregion
 
         #region Public methods: mitigations management.
-        public bool ApplyMitigation(MitigationCost mitigation, out AppliedMitigation appliedMitigation)
+        /// <summary>
+        /// Applies a mitigation to this risk model by creating an AppliedMitigation instance and adding it as a child node.
+        /// </summary>
+        /// <param name="mitigation">Mitigation to be applied.</param>
+        /// <param name="appliedMitigation">[out] The new applied mitigation object.</param>
+        /// <returns>True if the generation succeeded, false otherwise.</returns>
+        public bool ApplyMitigation(MitigationCost mitigation, out AppliedMitigation? appliedMitigation)
         {
-            appliedMitigation = new AppliedMitigation(mitigation);
-            return Add(appliedMitigation);
+            var riskModel = RiskModel.Get(_riskModelId);
+            if (riskModel != null)
+            {
+                appliedMitigation = new AppliedMitigation(riskModel, mitigation);
+                return Add(appliedMitigation);
+            }
+            else
+            {
+                appliedMitigation = null;
+                return false;
+            }
         }
 
+        /// <summary>
+        /// Remove a mitigation from this risk model by removing all AppliedMitigation instances that refer to the specified MitigationCost.
+        /// </summary>
+        /// <param name="mitigation">Mitigation to be removed.</param>
+        /// <returns>True if at least an associated mitigation has been removed.</returns>
         public bool RemoveMitigation(MitigationCost mitigation)
         {
             bool result = false;
@@ -57,6 +88,10 @@ namespace QRiskTree.Engine.ExtendedModel
             return result;
         }
 
+        /// <summary>
+        /// Remove all mitigations from this risk model by removing all AppliedMitigation instances.
+        /// </summary>
+        /// <returns></returns>
         public bool RemoveMitigations()
         {
             var result = false;

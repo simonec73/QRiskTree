@@ -18,6 +18,23 @@ namespace QRiskTree.Engine
             RangeType = rangeType;
         }
 
+        /// <summary>
+        /// Internal constructor used to clone a Range object.
+        /// </summary>
+        /// <param name="range">Source range object</param>
+        /// <exception cref="ArgumentNullException">The source range object cannot be null.</exception>
+        internal Range(Range range) : base()
+        {
+            if (range == null)
+                throw new ArgumentNullException(nameof(range));
+            RangeType = range.RangeType;
+            _min = range.Min;
+            _mode = range.Mode;
+            _max = range.Max;
+            _confidence = range.Confidence;
+            _calculated = range.Calculated;
+        }
+
         public Range(RangeType rangeType, double min, double mode, double max, Confidence confidence)
             : base()
         {
@@ -59,18 +76,6 @@ namespace QRiskTree.Engine
                     throw new ArgumentOutOfRangeException(nameof(rangeType), $"Unsupported range type: {rangeType}");
             }
         }
-        #endregion
-
-        #region Static properties.
-        /// <summary>
-        /// Percentile value to use for the minimum of the range.
-        /// </summary>
-        internal static int MinPercentile { get; set; } = 10;
-
-        /// <summary>
-        /// Percentile value to use for the maximum of the range.
-        /// </summary>
-        internal static int MaxPercentile { get; set; } = 90;
         #endregion
 
         #region Public methods.
