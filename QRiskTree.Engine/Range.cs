@@ -161,7 +161,7 @@ namespace QRiskTree.Engine
         protected double _mode { get; set; } = 0.0;
 
         /// <summary>
-        /// Most Probable value.
+        /// Mode value.
         /// </summary>
         public double Mode
         {

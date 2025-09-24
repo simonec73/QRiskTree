@@ -166,7 +166,7 @@ namespace QRiskTreeEditor.ViewModels
                 }
                 else if (_fact is FactRange factRange && factRange.Range is QRiskTree.Engine.Range range)
                 {
-                    result = $"Min: {range.GetMin()} - Most probable: {range.GetMode()} - Max: {range.GetMax()} - Confidence: {range.Confidence}.";
+                    result = $"Min: {range.GetMin()} - Mode: {range.GetMode()} - Max: {range.GetMax()} - Confidence: {range.Confidence}.";
                 }
 
                 return result;
