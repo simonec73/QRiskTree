@@ -651,6 +651,21 @@ namespace QRiskTree.Engine.ExtendedModel
             return confidence;
         }
 
+        /// <summary>
+        /// Calculate the optimal combination of mitigations to minimize the overall cost of the model.
+        /// </summary>
+        /// <param name="optimalCostFirstYear">[out] Optimal cost range for the first year, 
+        /// which includes also the implementation of the mitigations.</param>
+        /// <param name="optimalCostFollowingYears">[out] Optimal cost range for the following years, 
+        /// which does not include the implemenation cost of the mitigations.</param>
+        /// <param name="selectedMitigations">Mitigations selected for the analysis. If missing or null, 
+        /// all mitigations are considered.</param>
+        /// <param name="optimizationParameter">Parameter to be used for the optimization. By default, the Mode is used.</param>
+        /// <param name="optimizeForFollowingYears">Flag specifying if the optimization must be for the following years.
+        /// If it is for the first year, the implementation costs are also considered.
+        /// By default, the optimization considers the implementation costs.</param>
+        /// <param name="iterations">Number of iterations. By default, the value of <see cref="Node.DefaultIterations"/> is used.</param>
+        /// <returns>An enumeration of the mitigations that have been identified as part of the optimal set.</returns>
         public IEnumerable<MitigationCost>? OptimizeMitigations(out Range? optimalCostFirstYear, 
             out Range? optimalCostFollowingYears,
             IEnumerable<Guid>? selectedMitigations = null,
