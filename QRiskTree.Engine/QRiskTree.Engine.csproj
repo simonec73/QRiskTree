@@ -9,13 +9,13 @@
     <Authors>Simone Curzi</Authors>
     <Copyright>Copyright (c) Simone Curzi, 2025.</Copyright>
     <ProductName>QRiskTree Engine</ProductName>
-    <VersionPrefix>0.2.0</VersionPrefix>
-    <FileVersion>0.2.0</FileVersion>    
+    <VersionPrefix>0.3.0</VersionPrefix>
+    <FileVersion>0.3.0</FileVersion>    
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="SecurityCodeScan.VS2019" Version="5.6.7">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

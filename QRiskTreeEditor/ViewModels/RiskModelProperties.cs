@@ -15,6 +15,7 @@ namespace QRiskTreeEditor.ViewModels
         }
 
         #region Properties.
+        [Category("Model")]
         public string Name
         {
             get => _model.Name;
@@ -28,6 +29,7 @@ namespace QRiskTreeEditor.ViewModels
             }
         }
 
+        [Category("Model")]
         public string Description
         {
             get => _model.Description ?? string.Empty;
@@ -41,6 +43,7 @@ namespace QRiskTreeEditor.ViewModels
             }
         }
 
+        [Category("Range Definition")]
         public int MinPercentile
         {
             get => _model.MinPercentile;
@@ -54,6 +57,7 @@ namespace QRiskTreeEditor.ViewModels
             }
         }
 
+        [Category("Range Definition")]
         public int MaxPercentile
         {
             get => _model.MaxPercentile;
@@ -67,12 +71,15 @@ namespace QRiskTreeEditor.ViewModels
             }
         }
 
+        [Category("Simulation Parameters")]
         public uint Iterations { get; set; } = Node.DefaultIterations;
 
+        [Category("Simulation Parameters")]
         [DisplayName("Optimize for")]
         [PT.SelectorStyle(PT.SelectorStyle.ComboBox)]
         public OptimizationParameter OptimizationParameter { get; set; } = OptimizationParameter.Mode;
 
+        [Category("Simulation Parameters")]
         [DisplayName("Ignore implementation costs")]
         public bool IgnoreImplementationCosts { get; set; } = false;
         #endregion

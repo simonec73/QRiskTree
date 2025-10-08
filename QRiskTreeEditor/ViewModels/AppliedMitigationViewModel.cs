@@ -202,7 +202,7 @@ namespace QRiskTreeEditor.ViewModels
         }
 
         [Category("Range")]
-        [DisplayName("Most Likely Value")]
+        [DisplayName("Mode Value")]
         public string FormattedMode
         {
             get

@@ -707,12 +707,12 @@ namespace QRiskTreeEditor
                     {
                         int countTreeSize = RecursiveCount(risks);
                         int countMitigations = mitigations.Length;
-                        int countIterations = (countTreeSize + countMitigations + 3) * ((1 << countMitigations) - 1);
-                        int estimatedRequiredTime = countIterations * 20;
+                        int countIterations = (1 << countMitigations) - 1;
+                        int estimatedRequiredTime = countIterations * 120;
                         bool proceed;
                         if (estimatedRequiredTime > 30000)
                         {
-                            proceed = MessageBox.Show($"The calculation of the optimal mitigations might require about {(estimatedRequiredTime / 60000).ToString("N1")} minutes. Do you want to proceed?",
+                            proceed = MessageBox.Show($"The calculation of the optimal mitigations might require about {(estimatedRequiredTime / 60000).ToString("N0")} minutes. Do you want to proceed?",
                                 "Long running calculation", MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK;
                         }
                         else

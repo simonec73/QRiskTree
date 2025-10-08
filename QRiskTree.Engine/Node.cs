@@ -29,9 +29,29 @@ namespace QRiskTree.Engine
         #endregion
 
         #region Constants.
-        public const uint MaxIterations = 10485760; // Maximum number of iterations for the simulation.
-        public const uint MinIterations = 10000; // Minimum number of iterations for the simulation.
-        public const uint DefaultIterations = 100000; // Default number of iterations for the simulation.
+        /// <summary>
+        /// Maximum number of iterations for the simulation.
+        /// </summary>
+        /// <remarks>This constant defines the upper limit for the number of iterations that can be used
+        /// in the simulation. It ensures that the simulation has a limited duration.</remarks>
+        public const uint MaxIterations = 10485760;
+        /// <summary>
+        /// Represents the minimum number of iterations required for the simulation.
+        /// </summary>
+        /// <remarks>This constant defines the lower limit for the number of iterations that can be used
+        /// in the simulation. It ensures that the simulation runs with a sufficient number of iterations to produce
+        /// meaningful results.</remarks>
+        public const uint MinIterations = 10000;
+        /// <summary>
+        /// Represents the default number of iterations for the simulation.
+        /// </summary>
+        /// <remarks>This constant defines the standard iteration count used in simulation processes.  It
+        /// can be used as a default value when no specific iteration count is provided.
+        /// This number of iterations is not necessarily the most recommended one, 
+        /// but just one that should provide decent results for average models, without consuming too many resources. 
+        /// In fact, the recommendation is to increase this number to at least 200000 whenever possible, 
+        /// to improve the quality of the simulation, as more iterations improve the stability of the results.</remarks>
+        public const uint DefaultIterations = 100000;
         #endregion
 
         #region Properties.
@@ -217,7 +237,6 @@ namespace QRiskTree.Engine
             var result = false;
             samples = null;
 
-            // The cached samples cannot be used, so we must simulate the node.
             if (!Calculated.HasValue || Calculated.Value)
             {
                 if (Simulate(iterations, out samples, out var confidence) && (samples?.Any() ?? false))

@@ -520,7 +520,7 @@
             </TabItem>
         </TabControl>
         <GridSplitter x:Name="_splitter"  Grid.Row="2" Height="3" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="Gray"/>
-        <TextBox x:Name="_output" Grid.Row="3" Background="Black" Foreground="White" IsReadOnly="True" IsEnabled="True">
+        <TextBox x:Name="_output" Grid.Row="3" Background="Black" Foreground="White" IsReadOnly="True" IsEnabled="True" VerticalScrollBarVisibility="Auto">
         </TextBox>
     </Grid>
 </Window>
