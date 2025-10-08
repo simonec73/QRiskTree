@@ -237,7 +237,6 @@ namespace QRiskTree.Engine
             var result = false;
             samples = null;
 
-            // The cached samples cannot be used, so we must simulate the node.
             if (!Calculated.HasValue || Calculated.Value)
             {
                 if (Simulate(iterations, out samples, out var confidence) && (samples?.Any() ?? false))
