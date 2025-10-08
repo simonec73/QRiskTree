@@ -63,7 +63,7 @@ QRiskTree has been designed to be well structured and easily understandable. At 
 
 QRiskTree Editor requires a computer with Windows 10 x64 or Windows 11 and runs with minimal hardware. As of today, the QRiskTree library is single thread: this means that you might get better execution times with CPUs having better single-core performance.
 
-A computer based on AMD Ryzen 9 8945HS is able to optimize a model with 10 risks defined at the Loss Event Frequency and Loss Magnitude level, and the same 10 mitigations assigned to every threat in over 30 minutes. During the execution, the process has consistently used around 250 MBytes of RAM and has fully used a little more than one core (around 7-8% of the CPU). As it is, the behavior is ideal for being incorporated in server applications serving multiple requests at the same time. Moreover, you can start an optimization job while you can safely continue to use your PC. For these reasons, I will not change it to support parallel execution of the simulation anytime soon. 
+QRiskTree Editor 0.3.0 on a computer based on AMD Ryzen 9 8945HS is able to optimize the "Big Model" reference model with 10 risks defined at the Loss Event Frequency and Loss Magnitude level, and the same 10 mitigations assigned to every threat in about 2 minutes. The previous version, 0.2.0, took over 30 minutes for the same job. During the execution, the process has used around 350 to 550 MBytes of RAM (the previous version took around 250MBytes of RAM) and has fully used a little more than one core (around 7-8% of the CPU). As it is, the behavior is ideal for being incorporated in server applications serving multiple requests at the same time. Moreover, you can start an optimization job while you can safely continue to use your PC. For these reasons, I will not change it to support parallel execution of the simulation anytime soon. 
 
 Note: this doesn't mean that you cannot execute multiple simulations on different models at the same time on server applications. You can do that since version 0.2.0. The above limitation is only related to a single model simulation: given that the model is a tree, you might execute the simulation splitting it on multiple threads, potentially cutting the time by executing multiple parallel sub-tasks. While possible, this is not a goal for this version of the QRiskTree Engine, as I want to prioritize the possibility to execute models on server applications shared by multiple users at the same time.
 
@@ -71,6 +71,19 @@ Note: this doesn't mean that you cannot execute multiple simulations on differen
 
 Please watch this video to get a quick introduction to QRiskTree Editor.
 [![Welcome to QRiskTree Editor!](https://img.youtube.com/vi/u9vN_SIq5KY/maxresdefault.jpg)](https://youtu.be/u9vN_SIq5KY)
+
+## What are the improvements to QRiskTree Editor?
+
+QRiskTree Editor has already had a few versions. Here are the key improvements for the most important releases, from the latest to the first.
+
+- **0.3.0**: Intelligent Caching
+  - Major performance improvement. The "Big Model" reference model is now about 15 times faster.
+  - Improved consistency of the results.
+- **0.2.0**: Parallel Execution
+  - Added support for parallel execution.
+  - Corrected the optimal ranges shown by the tool.
+- **0.1.1**: Fixed minor bugs.
+- **0.1.0**: First public version.
 
 ## Can I customize QRiskTree for my purposes?
 
