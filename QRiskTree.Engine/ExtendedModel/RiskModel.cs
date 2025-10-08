@@ -450,6 +450,7 @@ namespace QRiskTree.Engine.ExtendedModel
         #endregion
 
         #region Simulation.
+        #region Events.
         /// <summary>
         /// Event raised when the simulation of a risk is completed.
         /// It includes the effects of the Mitigations, but not their cost.
@@ -479,16 +480,21 @@ namespace QRiskTree.Engine.ExtendedModel
         /// <remarks>The first parameter is the enumeration of the identifiers of the mitigations considered during the generation,
         /// and the third is an array containing the generated samples.</remarks>
         public event Action<IEnumerable<Guid>?, double[]>? FollowingYearsSimulationCompleted;
+        #endregion
 
+        #region Public methods.
         /// <summary>
         /// Simulation of the model considering only the selected risks, without factoring in the selected mitigations.
         /// </summary>
         /// <param name="iterations">Number of iterations.</param>
         /// <returns>Residual risk.</returns>
+        /// <remarks>It clears up the baseline definition.</remarks>
         public Range? Simulate(uint iterations = Node.DefaultIterations)
         {
             var enabledMitigations = _mitigations?.Where(x => x.IsEnabled).Select(x => x.Id).ToArray();
             SetEnabledState();
+            ClearBaselineRisks();
+            ClearBaselineMitigations();
 
             double[]? samples = null;
             Confidence confidence = Confidence.Moderate;
@@ -512,27 +518,67 @@ namespace QRiskTree.Engine.ExtendedModel
         }
 
         /// <summary>
-        /// Simulation of the model considering the selected risks and enabled mitigations.
+        /// Calculate the optimal combination of mitigations to minimize the overall cost of the model.
         /// </summary>
-        /// <param name="costFollowingYears">Overall costs calculated for the years following the first.</param>
-        /// <param name="iterations">Number of iterations.</param>
-        /// <returns>Costs calculated for the first year.</returns>
-        public Range? Simulate(out Range? costFollowingYears, uint iterations = Node.DefaultIterations)
+        /// <param name="optimalCostFirstYear">[out] Optimal cost range for the first year, 
+        /// which includes also the implementation of the mitigations.</param>
+        /// <param name="optimalCostFollowingYears">[out] Optimal cost range for the following years, 
+        /// which does not include the implemenation cost of the mitigations.</param>
+        /// <param name="selectedMitigations">Mitigations selected for the analysis. If missing or null, 
+        /// all mitigations are considered.</param>
+        /// <param name="optimizationParameter">Parameter to be used for the optimization. By default, the Mode is used.</param>
+        /// <param name="optimizeForFollowingYears">Flag specifying if the optimization must be for the following years.
+        /// If it is for the first year, the implementation costs are also considered.
+        /// By default, the optimization considers the implementation costs.</param>
+        /// <param name="iterations">Number of iterations. By default, the value of <see cref="Node.DefaultIterations"/> is used.</param>
+        /// <returns>An enumeration of the mitigations that have been identified as part of the optimal set.</returns>
+        /// <remarks>It doesn't clear up the baseline definition.</remarks>
+        public IEnumerable<MitigationCost>? OptimizeMitigations(out Range? optimalCostFirstYear,
+            out Range? optimalCostFollowingYears,
+            IEnumerable<Guid>? selectedMitigations = null,
+            OptimizationParameter optimizationParameter = OptimizationParameter.Mode,
+            bool optimizeForFollowingYears = false,
+            uint iterations = Node.DefaultIterations)
         {
-            var samples = CalculateResidualRisk(iterations, out var confidence);
+            IEnumerable<MitigationCost>? result = null;
+            optimalCostFirstYear = null;
+            optimalCostFollowingYears = null;
 
-            try
+            IEnumerable<Guid>? mitigationIds = null;
+            if (selectedMitigations == null)
             {
-                SimulationCompleted?.Invoke(_mitigations?.Where(x => x.IsEnabled).Select(x => x.Id), samples);
+                mitigationIds = _mitigations?.Select(x => x.Id).ToArray();
             }
-            catch
+            else
             {
-                // Ignore exceptions from the event handler.
+                mitigationIds = selectedMitigations.Where(x => _mitigations?.Any(y => x == y.Id) ?? false).ToArray();
             }
 
-            return CalculateCosts(iterations, samples, confidence, out costFollowingYears);
+            if (mitigationIds?.Any() ?? false)
+            {
+                var enabledMitigations = _mitigations?.Where(x => x.IsEnabled).Select(x => x.Id).ToArray();
+
+                // Calculates the best combination of mitigations based on the optimization parameter.
+                var combinations = GetAllCombinations(mitigationIds).ToArray();
+                IEnumerable<Guid>? bestCombination = GetBestCombination(mitigationIds, combinations,
+                    optimizationParameter, optimizeForFollowingYears, iterations, out var costFirstYear, out var costFollowingYears);
+                if (bestCombination != null && costFirstYear != null && costFollowingYears != null)
+                {
+                    optimalCostFirstYear = costFirstYear;
+                    optimalCostFollowingYears = costFollowingYears;
+                    result = _mitigations?.Where(x => bestCombination.Contains(x.Id));
+                    RestoreRanges();
+                }
+
+                // Restore the original enabled state of mitigations.
+                SetEnabledState(enabledMitigations);
+            }
+
+            return result;
         }
+        #endregion
 
+        #region Private methods.
         private double[] CalculateResidualRisk(uint iterations, out Confidence confidence)
         {
             double[] result = new double[iterations];
@@ -546,6 +592,18 @@ namespace QRiskTree.Engine.ExtendedModel
                     if (risk.SimulateAndGetSamples(out var riskSamples, iterations) &&
                         (riskSamples?.Length ?? 0) == iterations)
                     {
+                        try
+                        {
+#pragma warning disable CS8604 // Possible null reference argument.
+                            RiskSimulationCompleted?.Invoke(risk,
+                                _mitigations?.Where(x => x.IsEnabled).Select(x => x.Id), riskSamples);
+#pragma warning restore CS8604 // Possible null reference argument.
+                        }
+                        catch
+                        {
+                            // Ignore exceptions from the event handler.
+                        }
+
                         if (confidence > risk.Confidence)
                         {
                             confidence = risk.Confidence;
@@ -557,23 +615,27 @@ namespace QRiskTree.Engine.ExtendedModel
                             result[i] += riskSamples[i];
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                         }
-
-                        try
-                        {
-#pragma warning disable CS8604 // Possible null reference argument.
-                            RiskSimulationCompleted?.Invoke(risk, 
-                                _mitigations?.Where(x => x.IsEnabled).Select(x => x.Id), riskSamples);
-#pragma warning restore CS8604 // Possible null reference argument.
-                        }
-                        catch
-                        {
-                            // Ignore exceptions from the event handler.
-                        }
                     }
                 }
             }
 
             return result;
+        }
+
+        private Range? Simulate(out Range? costFollowingYears, uint iterations = Node.DefaultIterations)
+        {
+            var samples = CalculateResidualRisk(iterations, out var confidence);
+
+            try
+            {
+                SimulationCompleted?.Invoke(_mitigations?.Where(x => x.IsEnabled).Select(x => x.Id), samples);
+            }
+            catch
+            {
+                // Ignore exceptions from the event handler.
+            }
+
+            return CalculateCosts(iterations, samples, confidence, out costFollowingYears);
         }
 
         private Range? CalculateCosts(uint iterations, double[]? samples, Confidence confidence, out Range? followingYearsCosts)
@@ -617,97 +679,58 @@ namespace QRiskTree.Engine.ExtendedModel
 
         private Confidence CalculateCosts(MitigationCost mitigation, uint iterations, Confidence confidence, double[] firstYearSamples, double[] followingYearsSamples)
         {
-            if (mitigation.SimulateAndGetSamples(out var implementationCostSamples, iterations) &&
-                (implementationCostSamples?.Length ?? 0) == iterations)
+            double[]? implementationCostSamples = null;
+            double[]? operationalCostSamples = null;
+            Confidence implementationCostConfidence = Confidence.Low;
+            Confidence operationalCostConfidence = Confidence.Low;
+            bool ok = false;
+
+            if (mitigation.HasBaselines && (mitigation.ImplementationBaseline?.Length ?? 0) == iterations &&
+                (mitigation.OperationBaseline?.Length ?? 0) == iterations)
             {
-                if (confidence > mitigation.Confidence)
+                implementationCostSamples = mitigation.ImplementationBaseline;
+                implementationCostConfidence = mitigation.ImplementationBaselineConfidence;
+                operationalCostSamples = mitigation.OperationBaseline;
+                operationalCostConfidence = mitigation.OperationBaselineConfidence;
+                ok = true;
+            }
+            else if (mitigation.SimulateAndGetSamples(out implementationCostSamples, iterations) &&
+                (implementationCostSamples?.Length ?? 0) == iterations &&
+                (mitigation.OperationCosts?.GenerateSamples(iterations, out operationalCostSamples) ?? false) &&
+                (operationalCostSamples?.Length ?? 0) == iterations)
+            {
+                implementationCostConfidence = mitigation.Confidence;
+                operationalCostConfidence = mitigation.OperationCosts.Confidence;
+#pragma warning disable CS8604 // Possible null reference argument.
+                mitigation.SetBaselines(implementationCostSamples, implementationCostConfidence,
+                    operationalCostSamples, operationalCostConfidence);
+#pragma warning restore CS8604 // Possible null reference argument.
+                ok = true;
+            }
+
+            if (ok)
+            {
+                if (confidence > implementationCostConfidence)
                 {
-                    confidence = mitigation.Confidence;
+                    confidence = implementationCostConfidence;
+                }
+                if (confidence > operationalCostConfidence)
+                {
+                    confidence = operationalCostConfidence;
                 }
 
                 for (int i = 0; i < iterations; i++)
                 {
-                    // The implementation cost affects only the first year.
+                    // The implementation cost affects only the first year,
+                    // while operational costs affect both the first year and following years.
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-                    firstYearSamples[i] += implementationCostSamples[i];
+                    firstYearSamples[i] += implementationCostSamples[i] + operationalCostSamples[i];
+                    followingYearsSamples[i] += operationalCostSamples[i];
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
-                }
-
-                if (mitigation.OperationCosts != null &&
-                    mitigation.OperationCosts.GenerateSamples(iterations, out var operationalCostSamples) &&
-                    (operationalCostSamples?.Length ?? 0) == iterations)
-                {
-                    for (int i = 0; i < iterations; i++)
-                    {
-                        // Operational costs affect both the first year and following years.
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-                        firstYearSamples[i] += operationalCostSamples[i];
-                        followingYearsSamples[i] += operationalCostSamples[i];
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-                    }
                 }
             }
 
             return confidence;
-        }
-
-        /// <summary>
-        /// Calculate the optimal combination of mitigations to minimize the overall cost of the model.
-        /// </summary>
-        /// <param name="optimalCostFirstYear">[out] Optimal cost range for the first year, 
-        /// which includes also the implementation of the mitigations.</param>
-        /// <param name="optimalCostFollowingYears">[out] Optimal cost range for the following years, 
-        /// which does not include the implemenation cost of the mitigations.</param>
-        /// <param name="selectedMitigations">Mitigations selected for the analysis. If missing or null, 
-        /// all mitigations are considered.</param>
-        /// <param name="optimizationParameter">Parameter to be used for the optimization. By default, the Mode is used.</param>
-        /// <param name="optimizeForFollowingYears">Flag specifying if the optimization must be for the following years.
-        /// If it is for the first year, the implementation costs are also considered.
-        /// By default, the optimization considers the implementation costs.</param>
-        /// <param name="iterations">Number of iterations. By default, the value of <see cref="Node.DefaultIterations"/> is used.</param>
-        /// <returns>An enumeration of the mitigations that have been identified as part of the optimal set.</returns>
-        public IEnumerable<MitigationCost>? OptimizeMitigations(out Range? optimalCostFirstYear, 
-            out Range? optimalCostFollowingYears,
-            IEnumerable<Guid>? selectedMitigations = null,
-            OptimizationParameter optimizationParameter = OptimizationParameter.Mode,
-            bool optimizeForFollowingYears = false,
-            uint iterations = Node.DefaultIterations)
-        {
-            IEnumerable<MitigationCost>? result = null;
-            optimalCostFirstYear = null;
-            optimalCostFollowingYears = null;
-
-            IEnumerable<Guid>? mitigationIds = null;
-            if (selectedMitigations == null)
-            {
-                mitigationIds = _mitigations?.Select(x => x.Id).ToArray();
-            }
-            else
-            {
-                mitigationIds = selectedMitigations.Where(x => _mitigations?.Any(y => x == y.Id) ?? false).ToArray();
-            }
-
-            if (mitigationIds?.Any() ?? false)
-            {
-                var enabledMitigations = _mitigations?.Where(x => x.IsEnabled).Select(x => x.Id).ToArray();
-
-                // Calculates the best combination of mitigations based on the optimization parameter.
-                var combinations = GetAllCombinations(mitigationIds).ToArray();
-                IEnumerable<Guid>? bestCombination = GetBestCombination(mitigationIds, combinations,
-                    optimizationParameter, optimizeForFollowingYears, iterations, out var costFirstYear, out var costFollowingYears);
-                if (bestCombination != null && costFirstYear != null && costFollowingYears != null)
-                {
-                    optimalCostFirstYear = costFirstYear;
-                    optimalCostFollowingYears = costFollowingYears;
-                    result = _mitigations?.Where(x => bestCombination.Contains(x.Id));
-                    RestoreRanges();
-                }
-
-                // Restore the original enabled state of mitigations.
-                SetEnabledState(enabledMitigations);
-            }
-
-            return result;
         }
 
         private IEnumerable<Guid>? GetBestCombination(IEnumerable<Guid> selectedMitigations, 
@@ -873,6 +896,40 @@ namespace QRiskTree.Engine.ExtendedModel
                 }
             }
         }
+
+        private void ClearBaselineRisks()
+        {
+            var risks = _risks?.ToArray();
+            if (risks?.Any() ?? false)
+            {
+                foreach (var risk in risks)
+                {
+                    risk.ClearBaseline();
+
+                    var mitigations = risk.Children?.OfType<AppliedMitigation>().ToArray();
+                    if (mitigations?.Any() ?? false)
+                    {
+                        foreach (var mitigation in mitigations)
+                        {
+                            mitigation.ClearBaseline();
+                        }
+                    }
+                }
+            }
+        }
+
+        private void ClearBaselineMitigations()
+        {
+            var mitigations = _mitigations?.ToArray();
+            if (mitigations?.Any() ?? false)
+            {
+                foreach (var mitigation in mitigations)
+                {
+                    mitigation.ClearBaselines();
+                }
+            }
+        }
+        #endregion
         #endregion
 
         #region Serialization and Deserialization.

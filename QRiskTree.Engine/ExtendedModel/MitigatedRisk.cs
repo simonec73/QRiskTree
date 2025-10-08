@@ -3,9 +3,17 @@ using QRiskTree.Engine.Model;
 
 namespace QRiskTree.Engine.ExtendedModel
 {
+    /// <summary>
+    /// Represents a risk that has been mitigated within a risk model.
+    /// </summary>
+    /// <remarks>The <see cref="MitigatedRisk"/> class extends the <see cref="Risk"/> class to include
+    /// functionality for managing mitigations and baselines. It allows for the application and removal of mitigations,
+    /// as well as the simulation of risk with applied mitigations. This class is intended for use within a risk
+    /// management system where risks are assessed and mitigated based on defined models.</remarks>
     [JsonObject(MemberSerialization.OptIn)]
     public class MitigatedRisk : Risk
     {
+        #region Constructors.
         internal MitigatedRisk() : base()
         {
         }
@@ -13,14 +21,7 @@ namespace QRiskTree.Engine.ExtendedModel
         internal MitigatedRisk(string name) : base(name)
         {
         }
-
-        public void AssignModel(RiskModel model)
-        {
-            if (model != null)
-            {
-                _riskModelId = model.Id;
-            }
-        }
+        #endregion
 
         #region Properties.
         [JsonProperty("riskModelId", Order = 4)]
@@ -111,47 +112,150 @@ namespace QRiskTree.Engine.ExtendedModel
         }
         #endregion
 
+        #region Baseline management.
+        private double[]? _baseline;
+
+        /// <summary>
+        /// Flags indicating whether this risk has a defined baseline.
+        /// </summary>
+        public bool HasBaseline => _baseline?.Any() ?? false;
+
+        /// <summary>
+        /// Gets the baseline values.
+        /// </summary>
+        public double[]? Baseline => _baseline?.ToArray();
+
+        /// <summary>
+        /// Gets the confidence level of the baseline.
+        /// </summary>
+        public Confidence BaselineConfidence { get; private set; } = Confidence.Low;
+
+        /// <summary>
+        /// Set the baseline values and confidence.
+        /// </summary>
+        /// <param name="baseline">New baseline.</param>
+        /// <param name="confidence">New confidence level.</param>
+        public void SetBaseline(double[] baseline, Confidence confidence)
+        {
+            if ((baseline?.Any() ?? false) && (confidence != Confidence.Low))
+            {
+                _baseline = baseline.ToArray();
+                BaselineConfidence = confidence;
+            }
+        }
+
+        /// <summary>
+        /// Clear the baseline values and confidence.
+        /// </summary>
+        public void ClearBaseline()
+        {
+            _baseline = null;
+            BaselineConfidence = Confidence.Low;
+        }
+        #endregion
+
         #region Member overrides.
+        /// <summary>
+        /// Checks if the specified node is a valid child for this node.
+        /// </summary>
+        /// <param name="node">Node to be checked.</param>
+        /// <returns>True if it valid, false otherwise.</returns>
         protected override bool IsValidChild(Node node)
         {
             return base.IsValidChild(node) || (node is AppliedMitigation);
         }
 
+        /// <summary>
+        /// Simulates this risk, applying any mitigation costs from enabled AppliedMitigation child nodes.
+        /// </summary>
+        /// <param name="iterations">Number of iterations for the simulation.</param>
+        /// <param name="samples">[out] Generated samples.</param>
+        /// <param name="confidence"></param>
+        /// <returns></returns>
         protected override bool Simulate(uint iterations, out double[]? samples, out Confidence confidence)
         {
             var result = false;
             samples = null;
             confidence = Confidence;
 
-            if (IsEnabled && base.Simulate(iterations, out samples, out confidence) && (samples?.Length ?? 0) == iterations)
+            if (IsEnabled)
             {
-                result = true;
-
-                var appliedMitigations = _children?.OfType<AppliedMitigation>().Where(x => x.IsEnabled).ToArray();
-                if (appliedMitigations?.Any() ?? false)
+                if (HasBaseline && ((Baseline?.Length ?? 0) == iterations))
                 {
-                    // Apply each mitigation cost to the samples
-                    foreach (var appliedMitigation in appliedMitigations)
+                    // Use the baseline values as samples.
+                    samples = Baseline;
+                    confidence = BaselineConfidence;
+                    result = true;
+                }
+                else if (base.Simulate(iterations, out samples, out confidence) && (samples?.Length ?? 0) == iterations)
+                {
+                    result = true;
+
+                    // Set the baseline.
+                    _baseline = samples?.ToArray();
+                    BaselineConfidence = confidence;
+                }
+
+                if (result)
+                {
+                    var appliedMitigations = _children?.OfType<AppliedMitigation>().Where(x => x.IsEnabled).ToArray();
+                    if (appliedMitigations?.Any() ?? false)
                     {
-                        if (Simulate(appliedMitigation, iterations, out var amSamples) &&
-                            (amSamples?.Length ?? 0) == iterations)
+                        // Apply each mitigation cost to the samples
+                        foreach (var appliedMitigation in appliedMitigations)
                         {
-                            // Subtract the effect of the mitigation from each value.
-                            for (int i = 0; i < iterations; i++)
+                            double[]? amSamples = null;
+                            Confidence amConfidence = Confidence.Low;
+                            bool ok = false;
+
+                            if (appliedMitigation.HasBaseline && ((appliedMitigation.Baseline?.Length ?? 0) == iterations))
                             {
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-                                samples[i] *= (1 - amSamples[i]);
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
+                                amSamples = appliedMitigation.Baseline;
+                                amConfidence = appliedMitigation.BaselineConfidence;
+                                ok = true;
+                            } else if (Simulate(appliedMitigation, iterations, out amSamples) &&
+                                (amSamples?.Length ?? 0) == iterations)
+                            {
+                                ok = true;
+                                amConfidence = appliedMitigation.Confidence;
+#pragma warning disable CS8604 // Possible null reference argument.
+                                appliedMitigation.SetBaseline(amSamples, amConfidence);
+#pragma warning restore CS8604 // Possible null reference argument.
                             }
 
-                            if (appliedMitigation.Confidence < confidence)
-                                confidence = appliedMitigation.Confidence;
+                            if (ok)
+                            {
+                                // Subtract the effect of the mitigation from each value.
+                                for (int i = 0; i < iterations; i++)
+                                {
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+                                    samples[i] *= (1 - amSamples[i]);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+                                }
+
+                                if (appliedMitigation.Confidence < confidence)
+                                    confidence = amConfidence;
+                            }
                         }
                     }
                 }
             }
 
             return result;
+        }
+        #endregion
+
+        #region Internal methods.
+        /// <summary>
+        /// Assign the Risk to a RiskModel.
+        /// </summary>
+        /// <param name="model">Owning model.</param>
+        internal void AssignModel(RiskModel model)
+        {
+            if (model != null)
+            {
+                _riskModelId = model.Id;
+            }
         }
         #endregion
     }
