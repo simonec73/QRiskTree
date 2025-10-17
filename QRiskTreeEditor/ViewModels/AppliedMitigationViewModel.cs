@@ -55,7 +55,7 @@ namespace QRiskTreeEditor.ViewModels
         private void OnMitigationCostPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (sender is MitigationCostViewModel mitigationCostVM &&
-                (e.PropertyName == "Name" || e.PropertyName == "Description"))
+                (e.PropertyName == "Name" || e.PropertyName == "Description" || e.PropertyName == "ControlType"))
             {
                 if (e.PropertyName == "Name")
                 {
@@ -111,6 +111,7 @@ namespace QRiskTreeEditor.ViewModels
             OnPropertyChanged(nameof(FormattedMax));
             OnPropertyChanged(nameof(Confidence));
             OnPropertyChanged(nameof(IsSetByUser));
+            OnPropertyChanged(nameof(IsAuxiliary));
         }
 
         #region Properties.
@@ -130,7 +131,37 @@ namespace QRiskTreeEditor.ViewModels
         public string? Description => _node.Description;
 
         [Category("Mitigation")]
+        [DisplayName("Control Type")]
         public ControlType ControlType => MitigationCost?.ControlType ?? ControlType.Unknown;
+
+        [Category("Mitigation")]
+        [DisplayName("Is Auxiliary")]
+        public bool IsAuxiliary
+        {
+            get
+            {
+                return (_node as AppliedMitigation)?.IsAuxiliary ?? false;
+            }
+
+            set
+            {
+                if (_node is AppliedMitigation appliedMitigation)
+                {
+                    if (appliedMitigation.IsAuxiliary != value)
+                    {
+                        try
+                        {
+                            appliedMitigation.IsAuxiliary = value;
+                            OnPropertyChanged(nameof(IsAuxiliary));
+                        }
+                        catch
+                        {
+                            // Ignore exceptions for invalid values.
+                        }
+                    }
+                }
+            }
+        }
 
         [Browsable(false)]
         public RangeType RangeType => _node.RangeType;
