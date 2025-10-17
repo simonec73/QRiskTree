@@ -65,6 +65,8 @@ namespace QRiskTree.Engine.ExtendedModel
             }
         }
 
+        [JsonProperty("controlType")]
+        [JsonConverter(typeof(StringEnumConverter))]
         private ControlType _controlType { get; set; } = ControlType.Unknown;
 
         /// <summary>
@@ -72,8 +74,6 @@ namespace QRiskTree.Engine.ExtendedModel
         /// </summary>
         /// <remarks>Changing the control type will trigger an update to reflect the new control
         /// settings.</remarks>
-        [JsonProperty("controlType")]
-        [JsonConverter(typeof(StringEnumConverter))]
         public ControlType ControlType
         {
             get => _controlType;
