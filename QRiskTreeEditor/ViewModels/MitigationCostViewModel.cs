@@ -35,6 +35,20 @@ namespace QRiskTreeEditor.ViewModels
             }
         }
 
+        [DisplayName("Control Type")]
+        public ControlType ControlType
+        {
+            get => (_node as MitigationCost)?.ControlType ?? ControlType.Unknown;
+            set
+            {
+                if (_node is MitigationCost mitigationCost && mitigationCost.ControlType != value)
+                {
+                    mitigationCost.ControlType = value;
+                    OnPropertyChanged(nameof(ControlType));
+                }
+            }
+        }
+
         private QRiskTree.Engine.Range? OperationCosts => (_node as MitigationCost)?.OperationCosts;
 
         [Category("Range")]

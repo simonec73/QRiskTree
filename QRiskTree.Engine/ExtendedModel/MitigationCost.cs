@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using QRiskTree.Engine.Facts;
 using System;
 using System.Collections.Generic;
@@ -8,6 +9,12 @@ using System.Threading.Tasks;
 
 namespace QRiskTree.Engine.ExtendedModel
 {
+    /// <summary>
+    /// Represents the cost associated with a mitigation strategy, including operational costs and control type.
+    /// </summary>
+    /// <remarks>This class provides functionality to manage and update the operational costs and control type
+    /// of a mitigation strategy. It also allows setting and clearing baseline values for implementation and operation
+    /// metrics, along with their confidence levels.</remarks>
     [JsonObject(MemberSerialization.OptIn)]
     public class MitigationCost : NodeWithFacts
     {
@@ -23,6 +30,9 @@ namespace QRiskTree.Engine.ExtendedModel
         [JsonProperty("enabled", Order = 5)]
         private bool _isEnabled { get; set; } = true;
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the feature is enabled.
+        /// </summary>
         public bool IsEnabled
         {
             get => _isEnabled;
@@ -39,6 +49,9 @@ namespace QRiskTree.Engine.ExtendedModel
         [JsonProperty("operationalCosts", Order = 40)]
         private Range? _operationalCosts { get; set; }
 
+        /// <summary>
+        /// Gets or sets the range of operational costs.
+        /// </summary>
         public Range? OperationCosts
         {
             get => _operationalCosts;
@@ -47,6 +60,28 @@ namespace QRiskTree.Engine.ExtendedModel
                 if (value != null)
                 {
                     _operationalCosts = value;
+                    Update();
+                }
+            }
+        }
+
+        private ControlType _controlType { get; set; } = ControlType.Unknown;
+
+        /// <summary>
+        /// Gets or sets the type of control represented by this instance.
+        /// </summary>
+        /// <remarks>Changing the control type will trigger an update to reflect the new control
+        /// settings.</remarks>
+        [JsonProperty("controlType")]
+        [JsonConverter(typeof(StringEnumConverter))]
+        public ControlType ControlType
+        {
+            get => _controlType;
+            set
+            {
+                if (_controlType != value)
+                {
+                    _controlType = value;
                     Update();
                 }
             }

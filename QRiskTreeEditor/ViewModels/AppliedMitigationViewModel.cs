@@ -129,6 +129,9 @@ namespace QRiskTreeEditor.ViewModels
         [Category("General")]
         public string? Description => _node.Description;
 
+        [Category("Mitigation")]
+        public ControlType ControlType => MitigationCost?.ControlType ?? ControlType.Unknown;
+
         [Browsable(false)]
         public RangeType RangeType => _node.RangeType;
 
