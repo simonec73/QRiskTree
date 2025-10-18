@@ -12,7 +12,7 @@ namespace QRiskTree.Engine.ExtendedModel
     {
         private static readonly Dictionary<Guid, RiskModel> _instances = new();
         private readonly FactsManager _factsManager = new FactsManager();
-        private const double CurrentSchemaVersion = 0.2;
+        private const double CurrentSchemaVersion = 0.4;
         private const double MinSchemaVersion = 0.0;
 
         /// <summary>
@@ -480,6 +480,26 @@ namespace QRiskTree.Engine.ExtendedModel
         /// <remarks>The first parameter is the enumeration of the identifiers of the mitigations considered during the generation,
         /// and the third is an array containing the generated samples.</remarks>
         public event Action<IEnumerable<Guid>?, double[]>? FollowingYearsSimulationCompleted;
+        /// <summary>
+        /// Occurs when the baseline simulation has completed.
+        /// </summary>
+        /// <remarks>The event provides an array of double values representing the results of the
+        /// simulation.</remarks>
+        public event Action<double[]>? BaselineSimulationCompleted;
+        /// <summary>
+        /// Event raised when the optimal simulation of the first year is completed.
+        /// It includes the effects of the Mitigations and their implementation and operation costs.
+        /// </summary>
+        /// <remarks>The first parameter is the enumeration of the identifiers of the mitigations considered during the generation,
+        /// and the third is an array containing the generated samples.</remarks>
+        public event Action<IEnumerable<Guid>?, double[]>? OptimalFirstYearSimulationCompleted;
+        /// <summary>
+        /// Event raised when the optimal simulation of the following years is completed.
+        /// It includes the effects of the Mitigations and their operation costs.
+        /// </summary>
+        /// <remarks>The first parameter is the enumeration of the identifiers of the mitigations considered during the generation,
+        /// and the third is an array containing the generated samples.</remarks>
+        public event Action<IEnumerable<Guid>?, double[]>? OptimalFollowingYearsSimulationCompleted;
         #endregion
 
         #region Public methods.
@@ -503,6 +523,7 @@ namespace QRiskTree.Engine.ExtendedModel
             {
                 samples = CalculateResidualRisk(iterations, out confidence);
                 SimulationCompleted?.Invoke(null, samples);
+                BaselineSimulationCompleted?.Invoke(samples);
             }
             catch 
             {
@@ -622,7 +643,8 @@ namespace QRiskTree.Engine.ExtendedModel
             return result;
         }
 
-        private Range? Simulate(out Range? costFollowingYears, uint iterations = Node.DefaultIterations)
+        private Range? Simulate(out Range? costFollowingYears, uint iterations,
+            out double[]? firstYearSamples, out double[]? followingYearsSamples)
         {
             var samples = CalculateResidualRisk(iterations, out var confidence);
 
@@ -635,18 +657,22 @@ namespace QRiskTree.Engine.ExtendedModel
                 // Ignore exceptions from the event handler.
             }
 
-            return CalculateCosts(iterations, samples, confidence, out costFollowingYears);
+            return CalculateCosts(iterations, samples, confidence, out costFollowingYears, 
+                out firstYearSamples, out followingYearsSamples);
         }
 
-        private Range? CalculateCosts(uint iterations, double[]? samples, Confidence confidence, out Range? followingYearsCosts)
+        private Range? CalculateCosts(uint iterations, double[]? samples, Confidence confidence, 
+            out Range? followingYearsCosts, out double[]? firstYearSamples, out double[]? followingYearsSamples)
         {
             Range? result = null;
             followingYearsCosts = null;
+            firstYearSamples = null;
+            followingYearsSamples = null;
 
             if (samples != null && samples.Length == iterations)
             {
-                var firstYearSamples = samples.ToArray();
-                var followingYearsSamples = samples.ToArray();
+                firstYearSamples = samples.ToArray();
+                followingYearsSamples = samples.ToArray();
 
                 var mitigations = _mitigations?.Where(x => x.IsEnabled).ToArray();
                 if (mitigations?.Any() ?? false)
@@ -677,7 +703,8 @@ namespace QRiskTree.Engine.ExtendedModel
             return result;
         }
 
-        private Confidence CalculateCosts(MitigationCost mitigation, uint iterations, Confidence confidence, double[] firstYearSamples, double[] followingYearsSamples)
+        private Confidence CalculateCosts(MitigationCost mitigation, uint iterations, Confidence confidence, 
+            double[] firstYearSamples, double[] followingYearsSamples)
         {
             double[]? implementationCostSamples = null;
             double[]? operationalCostSamples = null;
@@ -741,11 +768,13 @@ namespace QRiskTree.Engine.ExtendedModel
             IEnumerable<Guid>? result = null;
             costFirstYear = null;
             costFollowingYears = null;
+            double[]? optimalFirstYearSamples = null;
+            double[]? optimalFollowingYearsSamples = null;
 
             foreach (var combination in combinations)
             {
                 var simulatedCostFirstYear = SimulateCombination(selectedMitigations.Where(x => combination.Contains(x)), 
-                    iterations, out var simulatedCostFollowingYears);
+                    iterations, out var simulatedCostFollowingYears, out var firstYearSamples, out var followingYearsSamples);
 
                 if (simulatedCostFirstYear != null && simulatedCostFollowingYears != null)
                 {
@@ -758,6 +787,8 @@ namespace QRiskTree.Engine.ExtendedModel
                                 {
                                     costFirstYear = simulatedCostFirstYear;
                                     costFollowingYears = simulatedCostFollowingYears;
+                                    optimalFirstYearSamples = firstYearSamples;
+                                    optimalFollowingYearsSamples = followingYearsSamples;
                                     result = combination;
                                     StoreRanges();
                                 }
@@ -767,6 +798,8 @@ namespace QRiskTree.Engine.ExtendedModel
                                 {
                                     costFirstYear = simulatedCostFirstYear;
                                     costFollowingYears = simulatedCostFollowingYears;
+                                    optimalFirstYearSamples = firstYearSamples;
+                                    optimalFollowingYearsSamples = followingYearsSamples;
                                     result = combination;
                                     StoreRanges();
                                 }
@@ -776,6 +809,8 @@ namespace QRiskTree.Engine.ExtendedModel
                                 {
                                     costFirstYear = simulatedCostFirstYear;
                                     costFollowingYears = simulatedCostFollowingYears;
+                                    optimalFirstYearSamples = firstYearSamples;
+                                    optimalFollowingYearsSamples = followingYearsSamples;
                                     result = combination;
                                     StoreRanges();
                                 }
@@ -791,6 +826,8 @@ namespace QRiskTree.Engine.ExtendedModel
                                 {
                                     costFirstYear = simulatedCostFirstYear;
                                     costFollowingYears = simulatedCostFollowingYears;
+                                    optimalFirstYearSamples = firstYearSamples;
+                                    optimalFollowingYearsSamples = followingYearsSamples;
                                     result = combination;
                                     StoreRanges();
                                 }
@@ -800,6 +837,8 @@ namespace QRiskTree.Engine.ExtendedModel
                                 {
                                     costFirstYear = simulatedCostFirstYear;
                                     costFollowingYears = simulatedCostFollowingYears;
+                                    optimalFirstYearSamples = firstYearSamples;
+                                    optimalFollowingYearsSamples = followingYearsSamples;
                                     result = combination;
                                     StoreRanges();
                                 }
@@ -809,12 +848,27 @@ namespace QRiskTree.Engine.ExtendedModel
                                 {
                                     costFirstYear = simulatedCostFirstYear;
                                     costFollowingYears = simulatedCostFollowingYears;
+                                    optimalFirstYearSamples = firstYearSamples;
+                                    optimalFollowingYearsSamples = followingYearsSamples;
                                     result = combination;
                                     StoreRanges();
                                 }
                                 break;
                         }
                     }
+                }
+            }
+
+            if (optimalFirstYearSamples != null && optimalFollowingYearsSamples != null)
+            {
+                try
+                {
+                    OptimalFirstYearSimulationCompleted?.Invoke(result, optimalFirstYearSamples);
+                    OptimalFollowingYearsSimulationCompleted?.Invoke(result, optimalFollowingYearsSamples);
+                }
+                catch
+                {
+                    // Ignore exceptions from the event handler.
                 }
             }
 
@@ -876,12 +930,13 @@ namespace QRiskTree.Engine.ExtendedModel
             }
         }
 
-        private Range? SimulateCombination(IEnumerable<Guid> mitigations, uint iterations, out Range? costFollowingYears)
+        private Range? SimulateCombination(IEnumerable<Guid> mitigations, uint iterations, out Range? costFollowingYears,
+            out double[]? firstYearSamples, out double[]? followingYearsSamples)
         {
             // Set the enabled state of mitigations based on the selection.
             SetEnabledState(mitigations);
 
-            return Simulate(out costFollowingYears, iterations);
+            return Simulate(out costFollowingYears, iterations, out firstYearSamples, out followingYearsSamples);
         }
 
         private void SetEnabledState(IEnumerable<Guid>? mitigations = null)

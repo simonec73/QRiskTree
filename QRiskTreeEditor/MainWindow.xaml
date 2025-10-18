@@ -7,7 +7,7 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:local="clr-namespace:QRiskTreeEditor"
         xmlns:engine="clr-namespace:QRiskTree.Engine;assembly=QRiskTree.Engine"
-        xmlns:extendedModel="clr-namespace:QRiskTree.Engine.ExtendedModel;assembly=QRiskTree.Engine"
+        xmlns:extendedModel="clr-namespace:QRiskTree.Engine.ExtendedModel;assembly=QRiskTree.Engine" xmlns:controls="clr-namespace:QRiskTreeEditor.Controls"
         mc:Ignorable="d"
         Title="QRiskTree Editor" Height="576" Width="1024" WindowState="Maximized">
     <Window.Resources>
@@ -527,6 +527,30 @@
                         </Grid>
                     </ScrollViewer>
                 </DockPanel>
+            </TabItem>
+            <TabItem x:Name="_tabBaseline" Header="Baseline">
+                <Grid Background="White">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <controls:DistributionChart x:Name="_chartBaseline"></controls:DistributionChart>
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="_tabOptimalFirst" Header="Optimal First Year">
+                <Grid Background="White">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <controls:DistributionChart x:Name="_chartFirst"></controls:DistributionChart>
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="_tabOptimalFollowing" Header="Optimal Following Years">
+                <Grid Background="White">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <controls:DistributionChart x:Name="_chartFollowing"></controls:DistributionChart>
+                </Grid>
             </TabItem>
         </TabControl>
         <GridSplitter x:Name="_splitter"  Grid.Row="2" Height="3" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="Gray"/>

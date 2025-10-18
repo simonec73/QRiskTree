@@ -2,6 +2,7 @@
 using QRiskTree.Engine.ExtendedModel;
 using QRiskTree.Engine.Facts;
 using QRiskTree.Engine.Model;
+using QRiskTreeEditor.Controls;
 using QRiskTreeEditor.Importers;
 using QRiskTreeEditor.SecondaryWindows;
 using QRiskTreeEditor.ViewModels;
@@ -34,10 +35,19 @@ namespace QRiskTreeEditor
             InitializeComponent();
 
             var riskModel = RiskModel.Create();
-            DataContext = new RiskModelViewModel(riskModel);
+            SetDataContext(new RiskModelViewModel(riskModel));
+
             _risksContainer.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
             _mitigationsContainer.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
             _factsContainer.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
+        }
+
+        private void SetDataContext(RiskModelViewModel model)
+        {
+            DataContext = model;
+            _chartBaseline.SetModel(model, RelevantEvent.Baseline);
+            _chartFirst.SetModel(model, RelevantEvent.FirstYear);
+            _chartFollowing.SetModel(model, RelevantEvent.FollowingYears);
             SubscribeMitigatedRisks();
         }
 
@@ -100,13 +110,13 @@ namespace QRiskTreeEditor
                     var riskModel = modelVM.Model;
                     riskModel.Dispose();
                     _fileName = string.Empty;
-                    DataContext = new RiskModelViewModel(RiskModel.Create());
+                    SetDataContext(new RiskModelViewModel(RiskModel.Create()));
                 }
             }
             else
             {
                 _fileName = string.Empty;
-                DataContext = new RiskModelViewModel(RiskModel.Create());
+                SetDataContext(new RiskModelViewModel(RiskModel.Create()));
             }
         }
 
@@ -128,8 +138,7 @@ namespace QRiskTreeEditor
                     var riskModel = RiskModel.Load(_fileName);
                     if (riskModel != null)
                     {
-                        DataContext = new RiskModelViewModel(riskModel);
-                        SubscribeMitigatedRisks();
+                        SetDataContext(new RiskModelViewModel(riskModel));
 
                         MessageBox.Show("File loaded successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
@@ -883,6 +892,7 @@ namespace QRiskTreeEditor
         #endregion
         #endregion
 
+        #region Other event handlers.
         private void ToggleRowDetails(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Tag is object item)
@@ -923,6 +933,7 @@ namespace QRiskTreeEditor
                 e.Handled = true;
             }
         }
+        #endregion
 
         #region Context menu management.
         private void OpeningContextMenu(object sender, ContextMenuEventArgs e)
