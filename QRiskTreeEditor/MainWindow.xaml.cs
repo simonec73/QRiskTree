@@ -48,6 +48,7 @@ namespace QRiskTreeEditor
             _chartBaseline.SetModel(model, RelevantEvent.Baseline);
             _chartFirst.SetModel(model, RelevantEvent.FirstYear);
             _chartFollowing.SetModel(model, RelevantEvent.FollowingYears);
+            _chartComparison.SetModel(model, RelevantEvent.BaselineAndOptimizationTarget);
             SubscribeMitigatedRisks();
         }
 
@@ -107,8 +108,7 @@ namespace QRiskTreeEditor
             {
                 if (MessageBox.Show("Are you sure you want to create a new model?\nUnsaved changes will be lost.", "Confirm New Model", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
                 {
-                    var riskModel = modelVM.Model;
-                    riskModel.Dispose();
+                    modelVM.Model?.Dispose();
                     _fileName = string.Empty;
                     SetDataContext(new RiskModelViewModel(RiskModel.Create()));
                 }
@@ -122,30 +122,38 @@ namespace QRiskTreeEditor
 
         private void _fileOpen_Click(object sender, RoutedEventArgs e)
         {
-            var openFileDialog = new Microsoft.Win32.OpenFileDialog
+            if (DataContext is RiskModelViewModel modelVM)
             {
-                Title = "Open QRiskTree File",
-                Filter = "QRiskTree files (*.json)|*.json|All files (*.*)|*.*",
-                DefaultExt = ".json",
-                CheckFileExists = true
-            };
-
-            if (openFileDialog.ShowDialog() == true)
-            {
-                try
+                if (MessageBox.Show("Are you sure you want to open a new model?\nUnsaved changes will be lost.", "Confirm Open Model", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
                 {
-                    _fileName = openFileDialog.FileName;
-                    var riskModel = RiskModel.Load(_fileName);
-                    if (riskModel != null)
+                    modelVM.Model?.Dispose();
+
+                    var openFileDialog = new Microsoft.Win32.OpenFileDialog
                     {
-                        SetDataContext(new RiskModelViewModel(riskModel));
+                        Title = "Open QRiskTree File",
+                        Filter = "QRiskTree files (*.json)|*.json|All files (*.*)|*.*",
+                        DefaultExt = ".json",
+                        CheckFileExists = true
+                    };
 
-                        MessageBox.Show("File loaded successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    if (openFileDialog.ShowDialog() == true)
+                    {
+                        try
+                        {
+                            _fileName = openFileDialog.FileName;
+                            var riskModel = RiskModel.Load(_fileName);
+                            if (riskModel != null)
+                            {
+                                SetDataContext(new RiskModelViewModel(riskModel));
+
+                                MessageBox.Show("File loaded successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"Error loading file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
                     }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error loading file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }

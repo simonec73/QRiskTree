@@ -552,6 +552,14 @@
                     <controls:DistributionChart x:Name="_chartFollowing"></controls:DistributionChart>
                 </Grid>
             </TabItem>
+            <TabItem x:Name="_tabComparison" Header="Comparison">
+                <Grid Background="White">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <controls:DistributionChart x:Name="_chartComparison"></controls:DistributionChart>
+                </Grid>
+            </TabItem>
         </TabControl>
         <GridSplitter x:Name="_splitter"  Grid.Row="2" Height="3" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="Gray"/>
         <TextBox x:Name="_output" Grid.Row="3" Background="Black" Foreground="White" IsReadOnly="True" IsEnabled="True" VerticalScrollBarVisibility="Auto">

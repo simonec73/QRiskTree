@@ -4,6 +4,7 @@
     {
         Baseline,
         FirstYear,
-        FollowingYears
+        FollowingYears,
+        BaselineAndOptimizationTarget
     }
 }
