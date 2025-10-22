@@ -1,0 +1,542 @@
+{
+  "schemaVersion": 0.2,
+  "id": "828374a0-6dc9-4261-a12b-7581a0631d98",
+  "name": "Risk Model",
+  "minPercentile": 5,
+  "maxPercentile": 95,
+  "risks": [
+    {
+      "id": "b16908a0-0068-46d8-b486-dbe6ae61011b",
+      "name": "Risk 1: Unauthorized access to sensitive data.",
+      "riskModelId": "828374a0-6dc9-4261-a12b-7581a0631d98",
+      "enabled": true,
+      "calculated": true,
+      "Min": 3150486.0896852496,
+      "mode": 3654566.105187278,
+      "Max": 38913308.55814858,
+      "confidence": "Moderate",
+      "children": [
+        {
+          "$type": "QRiskTree.Engine.Model.LossEventFrequency, QRiskTree.Engine",
+          "id": "e749051a-8abc-45f0-a26a-bc3bef23ccdd",
+          "calculated": false,
+          "Min": 1.0,
+          "mode": 12.0,
+          "Max": 120.0,
+          "confidence": "Moderate",
+          "createdBy": "Simone Curzi",
+          "createdOn": "2025-08-28T17:02:01.5743362+02:00",
+          "modifiedBy": "Simone Curzi",
+          "modifiedOn": "2025-08-28T17:02:01.5760854+02:00"
+        },
+        {
+          "$type": "QRiskTree.Engine.Model.LossMagnitude, QRiskTree.Engine",
+          "id": "6791209e-a8a9-459d-ae34-280c5b5460c0",
+          "calculated": false,
+          "Min": 100000.0,
+          "mode": 500000.0,
+          "Max": 20000000.0,
+          "confidence": "Moderate",
+          "createdBy": "Simone Curzi",
+          "createdOn": "2025-08-28T17:02:01.5762811+02:00",
+          "modifiedBy": "Simone Curzi",
+          "modifiedOn": "2025-08-28T17:02:01.5769258+02:00"
+        },
+        {
+          "$type": "QRiskTree.Engine.ExtendedModel.AppliedMitigation, QRiskTree.Engine",
+          "id": "f90fd6c9-4bd1-4977-b4fb-097eecf81aa1",
+          "name": "Mitigation 1: Implement multi-factor authentication.",
+          "riskModelId": "828374a0-6dc9-4261-a12b-7581a0631d98",
+          "mitigationCostId": "167daa18-2b19-4ad7-b6f7-2d8e60ed3baf",
+          "calculated": false,
+          "Min": 0.1,
+          "mode": 0.2,
+          "Max": 0.5,
+          "confidence": "Moderate",
+          "createdBy": "Simone Curzi",
+          "createdOn": "2025-08-28T17:02:01.5844609+02:00",
+          "modifiedBy": "Simone Curzi",
+          "modifiedOn": "2025-08-28T17:02:01.5851573+02:00"
+        }
+      ],
+      "facts": [
+        "7a5377cf-83a9-4495-9c2f-5e21a987f1a5"
+      ],
+      "createdBy": "Simone Curzi",
+      "createdOn": "2025-08-28T17:02:01.5733691+02:00",
+      "modifiedBy": "Simone Curzi",
+      "modifiedOn": "2025-08-29T08:58:49.402354+02:00"
+    },
+    {
+      "id": "c69b014a-9c03-424f-b77e-68efe1b5ce4f",
+      "name": "Risk 2: Data loss due to hardware failure.",
+      "riskModelId": "828374a0-6dc9-4261-a12b-7581a0631d98",
+      "enabled": true,
+      "calculated": true,
+      "mode": 1168518.5142524862,
+      "Max": 31194119.2440657,
+      "children": [
+        {
+          "$type": "QRiskTree.Engine.Model.LossEventFrequency, QRiskTree.Engine",
+          "id": "333f5096-7e70-4eef-83cc-85f971cc9a42",
+          "name": "Data loss event frequency",
+          "calculated": true,
+          "mode": 1.7469768507761787,
+          "Max": 79.75870455572402,
+          "confidence": "Moderate",
+          "children": [
+            {
+              "$type": "QRiskTree.Engine.Model.ThreatEventFrequency, QRiskTree.Engine",
+              "id": "2a0a0ad9-7081-43e6-8bbe-65ce0ca76350",
+              "name": "Data loss threat event frequency",
+              "calculated": true,
+              "Min": 19.311287396134798,
+              "mode": 28.25842121882856,
+              "Max": 102.70459554436773,
+              "confidence": "Moderate",
+              "children": [
+                {
+                  "$type": "QRiskTree.Engine.Model.ContactFrequency, QRiskTree.Engine",
+                  "id": "f127c8c5-d578-4a0b-aa00-2574d4896d0a",
+                  "name": "Data Loss Contact Frequency",
+                  "calculated": false,
+                  "Min": 52.0,
+                  "mode": 356.0,
+                  "Max": 3560.0,
+                  "confidence": "Moderate",
+                  "createdBy": "Simone Curzi",
+                  "createdOn": "2025-08-28T17:02:01.5779742+02:00",
+                  "modifiedBy": "Simone Curzi",
+                  "modifiedOn": "2025-08-28T17:02:01.578226+02:00"
+                },
+                {
+                  "$type": "QRiskTree.Engine.Model.ProbabilityOfAction, QRiskTree.Engine",
+                  "id": "0c407e99-c4e2-4c41-b5d8-0d6598ce393e",
+                  "name": "Data loss probability of action",
+                  "calculated": false,
+                  "Min": 0.01,
+                  "mode": 0.1,
+                  "Max": 0.5,
+                  "confidence": "Moderate",
+                  "createdBy": "Simone Curzi",
+                  "createdOn": "2025-08-28T17:02:01.5784012+02:00",
+                  "modifiedBy": "Simone Curzi",
+                  "modifiedOn": "2025-08-28T17:02:01.5785866+02:00"
+                }
+              ],
+              "facts": [
+                "80cfb47b-507f-4fff-b939-6545ce3bd201"
+              ],
+              "createdBy": "Simone Curzi",
+              "createdOn": "2025-08-28T17:02:01.577564+02:00",
+              "modifiedBy": "Simone Curzi",
+              "modifiedOn": "2025-08-29T08:58:49.4028553+02:00"
+            },
+            {
+              "$type": "QRiskTree.Engine.Model.Vulnerability, QRiskTree.Engine",
+              "id": "84a1e5ee-0446-40d6-9c57-449603bf3e09",
+              "name": "Data loss vulnerability",
+              "calculated": true,
+              "mode": 0.995,
+              "Max": 1.0,
+              "confidence": "Moderate",
+              "children": [
+                {
+                  "$type": "QRiskTree.Engine.Model.ThreatCapability, QRiskTree.Engine",
+                  "id": "c542efda-5309-4f08-9d8e-0dae5c0c76a5",
+                  "name": "Data loss threat capability",
+                  "calculated": false,
+                  "Min": 0.1,
+                  "mode": 0.5,
+                  "Max": 0.9,
+                  "confidence": "Moderate",
+                  "createdBy": "Simone Curzi",
+                  "createdOn": "2025-08-28T17:02:01.5790422+02:00",
+                  "modifiedBy": "Simone Curzi",
+                  "modifiedOn": "2025-08-28T17:02:01.5792929+02:00"
+                },
+                {
+                  "$type": "QRiskTree.Engine.Model.ResistenceStrength, QRiskTree.Engine",
+                  "id": "3324668f-bbe1-4a37-a4fc-42ff26985b92",
+                  "name": "Data loss resistance strength",
+                  "calculated": false,
+                  "Min": 0.2,
+                  "mode": 0.5,
+                  "Max": 0.75,
+                  "confidence": "Moderate",
+                  "createdBy": "Simone Curzi",
+                  "createdOn": "2025-08-28T17:02:01.5794612+02:00",
+                  "modifiedBy": "Simone Curzi",
+                  "modifiedOn": "2025-08-28T17:02:01.5796241+02:00"
+                }
+              ],
+              "createdBy": "Simone Curzi",
+              "createdOn": "2025-08-28T17:02:01.5787687+02:00",
+              "modifiedBy": "Simone Curzi",
+              "modifiedOn": "2025-08-29T08:58:49.4029128+02:00"
+            }
+          ],
+          "createdBy": "Simone Curzi",
+          "createdOn": "2025-08-28T17:02:01.5772909+02:00",
+          "modifiedBy": "Simone Curzi",
+          "modifiedOn": "2025-08-29T08:58:49.4026899+02:00"
+        },
+        {
+          "$type": "QRiskTree.Engine.Model.LossMagnitude, QRiskTree.Engine",
+          "id": "612dd266-0cb1-4181-bb1d-3ecaa057183c",
+          "name": "Data loss magnitude",
+          "calculated": true,
+          "Min": 234944.79272386216,
+          "mode": 401330.4975389788,
+          "Max": 791010.3914885293,
+          "children": [
+            {
+              "$type": "QRiskTree.Engine.Model.PrimaryLoss, QRiskTree.Engine",
+              "form": "Productivity",
+              "id": "f62fbb97-bef9-4f1a-9d61-32ea45876c9c",
+              "name": "Primary loss: Productivity",
+              "calculated": false,
+              "mode": 100000.0,
+              "Max": 1000000.0,
+              "createdBy": "Simone Curzi",
+              "createdOn": "2025-08-28T17:02:01.5800534+02:00",
+              "modifiedBy": "Simone Curzi",
+              "modifiedOn": "2025-08-28T17:02:01.5803312+02:00"
+            },
+            {
+              "$type": "QRiskTree.Engine.Model.PrimaryLoss, QRiskTree.Engine",
+              "form": "Replacement",
+              "id": "8202448f-4dad-4c84-b000-165d7744d970",
+              "name": "Primary loss: Replacement",
+              "calculated": false,
+              "Min": 1000.0,
+              "mode": 2000.0,
+              "Max": 3000.0,
+              "confidence": "High",
+              "createdBy": "Simone Curzi",
+              "createdOn": "2025-08-28T17:02:01.5803921+02:00",
+              "modifiedBy": "Simone Curzi",
+              "modifiedOn": "2025-08-28T17:02:01.5805058+02:00"
+            },
+            {
+              "$type": "QRiskTree.Engine.Model.PrimaryLoss, QRiskTree.Engine",
+              "form": "Response",
+              "id": "e22a4f0f-f22a-4107-b27e-fe6e3134d4e4",
+              "name": "Primary loss: Response",
+              "calculated": false,
+              "Min": 50000.0,
+              "mode": 100000.0,
+              "Max": 1000000.0,
+              "createdBy": "Simone Curzi",
+              "createdOn": "2025-08-28T17:02:01.5805647+02:00",
+              "modifiedBy": "Simone Curzi",
+              "modifiedOn": "2025-08-28T17:02:01.5806718+02:00"
+            },
+            {
+              "$type": "QRiskTree.Engine.Model.SecondaryRisk, QRiskTree.Engine",
+              "form": "Reputation",
+              "id": "c1ba449b-c15f-430c-b74a-31254f3ae845",
+              "name": "Secondary risk: Reputation",
+              "calculated": true,
+              "Min": 627.0676038676247,
+              "mode": 1054.414990143102,
+              "Max": 3560.5514711905284,
+              "children": [
+                {
+                  "$type": "QRiskTree.Engine.Model.SecondaryLossEventFrequency, QRiskTree.Engine",
+                  "id": "07f1e4c6-2c37-49d3-b5ef-5ae6d5d58619",
+                  "name": "Reputation event frequency",
+                  "calculated": false,
+                  "Min": 0.01,
+                  "mode": 0.02,
+                  "Max": 0.2,
+                  "confidence": "Moderate",
+                  "createdBy": "Simone Curzi",
+                  "createdOn": "2025-08-28T17:02:01.5811579+02:00",
+                  "modifiedBy": "Simone Curzi",
+                  "modifiedOn": "2025-08-28T17:02:01.5814283+02:00"
+                },
+                {
+                  "$type": "QRiskTree.Engine.Model.SecondaryLossMagnitude, QRiskTree.Engine",
+                  "id": "c543b387-273b-4e81-86fa-7dc34b2ee29c",
+                  "name": "Reputation loss magnitude",
+                  "calculated": false,
+                  "Min": 10000.0,
+                  "mode": 50000.0,
+                  "Max": 200000.0,
+                  "createdBy": "Simone Curzi",
+                  "createdOn": "2025-08-28T17:02:01.5816105+02:00",
+                  "modifiedBy": "Simone Curzi",
+                  "modifiedOn": "2025-08-28T17:02:01.5817859+02:00"
+                }
+              ],
+              "createdBy": "Simone Curzi",
+              "createdOn": "2025-08-28T17:02:01.5808489+02:00",
+              "modifiedBy": "Simone Curzi",
+              "modifiedOn": "2025-08-29T08:58:49.403073+02:00"
+            },
+            {
+              "$type": "QRiskTree.Engine.Model.SecondaryRisk, QRiskTree.Engine",
+              "form": "Competitive_Advantage",
+              "id": "e54c03db-6e52-45fe-a2da-21489ca38e87",
+              "name": "Secondary risk: Competitive Advantage",
+              "calculated": true,
+              "Min": 5789.0671235711325,
+              "mode": 10599.686946520313,
+              "Max": 28238.65834833272,
+              "children": [
+                {
+                  "$type": "QRiskTree.Engine.Model.SecondaryLossEventFrequency, QRiskTree.Engine",
+                  "id": "7e3b59bc-be79-4edc-89a3-d963c9fad402",
+                  "name": "Competitive Advantage event frequency",
+                  "calculated": false,
+                  "Min": 0.01,
+                  "mode": 0.02,
+                  "Max": 0.1,
+                  "confidence": "Moderate",
+                  "createdBy": "Simone Curzi",
+                  "createdOn": "2025-08-28T17:02:01.5819499+02:00",
+                  "modifiedBy": "Simone Curzi",
+                  "modifiedOn": "2025-08-28T17:02:01.5820504+02:00"
+                },
+                {
+                  "$type": "QRiskTree.Engine.Model.SecondaryLossMagnitude, QRiskTree.Engine",
+                  "id": "bb627d5a-3180-4bcd-a8f6-653f4ee2cd29",
+                  "name": "Competitive Advantage loss magnitude",
+                  "calculated": false,
+                  "Min": 100000.0,
+                  "mode": 500000.0,
+                  "Max": 2000000.0,
+                  "createdBy": "Simone Curzi",
+                  "createdOn": "2025-08-28T17:02:01.5821082+02:00",
+                  "modifiedBy": "Simone Curzi",
+                  "modifiedOn": "2025-08-28T17:02:01.5822268+02:00"
+                }
+              ],
+              "createdBy": "Simone Curzi",
+              "createdOn": "2025-08-28T17:02:01.581842+02:00",
+              "modifiedBy": "Simone Curzi",
+              "modifiedOn": "2025-08-29T08:58:49.4031247+02:00"
+            }
+          ],
+          "createdBy": "Simone Curzi",
+          "createdOn": "2025-08-28T17:02:01.579811+02:00",
+          "modifiedBy": "Simone Curzi",
+          "modifiedOn": "2025-08-29T08:58:49.4029631+02:00"
+        },
+        {
+          "$type": "QRiskTree.Engine.ExtendedModel.AppliedMitigation, QRiskTree.Engine",
+          "id": "a56d7624-5048-4863-91e2-cde92c3f567e",
+          "name": "Mitigation 2: Regular data backups.",
+          "riskModelId": "828374a0-6dc9-4261-a12b-7581a0631d98",
+          "mitigationCostId": "432d615a-1f18-4ee2-abcf-3390d9e9f037",
+          "calculated": false,
+          "Min": 0.1,
+          "mode": 0.2,
+          "Max": 0.5,
+          "createdBy": "Simone Curzi",
+          "createdOn": "2025-08-28T17:02:01.5858088+02:00",
+          "modifiedBy": "Simone Curzi",
+          "modifiedOn": "2025-08-29T08:58:42.2367813+02:00"
+        }
+      ],
+      "createdBy": "Simone Curzi",
+      "createdOn": "2025-08-28T17:02:01.5769924+02:00",
+      "modifiedBy": "Simone Curzi",
+      "modifiedOn": "2025-08-29T08:58:49.4025711+02:00"
+    },
+    {
+      "id": "f25ad038-c999-4aff-9a18-ab395470654d",
+      "name": "Risk 3: Phishing attack leading to credential theft.",
+      "riskModelId": "828374a0-6dc9-4261-a12b-7581a0631d98",
+      "enabled": true,
+      "calculated": true,
+      "Min": 5533.039147349994,
+      "mode": 9010.648564084264,
+      "Max": 44439.98972668877,
+      "children": [
+        {
+          "$type": "QRiskTree.Engine.Model.LossEventFrequency, QRiskTree.Engine",
+          "id": "96d40e1a-e73a-4bda-9965-7194f5519e51",
+          "calculated": false,
+          "Min": 12.0,
+          "mode": 60.0,
+          "Max": 1200.0,
+          "confidence": "Moderate",
+          "createdBy": "Simone Curzi",
+          "createdOn": "2025-08-28T17:02:01.5824142+02:00",
+          "modifiedBy": "Simone Curzi",
+          "modifiedOn": "2025-08-28T17:02:01.5825416+02:00"
+        },
+        {
+          "$type": "QRiskTree.Engine.Model.LossMagnitude, QRiskTree.Engine",
+          "id": "8efeb7f7-9401-4506-b5e2-de05e545dd87",
+          "calculated": false,
+          "Min": 100.0,
+          "mode": 500.0,
+          "Max": 1500.0,
+          "createdBy": "Simone Curzi",
+          "createdOn": "2025-08-28T17:02:01.5825997+02:00",
+          "modifiedBy": "Simone Curzi",
+          "modifiedOn": "2025-08-28T17:02:01.5827242+02:00"
+        },
+        {
+          "$type": "QRiskTree.Engine.ExtendedModel.AppliedMitigation, QRiskTree.Engine",
+          "id": "8c6e303a-0773-4e5a-b617-6e84d3ed95e7",
+          "name": "Mitigation 1: Implement multi-factor authentication.",
+          "riskModelId": "828374a0-6dc9-4261-a12b-7581a0631d98",
+          "mitigationCostId": "167daa18-2b19-4ad7-b6f7-2d8e60ed3baf",
+          "calculated": false,
+          "Min": 0.3,
+          "mode": 0.67,
+          "Max": 0.9,
+          "confidence": "High",
+          "createdBy": "Simone Curzi",
+          "createdOn": "2025-08-28T17:02:01.5852284+02:00",
+          "modifiedBy": "Simone Curzi",
+          "modifiedOn": "2025-08-28T17:02:01.5859959+02:00"
+        },
+        {
+          "$type": "QRiskTree.Engine.ExtendedModel.AppliedMitigation, QRiskTree.Engine",
+          "id": "80926f77-1ffb-4233-9ab3-dcc2f4ce0b2e",
+          "name": "Mitigation 3: Employee training on phishing awareness.",
+          "riskModelId": "828374a0-6dc9-4261-a12b-7581a0631d98",
+          "mitigationCostId": "e7692194-9c10-4d51-b3f0-5b90cd483399",
+          "calculated": false,
+          "Min": 0.0001,
+          "mode": 0.00025,
+          "Max": 0.0004,
+          "confidence": "Moderate",
+          "createdBy": "Simone Curzi",
+          "createdOn": "2025-08-28T17:02:01.5864359+02:00",
+          "modifiedBy": "Simone Curzi",
+          "modifiedOn": "2025-08-28T17:02:01.5866404+02:00"
+        }
+      ],
+      "createdBy": "Simone Curzi",
+      "createdOn": "2025-08-28T17:02:01.5822847+02:00",
+      "modifiedBy": "Simone Curzi",
+      "modifiedOn": "2025-08-29T08:58:49.4031771+02:00"
+    }
+  ],
+  "mitigations": [
+    {
+      "id": "167daa18-2b19-4ad7-b6f7-2d8e60ed3baf",
+      "name": "Mitigation 1: Implement multi-factor authentication.",
+      "enabled": true,
+      "calculated": false,
+      "Min": 5000.0,
+      "mode": 10000.0,
+      "Max": 20000.0,
+      "confidence": "Moderate",
+      "operationalCosts": {
+        "calculated": false,
+        "Min": 1200.0,
+        "mode": 6000.0,
+        "Max": 20000.0,
+        "confidence": "Moderate",
+        "createdBy": "Simone Curzi",
+        "createdOn": "2025-08-28T17:02:01.5835497+02:00",
+        "modifiedBy": "Simone Curzi",
+        "modifiedOn": "2025-08-28T17:02:01.5836695+02:00"
+      },
+      "createdBy": "Simone Curzi",
+      "createdOn": "2025-08-28T17:02:01.5831132+02:00",
+      "modifiedBy": "Simone Curzi",
+      "modifiedOn": "2025-08-29T08:58:48.9506594+02:00"
+    },
+    {
+      "id": "432d615a-1f18-4ee2-abcf-3390d9e9f037",
+      "name": "Mitigation 2: Regular data backups.",
+      "enabled": true,
+      "calculated": false,
+      "Min": 5000.0,
+      "mode": 10000.0,
+      "Max": 20000.0,
+      "confidence": "Moderate",
+      "operationalCosts": {
+        "calculated": false,
+        "Min": 1200.0,
+        "mode": 12000.0,
+        "Max": 24000.0,
+        "confidence": "Moderate",
+        "createdBy": "Simone Curzi",
+        "createdOn": "2025-08-28T17:02:01.5855921+02:00",
+        "modifiedBy": "Simone Curzi",
+        "modifiedOn": "2025-08-28T17:02:01.5856405+02:00"
+      },
+      "createdBy": "Simone Curzi",
+      "createdOn": "2025-08-28T17:02:01.5854776+02:00",
+      "modifiedBy": "Simone Curzi",
+      "modifiedOn": "2025-08-29T08:58:48.5711979+02:00"
+    },
+    {
+      "id": "e7692194-9c10-4d51-b3f0-5b90cd483399",
+      "name": "Mitigation 3: Employee training on phishing awareness.",
+      "enabled": true,
+      "calculated": false,
+      "Min": 200000.0,
+      "mode": 300000.0,
+      "Max": 5000000.0,
+      "confidence": "Moderate",
+      "operationalCosts": {
+        "calculated": false,
+        "Min": 10000.0,
+        "mode": 20000.0,
+        "Max": 50000.0,
+        "confidence": "Moderate",
+        "createdBy": "Simone Curzi",
+        "createdOn": "2025-08-28T17:02:01.5861899+02:00",
+        "modifiedBy": "Simone Curzi",
+        "modifiedOn": "2025-08-28T17:02:01.5862477+02:00"
+      },
+      "createdBy": "Simone Curzi",
+      "createdOn": "2025-08-28T17:02:01.5860671+02:00",
+      "modifiedBy": "Simone Curzi",
+      "modifiedOn": "2025-08-29T08:58:48.172926+02:00"
+    }
+  ],
+  "facts": {
+    "facts": [
+      {
+        "$type": "QRiskTree.Engine.Facts.FactRange, QRiskTree.Engine",
+        "id": "7a5377cf-83a9-4495-9c2f-5e21a987f1a5",
+        "context": "Some context",
+        "source": "John Doe",
+        "refDate": "2025-08-28T17:02:01.5873833+02:00",
+        "name": "This is some information about something",
+        "range": {
+          "Min": 10000.0,
+          "mode": 20000.0,
+          "Max": 100000.0,
+          "createdBy": "Simone Curzi",
+          "createdOn": "2025-08-28T17:02:01.5871703+02:00"
+        },
+        "createdBy": "Simone Curzi",
+        "createdOn": "2025-08-28T17:02:01.5874559+02:00"
+      },
+      {
+        "$type": "QRiskTree.Engine.Facts.FactHardNumber, QRiskTree.Engine",
+        "id": "80cfb47b-507f-4fff-b939-6545ce3bd201",
+        "context": "Some context",
+        "source": "John Doe",
+        "refDate": "2025-08-18T17:02:01.5903098+02:00",
+        "name": "This is some information about the contact frequency",
+        "details": "This is a detail about the contact frequency.",
+        "tags": [
+          "tag1",
+          "tag2"
+        ],
+        "value": 100.0,
+        "createdBy": "Simone Curzi",
+        "createdOn": "2025-08-28T17:02:01.5894841+02:00",
+        "modifiedBy": "Simone Curzi",
+        "modifiedOn": "2025-08-28T17:02:01.590567+02:00"
+      }
+    ]
+  },
+  "createdBy": "Simone Curzi",
+  "createdOn": "2025-08-28T17:02:01.5662766+02:00",
+  "modifiedBy": "Simone Curzi",
+  "modifiedOn": "2025-08-28T17:02:01.5861323+02:00"
+}
