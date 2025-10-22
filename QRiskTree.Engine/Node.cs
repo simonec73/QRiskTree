@@ -187,30 +187,51 @@ namespace QRiskTree.Engine
         /// <returns>True if the node can be simulated, false otherwise.</returns>
         public bool CanBeSimulated(out Node? node)
         {
-            var result = Calculated.HasValue && !Calculated.Value;
-            node = null;
+            bool result;
 
-            if (!result)
+            var canBeSimulated = CanBeSimulated();
+            if (canBeSimulated.HasValue)
             {
-                node = this;
+                result = canBeSimulated.Value;
+                node = result ? null : this;
+            }
+            else
+            {
+                result = Calculated.HasValue && !Calculated.Value;
+                node = null;
 
-                if (HasAllChildren() && (_children?.Any() ?? false))
+                if (!result)
                 {
-                    result = true;
-                    var children = _children.ToArray();
-                    foreach (var child in children)
+                    node = this;
+
+                    if (HasAllChildren() && (_children?.Any() ?? false))
                     {
-                        if (!child.CanBeSimulated(out var violatingNode))
+                        result = true;
+                        var children = _children.ToArray();
+                        foreach (var child in children)
                         {
-                            node = violatingNode;
-                            result = false;
-                            break;
+                            if (!child.CanBeSimulated(out var violatingNode))
+                            {
+                                node = violatingNode;
+                                result = false;
+                                break;
+                            }
                         }
                     }
                 }
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Function to be overridden in derived classes which allows them to override the default verification.
+        /// </summary>
+        /// <returns>Null, if the basic behavior must be applied. 
+        /// If not null, the returned value determines if the node can be simulated.</returns>
+        protected virtual bool? CanBeSimulated()
+        {
+            return null;
         }
 
         /// <summary>

@@ -136,6 +136,11 @@ namespace QRiskTree.Engine.ExtendedModel
 
             return false;
         }
+
+        protected override bool? CanBeSimulated()
+        {
+            return _auxiliary ? true : null;
+        }
         #endregion
     }
 }
