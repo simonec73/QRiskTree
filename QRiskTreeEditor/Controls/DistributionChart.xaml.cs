@@ -122,7 +122,7 @@ namespace QRiskTreeEditor.Controls
                     count += data.Count(v => v == max);
                 partial += count;
 
-                double area = count * (double)data.Length;
+                double area = count * bucketSize;
                 histogramSeries.Items.Add(new HistogramItem(bucketStart, bucketEnd, area, count));
                 percentileSeries.Points.Add(new DataPoint(bucketStart + (bucketSize / 2), ((double) partial) / ((double) data.Length) * 100));
             }
@@ -250,7 +250,7 @@ namespace QRiskTreeEditor.Controls
                 if (i == _bucketCount - 1)
                     count += data.Count(v => v == max);
 
-                double area = count * (double)data.Length;
+                double area = count * _bucketSize;
                 histogramSeries.Items.Add(new HistogramItem(bucketStart, bucketEnd, area, count));
             }
 
@@ -352,7 +352,7 @@ namespace QRiskTreeEditor.Controls
                     if (i == _bucketCount - 1)
                         count += data.Count(v => v == max);
 
-                    double area = count * (double)data.Length;
+                    double area = count * _bucketSize;
                     histogramSeries.Items.Add(new HistogramItem(bucketStart, bucketEnd, area, count));
                 }
 

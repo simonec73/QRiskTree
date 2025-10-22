@@ -593,7 +593,7 @@ namespace QRiskTree.Engine.ExtendedModel
                 var enabledMitigations = _mitigations?.Where(x => x.IsEnabled).Select(x => x.Id).ToArray();
 
                 // Calculates the best combination of mitigations based on the optimization parameter.
-                var combinations = GetAllCombinations(mitigationIds).ToArray();
+                var combinations = RemoveCombinationsWithoutAuxiliary(GetAllCombinations(mitigationIds)).ToArray();
                 IEnumerable<Guid>? bestCombination = GetBestCombination(mitigationIds, combinations,
                     optimizationParameter, optimizeForFollowingYears, iterations, out var costFirstYear, out var costFollowingYears);
                 if (bestCombination != null && costFirstYear != null && costFollowingYears != null)
@@ -609,6 +609,21 @@ namespace QRiskTree.Engine.ExtendedModel
             }
 
             return result;
+        }
+
+        private IEnumerable<IEnumerable<Guid>> RemoveCombinationsWithoutAuxiliary(IEnumerable<IEnumerable<Guid>> inputCombinations)
+        {
+            var auxiliaryMitigationIds = _risks?
+                .SelectMany(risk => risk.Children?.OfType<AppliedMitigation>() ?? Enumerable.Empty<AppliedMitigation>())
+                .Where(mitigation => mitigation.IsAuxiliary)
+                .Select(x => x.MitigationCostId)
+                .Distinct()
+                .ToArray();
+
+            if (auxiliaryMitigationIds == null || auxiliaryMitigationIds.Length == 0)
+                return inputCombinations;
+            
+            return inputCombinations.Where(combination => auxiliaryMitigationIds.All(auxId => combination.Contains(auxId)));
         }
         #endregion
 
