@@ -2,7 +2,6 @@
 using QRiskTree.Engine.ExtendedModel;
 using QRiskTree.Engine.Facts;
 using QRiskTree.Engine.Model;
-using QRiskTreeEditor.Importers;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Data;
@@ -14,6 +13,7 @@ namespace QRiskTreeEditor.ViewModels
     {
         public NodeViewModel(NodeWithFacts node, NodeViewModel? parent, RiskModelViewModel model) : base(node, parent, model)
         {
+            _model.PropertyChanged += OnModelPropertyChanged;
             _node.Changed += OnNodeChanged;
 
             _components = new ObservableCollection<NodeViewModel>();
@@ -100,6 +100,22 @@ namespace QRiskTreeEditor.ViewModels
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        private void OnModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (string.CompareOrdinal(e.PropertyName, nameof(RiskModelProperties.CurrencySymbol)) == 0)
+            {
+                OnPropertyChanged(nameof(FormattedMin));
+                OnPropertyChanged(nameof(FormattedMode));
+                OnPropertyChanged(nameof(FormattedMax));
+            }
+            else if (string.CompareOrdinal(e.PropertyName, nameof(RiskModelProperties.MonetaryScale)) == 0)
+            {
+                OnPropertyChanged(nameof(FormattedMin));
+                OnPropertyChanged(nameof(FormattedMode));
+                OnPropertyChanged(nameof(FormattedMax));
+            }
+        }
+
         protected override void RaiseUpdateEvent(string propertyName)
         {
             OnPropertyChanged(propertyName);
@@ -134,6 +150,8 @@ namespace QRiskTreeEditor.ViewModels
                 }
 
                 _parent.RemoveChild(this);
+                _model.PropertyChanged -= OnModelPropertyChanged;
+                _node.Changed -= OnNodeChanged;
             }
         }
 
@@ -459,12 +477,13 @@ namespace QRiskTreeEditor.ViewModels
         {
             get
             {
-                return _node.GetMin();
+                return _node.GetMin(_model.Properties.CurrencySymbol, _model.Properties.MonetaryScale);
             }
 
             set
             {
-                if (FormattedMin.TryChangeValue(value, out var calculated))
+                if (FormattedMin.TryChangeValue(value, _model.Properties.CurrencySymbol, 
+                    _model.Properties.MonetaryScale, out var calculated))
                 {
                     try
                     {
@@ -507,12 +526,13 @@ namespace QRiskTreeEditor.ViewModels
         {
             get
             {
-                return _node.GetMode();
+                return _node.GetMode(_model.Properties.CurrencySymbol, _model.Properties.MonetaryScale);
             }
 
             set
             {
-                if (FormattedMode.TryChangeValue(value, out var calculated))
+                if (FormattedMode.TryChangeValue(value, _model.Properties.CurrencySymbol, 
+                    _model.Properties.MonetaryScale, out var calculated))
                 {
                     try
                     {
@@ -555,12 +575,13 @@ namespace QRiskTreeEditor.ViewModels
         {
             get
             {
-                return _node.GetMax();
+                return _node.GetMax(_model.Properties.CurrencySymbol, _model.Properties.MonetaryScale);
             }
 
             set
             {
-                if (FormattedMax.TryChangeValue(value, out var calculated))
+                if (FormattedMax.TryChangeValue(value, _model.Properties.CurrencySymbol, 
+                    _model.Properties.MonetaryScale, out var calculated))
                 {
                     try
                     {

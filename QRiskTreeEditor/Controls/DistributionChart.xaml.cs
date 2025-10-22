@@ -1,10 +1,10 @@
 ﻿using OxyPlot;
 using OxyPlot.Annotations;
 using OxyPlot.Axes;
+using OxyPlot.Legends;
 using OxyPlot.Series;
 using QRiskTree.Engine;
 using QRiskTreeEditor.ViewModels;
-using System.Diagnostics.Eventing.Reader;
 using System.Windows.Controls;
 
 namespace QRiskTreeEditor.Controls
@@ -12,7 +12,8 @@ namespace QRiskTreeEditor.Controls
     public partial class DistributionChart : UserControl
     {
         private RiskModelViewModel? _model;
-        private const int _bucketCount = 250;
+        private const int DefaultBucketCount = 500;
+        private int _bucketCount = DefaultBucketCount;
         private double _bucketSize = 0;
 
         public DistributionChart()
@@ -51,6 +52,7 @@ namespace QRiskTreeEditor.Controls
             }
         }
 
+        #region Events management.
         private void BaselineSimulationCompleted(double[] samples)
         {
             Plot(samples);
@@ -81,7 +83,9 @@ namespace QRiskTreeEditor.Controls
                 ComparisonPlot(samples);
             }
         }
+        #endregion
 
+        #region Plotting Methods.
         private void Plot(double[] data)
         {
             if (data == null || data.Length == 0)
@@ -89,15 +93,14 @@ namespace QRiskTreeEditor.Controls
 
             double min = data.Min();
             double max = data.Max();
+            _bucketCount = Math.Min(DefaultBucketCount, data.Length / 100);
             double bucketSize = (max - min) / _bucketCount;
 
             // Histogram
             var histogramSeries = new HistogramSeries
             {
                 Title = "Histogram",
-                FillColor = OxyColors.SkyBlue,
-                StrokeColor = OxyColors.Black,
-                StrokeThickness = 1
+                FillColor = OxyColors.SkyBlue
             };
 
             // Percentile line (unchanged)
@@ -127,13 +130,17 @@ namespace QRiskTreeEditor.Controls
             // Plot model
             var model = new PlotModel();
 
+            var currencySymbol = _model?.Properties.CurrencySymbol ?? 
+                System.Globalization.CultureInfo.CurrentCulture.NumberFormat.CurrencySymbol;
+            var monetaryScale = _model?.Properties.MonetaryScale ?? string.Empty;
+
             // X Axis
             model.Axes.Add(new LinearAxis
             {
                 Position = AxisPosition.Bottom,
                 Minimum = min,
                 Maximum = max,
-                Title = "Value",
+                Title = $"Value ({monetaryScale}{currencySymbol})",
                 StringFormat = "N0",
                 MajorStep = GetNiceStep(min, max)
             });
@@ -195,7 +202,7 @@ namespace QRiskTreeEditor.Controls
                     X = range.Min,
                     Color = OxyColors.Red,
                     LineStyle = LineStyle.Dash,
-                    Text = $"Value at {minPercentile}th Percentile: {range.Min:N0}",
+                    Text = $"Value at {minPercentile}th Percentile: {range.GetMin(currencySymbol, monetaryScale)}",
                     TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Right,
                     TextVerticalAlignment = OxyPlot.VerticalAlignment.Top
                 };
@@ -206,7 +213,7 @@ namespace QRiskTreeEditor.Controls
                     X = range.Max,
                     Color = OxyColors.Red,
                     LineStyle = LineStyle.Dash,
-                    Text = $"Value at {maxPercentile}th Percentile: {range.Max:N0}",
+                    Text = $"Value at {maxPercentile}th Percentile: {range.GetMax(currencySymbol, monetaryScale)}",
                     TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Right,
                     TextVerticalAlignment = OxyPlot.VerticalAlignment.Top
                 };
@@ -225,15 +232,14 @@ namespace QRiskTreeEditor.Controls
 
             double min = data.Min();
             double max = data.Max();
+            _bucketCount = Math.Min(DefaultBucketCount, data.Length / 100);
             _bucketSize = (max - min) / _bucketCount;
 
             // Baseline Histogram
             var histogramSeries = new HistogramSeries
             {
                 Title = "Baseline",
-                FillColor = OxyColors.SkyBlue,
-                StrokeColor = OxyColors.Black,
-                StrokeThickness = 1
+                FillColor = OxyColors.SkyBlue
             };
 
             for (int i = 0; i < _bucketCount; i++)
@@ -251,13 +257,17 @@ namespace QRiskTreeEditor.Controls
             // Plot model
             var model = new PlotModel();
 
+            var currencySymbol = _model?.Properties.CurrencySymbol ??
+                System.Globalization.CultureInfo.CurrentCulture.NumberFormat.CurrencySymbol;
+            var monetaryScale = _model?.Properties.MonetaryScale ?? string.Empty;
+
             // X Axis
             model.Axes.Add(new LinearAxis
             {
                 Position = AxisPosition.Bottom,
                 Minimum = min,
                 Maximum = max,
-                Title = "Value",
+                Title = $"Value ({monetaryScale}{currencySymbol})",
                 StringFormat = "N0",
                 MajorStep = GetNiceStep(min, max)
             });
@@ -271,6 +281,13 @@ namespace QRiskTreeEditor.Controls
             });
 
             model.Series.Add(histogramSeries);
+
+            model.Legends.Add(new Legend()
+            {
+                LegendPosition = LegendPosition.BottomCenter,
+                LegendOrientation = LegendOrientation.Horizontal,
+                LegendPlacement = LegendPlacement.Outside
+            });
 
             PlotView.Model = model;
         }
@@ -324,8 +341,6 @@ namespace QRiskTreeEditor.Controls
                 {
                     Title = "Optimized",
                     FillColor = OxyColors.Green,
-                    StrokeColor = OxyColors.Black,
-                    StrokeThickness = 1,
                     YAxisKey = "OptimizedAxis"
                 };
 
@@ -357,5 +372,6 @@ namespace QRiskTreeEditor.Controls
             double bestStep = niceSteps.Select(f => f * magnitude).OrderBy(f => Math.Abs(f - roughStep)).First();
             return bestStep;
         }
+        #endregion
     }
 }

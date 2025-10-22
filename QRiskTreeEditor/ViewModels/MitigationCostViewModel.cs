@@ -91,12 +91,14 @@ namespace QRiskTreeEditor.ViewModels
                 if (OperationCosts == null)
                     return OperationMin.ToString();
                 else
-                    return OperationMin.ToString(OperationCosts?.GetFormat());
+                    return OperationMin.ToString(OperationCosts?.GetFormat(_model.Properties.CurrencySymbol, 
+                        _model.Properties.MonetaryScale));
             }
 
             set
             {
-                if (FormattedOperationMin.TryChangeValue(value, out var calculated))
+                if (FormattedOperationMin.TryChangeValue(value, _model.Properties.CurrencySymbol, 
+                    _model.Properties.MonetaryScale, out var calculated))
                 {
                     if (_node is MitigationCost mitigation)
                     {
@@ -151,12 +153,14 @@ namespace QRiskTreeEditor.ViewModels
                 if (OperationCosts == null)
                     return OperationMode.ToString();
                 else
-                    return OperationMode.ToString(OperationCosts?.GetFormat());
+                    return OperationMode.ToString(OperationCosts?.GetFormat(_model.Properties.CurrencySymbol, 
+                        _model.Properties.MonetaryScale));
             }
 
             set
             {
-                if (FormattedOperationMode.TryChangeValue(value, out var calculated))
+                if (FormattedOperationMode.TryChangeValue(value, _model.Properties.CurrencySymbol, 
+                    _model.Properties.MonetaryScale, out var calculated))
                 {
                     if (_node is MitigationCost mitigation)
                     {
@@ -211,12 +215,14 @@ namespace QRiskTreeEditor.ViewModels
                 if (OperationCosts == null)
                     return OperationMax.ToString();
                 else
-                    return OperationMax.ToString(OperationCosts?.GetFormat());
+                    return OperationMax.ToString(OperationCosts?.GetFormat(_model.Properties.CurrencySymbol, 
+                        _model.Properties.MonetaryScale));
             }
 
             set
             {
-                if (FormattedOperationMax.TryChangeValue(value, out var calculated))
+                if (FormattedOperationMax.TryChangeValue(value, _model.Properties.CurrencySymbol, _model.Properties.MonetaryScale, 
+                    out var calculated))
                 {
                     if (_node is MitigationCost mitigation)
                     {

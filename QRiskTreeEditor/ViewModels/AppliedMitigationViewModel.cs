@@ -193,12 +193,13 @@ namespace QRiskTreeEditor.ViewModels
         {
             get
             {
-                return _node.GetMin();
+                return _node.GetMin(_model.Properties.CurrencySymbol, _model.Properties.MonetaryScale);
             }
 
             set
             {
-                if (FormattedMin.TryChangeValue(value, out var calculated))
+                if (FormattedMin.TryChangeValue(value, 
+                    _model.Properties.CurrencySymbol, _model.Properties.MonetaryScale, out var calculated))
                 {
                     try
                     {
@@ -241,12 +242,13 @@ namespace QRiskTreeEditor.ViewModels
         {
             get
             {
-                return _node.GetMode();
+                return _node.GetMode(_model.Properties.CurrencySymbol, _model.Properties.MonetaryScale);
             }
 
             set
             {
-                if (FormattedMode.TryChangeValue(value, out var calculated))
+                if (FormattedMode.TryChangeValue(value, 
+                    _model.Properties.CurrencySymbol, _model.Properties.MonetaryScale, out var calculated))
                 {
                     try
                     {
@@ -289,12 +291,13 @@ namespace QRiskTreeEditor.ViewModels
         {
             get
             {
-                return _node.GetMax();
+                return _node.GetMax(_model.Properties.CurrencySymbol, _model.Properties.MonetaryScale);
             }
 
             set
             {
-                if (FormattedMax.TryChangeValue(value, out var calculated))
+                if (FormattedMax.TryChangeValue(value, 
+                    _model.Properties.CurrencySymbol, _model.Properties.MonetaryScale, out var calculated))
                 {
                     try
                     {

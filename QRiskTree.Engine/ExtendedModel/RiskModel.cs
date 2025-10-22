@@ -173,6 +173,19 @@ namespace QRiskTree.Engine.ExtendedModel
                 Update();
             }
         }
+
+        /// <summary>
+        /// Currency symbol used for displaying monetary values.
+        /// </summary>
+        [JsonProperty("currencySymbol", Order = 7)]
+        public string CurrencySymbol { get; set; } = System.Globalization.CultureInfo.CurrentCulture.NumberFormat.CurrencySymbol;
+
+        /// <summary>
+        /// Monetary scale used for displaying monetary values.
+        /// </summary>
+        /// <remarks>It typically is empty, or assumes values like 'K' or 'M'.</remarks>
+        [JsonProperty("monetaryScale", Order = 8)]
+        public string? MonetaryScale { get; set; }
         #endregion
 
         #region Risks management.

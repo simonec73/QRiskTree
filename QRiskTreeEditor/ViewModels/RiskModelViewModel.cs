@@ -24,6 +24,10 @@ namespace QRiskTreeEditor.ViewModels
         {
             _model = model;
             _properties = new RiskModelProperties(model);
+            _properties.PropertyChanged += (s, e) => {
+                if (!string.IsNullOrEmpty(e?.PropertyName))
+                    OnPropertyChanged(e.PropertyName);
+            };
 
             #region Load the whole list of the Facts.
             var facts = model.AvailableFacts?.Select(x => new FactViewModel(x, this)).ToArray();
