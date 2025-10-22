@@ -82,7 +82,7 @@ It is now possible to specify the Control Type for Mitigations. There is a new p
 | ------------ | ------------------------------------------------------------ |
 | Unknown      | This is the default value. It means that the Control Type has not been assigned. |
 | Preventive   | Preventive controls reduce the probability and/or the impact of the risk.<br />They are also known as Preventative. |
-| Detective    | Detective controls are used to detect attack while they are in progress.<br />As such, Detective controls have no direct effect on the potential losses, but they act as triggers for Corrective controls. See [Auxiliary Mitigations](#auxiliary-mitigations) for understanding how you should manage them. |
+| Detective    | Detective controls are used to detect attack while they are in progress.<br />As such, Detective controls have no direct effect on the potential losses, but they act as triggers for Corrective controls. See [[0.4] Auxiliary Mitigations](#[0.4]-auxiliary-mitigations) for understanding how you should manage them. |
 | Corrective   | Corrective controls have the intent of blocking attacks while they are in progress, to limit the potential losses. They are usually triggered by Detective controls, and include automated actions and manual processes, like those that are started by an email sent by some Alert.<br />They are also known as Responsive. |
 | Recovery     | Recovery controls are used to recover the system to its original state after a compromise. |
 | Other        | This category is used to represent any other category of controls not included in the list. For example, a purely Deterrent control would be assigned to this category. |
