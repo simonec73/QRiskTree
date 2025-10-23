@@ -44,6 +44,7 @@ namespace QRiskTreeEditor.ViewModels
         }
 
         [Category("Range Definition")]
+        [DisplayName("Min Percentile")]
         public int MinPercentile
         {
             get => _model.MinPercentile;
@@ -58,6 +59,7 @@ namespace QRiskTreeEditor.ViewModels
         }
 
         [Category("Range Definition")]
+        [DisplayName("Max Percentile")]
         public int MaxPercentile
         {
             get => _model.MaxPercentile;
@@ -67,6 +69,36 @@ namespace QRiskTreeEditor.ViewModels
                 {
                     _model.MaxPercentile = value;
                     OnPropertyChanged(nameof(MaxPercentile));
+                }
+            }
+        }
+
+        [Category("Range Definition")]
+        [DisplayName("Currency Symbol")]
+        public string CurrencySymbol
+        {
+            get => _model.CurrencySymbol;
+            set
+            {
+                if (_model.CurrencySymbol != value)
+                {
+                    _model.CurrencySymbol = value;
+                    OnPropertyChanged(nameof(CurrencySymbol));
+                }
+            }
+        }
+
+        [Category("Range Definition")]
+        [DisplayName("Monetary Scale")]
+        public string? MonetaryScale
+        {
+            get => _model.MonetaryScale;
+            set
+            {
+                if (_model.MonetaryScale != value)
+                {
+                    _model.MonetaryScale = value;
+                    OnPropertyChanged(nameof(MonetaryScale));
                 }
             }
         }

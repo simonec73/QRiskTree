@@ -204,37 +204,43 @@ namespace QRiskTree.Engine.ExtendedModel
                         // Apply each mitigation cost to the samples
                         foreach (var appliedMitigation in appliedMitigations)
                         {
-                            double[]? amSamples = null;
-                            Confidence amConfidence = Confidence.Low;
-                            bool ok = false;
+                            // Auxiliary mitigations do not affect the residual risk,
+                            // only the implementation and operation costs.
+                            if (!appliedMitigation.IsAuxiliary)
+                            {
+                                double[]? amSamples = null;
+                                Confidence amConfidence = Confidence.Low;
+                                bool ok = false;
 
-                            if (appliedMitigation.HasBaseline && ((appliedMitigation.Baseline?.Length ?? 0) == iterations))
-                            {
-                                amSamples = appliedMitigation.Baseline;
-                                amConfidence = appliedMitigation.BaselineConfidence;
-                                ok = true;
-                            } else if (Simulate(appliedMitigation, iterations, out amSamples) &&
-                                (amSamples?.Length ?? 0) == iterations)
-                            {
-                                ok = true;
-                                amConfidence = appliedMitigation.Confidence;
-#pragma warning disable CS8604 // Possible null reference argument.
-                                appliedMitigation.SetBaseline(amSamples, amConfidence);
-#pragma warning restore CS8604 // Possible null reference argument.
-                            }
-
-                            if (ok)
-                            {
-                                // Subtract the effect of the mitigation from each value.
-                                for (int i = 0; i < iterations; i++)
+                                if (appliedMitigation.HasBaseline && ((appliedMitigation.Baseline?.Length ?? 0) == iterations))
                                 {
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-                                    samples[i] *= (1 - amSamples[i]);
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
+                                    amSamples = appliedMitigation.Baseline;
+                                    amConfidence = appliedMitigation.BaselineConfidence;
+                                    ok = true;
+                                }
+                                else if (Simulate(appliedMitigation, iterations, out amSamples) &&
+                                    (amSamples?.Length ?? 0) == iterations)
+                                {
+                                    ok = true;
+                                    amConfidence = appliedMitigation.Confidence;
+#pragma warning disable CS8604 // Possible null reference argument.
+                                    appliedMitigation.SetBaseline(amSamples, amConfidence);
+#pragma warning restore CS8604 // Possible null reference argument.
                                 }
 
-                                if (appliedMitigation.Confidence < confidence)
-                                    confidence = amConfidence;
+                                if (ok)
+                                {
+                                    // Subtract the effect of the mitigation from each value.
+                                    for (int i = 0; i < iterations; i++)
+                                    {
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+                                        samples[i] *= (1 - amSamples[i]);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+                                    }
+
+                                    if (appliedMitigation.Confidence < confidence)
+                                        confidence = amConfidence;
+                                }
                             }
                         }
                     }

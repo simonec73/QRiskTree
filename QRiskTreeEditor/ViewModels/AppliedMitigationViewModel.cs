@@ -55,7 +55,7 @@ namespace QRiskTreeEditor.ViewModels
         private void OnMitigationCostPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (sender is MitigationCostViewModel mitigationCostVM &&
-                (e.PropertyName == "Name" || e.PropertyName == "Description"))
+                (e.PropertyName == "Name" || e.PropertyName == "Description" || e.PropertyName == "ControlType"))
             {
                 if (e.PropertyName == "Name")
                 {
@@ -111,6 +111,7 @@ namespace QRiskTreeEditor.ViewModels
             OnPropertyChanged(nameof(FormattedMax));
             OnPropertyChanged(nameof(Confidence));
             OnPropertyChanged(nameof(IsSetByUser));
+            OnPropertyChanged(nameof(IsAuxiliary));
         }
 
         #region Properties.
@@ -128,6 +129,39 @@ namespace QRiskTreeEditor.ViewModels
 
         [Category("General")]
         public string? Description => _node.Description;
+
+        [Category("Mitigation")]
+        [DisplayName("Control Type")]
+        public ControlType ControlType => MitigationCost?.ControlType ?? ControlType.Unknown;
+
+        [Category("Mitigation")]
+        [DisplayName("Is Auxiliary")]
+        public bool IsAuxiliary
+        {
+            get
+            {
+                return (_node as AppliedMitigation)?.IsAuxiliary ?? false;
+            }
+
+            set
+            {
+                if (_node is AppliedMitigation appliedMitigation)
+                {
+                    if (appliedMitigation.IsAuxiliary != value)
+                    {
+                        try
+                        {
+                            appliedMitigation.IsAuxiliary = value;
+                            OnPropertyChanged(nameof(IsAuxiliary));
+                        }
+                        catch
+                        {
+                            // Ignore exceptions for invalid values.
+                        }
+                    }
+                }
+            }
+        }
 
         [Browsable(false)]
         public RangeType RangeType => _node.RangeType;
@@ -159,12 +193,13 @@ namespace QRiskTreeEditor.ViewModels
         {
             get
             {
-                return _node.GetMin();
+                return _node.GetMin(_model.Properties.CurrencySymbol, _model.Properties.MonetaryScale);
             }
 
             set
             {
-                if (FormattedMin.TryChangeValue(value, out var calculated))
+                if (FormattedMin.TryChangeValue(value, 
+                    _model.Properties.CurrencySymbol, _model.Properties.MonetaryScale, out var calculated))
                 {
                     try
                     {
@@ -207,12 +242,13 @@ namespace QRiskTreeEditor.ViewModels
         {
             get
             {
-                return _node.GetMode();
+                return _node.GetMode(_model.Properties.CurrencySymbol, _model.Properties.MonetaryScale);
             }
 
             set
             {
-                if (FormattedMode.TryChangeValue(value, out var calculated))
+                if (FormattedMode.TryChangeValue(value, 
+                    _model.Properties.CurrencySymbol, _model.Properties.MonetaryScale, out var calculated))
                 {
                     try
                     {
@@ -255,12 +291,13 @@ namespace QRiskTreeEditor.ViewModels
         {
             get
             {
-                return _node.GetMax();
+                return _node.GetMax(_model.Properties.CurrencySymbol, _model.Properties.MonetaryScale);
             }
 
             set
             {
-                if (FormattedMax.TryChangeValue(value, out var calculated))
+                if (FormattedMax.TryChangeValue(value, 
+                    _model.Properties.CurrencySymbol, _model.Properties.MonetaryScale, out var calculated))
                 {
                     try
                     {

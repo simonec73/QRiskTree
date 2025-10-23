@@ -7,12 +7,18 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:local="clr-namespace:QRiskTreeEditor"
         xmlns:engine="clr-namespace:QRiskTree.Engine;assembly=QRiskTree.Engine"
+        xmlns:extendedModel="clr-namespace:QRiskTree.Engine.ExtendedModel;assembly=QRiskTree.Engine" xmlns:controls="clr-namespace:QRiskTreeEditor.Controls"
         mc:Ignorable="d"
         Title="QRiskTree Editor" Height="576" Width="1024" WindowState="Maximized">
     <Window.Resources>
         <ObjectDataProvider x:Key="ConfidenceValues" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
             <ObjectDataProvider.MethodParameters>
                 <x:Type TypeName="engine:Confidence"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+        <ObjectDataProvider x:Key="ControlTypeValues" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="extendedModel:ControlType"/>
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
         <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
@@ -340,6 +346,8 @@
                                                       Loaded="DataGrid_Loaded">
                                                 <DataGrid.Columns>
                                                     <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="Auto" MinWidth="400"/>
+                                                    <DataGridTextColumn Header="Control Type" Binding="{Binding ControlType}" Width="80" IsReadOnly="True"/>
+                                                    <DataGridCheckBoxColumn Header="Auxiliary" Binding="{Binding IsAuxiliary}" Width="80"/>
                                                     <DataGridTextColumn Header="Min" Binding="{Binding FormattedMin}" Width="120"
                                                     ElementStyle="{StaticResource RightAlignedTextStyle}"/>
                                                     <DataGridTextColumn Header="Mode" Binding="{Binding FormattedMode}" Width="120"
@@ -401,6 +409,8 @@
                                     </DataGridTemplateColumn>
                                     <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding IsEnabled}" Width="60" IsThreeState="False"/>
                                     <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="Auto" MinWidth="400"/>
+                                    <DataGridComboBoxColumn Header="Control Type" SelectedItemBinding="{Binding ControlType}" 
+                                                            ItemsSource="{Binding Source={StaticResource ControlTypeValues}}" Width="90"/>
                                     <DataGridTextColumn Header="Min" Binding="{Binding FormattedMin}" Width="120"
                                                     ElementStyle="{StaticResource RightAlignedTextStyle}"/>
                                     <DataGridTextColumn Header="Mode" Binding="{Binding FormattedMode}" Width="120"
@@ -517,6 +527,38 @@
                         </Grid>
                     </ScrollViewer>
                 </DockPanel>
+            </TabItem>
+            <TabItem x:Name="_tabBaseline" Header="Baseline">
+                <Grid Background="White">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <controls:DistributionChart x:Name="_chartBaseline"></controls:DistributionChart>
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="_tabOptimalFirst" Header="Optimal First Year">
+                <Grid Background="White">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <controls:DistributionChart x:Name="_chartFirst"></controls:DistributionChart>
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="_tabOptimalFollowing" Header="Optimal Following Years">
+                <Grid Background="White">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <controls:DistributionChart x:Name="_chartFollowing"></controls:DistributionChart>
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="_tabComparison" Header="Comparison">
+                <Grid Background="White">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <controls:DistributionChart x:Name="_chartComparison"></controls:DistributionChart>
+                </Grid>
             </TabItem>
         </TabControl>
         <GridSplitter x:Name="_splitter"  Grid.Row="2" Height="3" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="Gray"/>

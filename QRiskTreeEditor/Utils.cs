@@ -11,14 +11,16 @@ namespace QRiskTreeEditor
             return Regex.Replace(input, "(?<!^)([A-Z])", " $1");
         }
 
-        internal static string GetFormat(this QRiskTree.Engine.Range range)
+        internal static string GetFormat(this QRiskTree.Engine.Range range, 
+            string? currencySymbol, string? monetaryScale)
         {
             string result;
 
             switch (range.RangeType)
             {
                 case RangeType.Money:
-                    result = "C0";
+                    currencySymbol ??= CultureInfo.CurrentCulture.NumberFormat.CurrencySymbol;
+                    result = $"{currencySymbol}#,0{monetaryScale}";
                     break;
                 case RangeType.Frequency:
                     result = "F2";
@@ -34,22 +36,23 @@ namespace QRiskTreeEditor
             return result;
         }
 
-        internal static string GetMin(this QRiskTree.Engine.Range range)
+        internal static string GetMin(this QRiskTree.Engine.Range range, string? currencySymbol, string? monetaryScale)
         {
-            return range.Min.ToString(range.GetFormat());
+            return range.Min.ToString(range.GetFormat(currencySymbol, monetaryScale));
         }
 
-        internal static string GetMode(this QRiskTree.Engine.Range range)
+        internal static string GetMode(this QRiskTree.Engine.Range range, string? currencySymbol, string? monetaryScale)
         {
-            return range.Mode.ToString(range.GetFormat());
+            return range.Mode.ToString(range.GetFormat(currencySymbol, monetaryScale));
         }
 
-        internal static string GetMax(this QRiskTree.Engine.Range range)
+        internal static string GetMax(this QRiskTree.Engine.Range range, string? currencySymbol, string? monetaryScale)
         {
-            return range.Max.ToString(range.GetFormat());
+            return range.Max.ToString(range.GetFormat(currencySymbol, monetaryScale));
         }
 
-        internal static bool TryChangeValue(this string oldValue, string newValue, out double calculated)
+        internal static bool TryChangeValue(this string oldValue, string newValue, 
+            string currencySymbol, string? monetaryScale, out double calculated)
         {
             bool result = false;
             calculated = 0.0;
@@ -65,9 +68,13 @@ namespace QRiskTreeEditor
                         result = true;
                     }
                 }
-                else if (newValue.Contains(CultureInfo.CurrentCulture.NumberFormat.CurrencySymbol))
+                else if (newValue.Contains(currencySymbol))
                 {
-                    var number = newValue.Replace(CultureInfo.CurrentCulture.NumberFormat.CurrencySymbol, "").Trim();
+                    var number = newValue.Replace(currencySymbol, "").Trim();
+                    if (!string.IsNullOrEmpty(monetaryScale))
+                    {
+                        number = number.Replace(monetaryScale, "").Trim();
+                    }
                     if (double.TryParse(number, out calculated))
                     {
                         result = true;

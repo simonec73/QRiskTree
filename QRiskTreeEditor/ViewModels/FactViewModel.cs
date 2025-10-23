@@ -166,7 +166,7 @@ namespace QRiskTreeEditor.ViewModels
                 }
                 else if (_fact is FactRange factRange && factRange.Range is QRiskTree.Engine.Range range)
                 {
-                    result = $"Min: {range.GetMin()} - Mode: {range.GetMode()} - Max: {range.GetMax()} - Confidence: {range.Confidence}.";
+                    result = $"Min: {range.GetMin(_model.Properties.CurrencySymbol, _model.Properties.MonetaryScale)} - Mode: {range.GetMode(_model.Properties.CurrencySymbol, _model.Properties.MonetaryScale)} - Max: {range.GetMax(_model.Properties.CurrencySymbol, _model.Properties.MonetaryScale)} - Confidence: {range.Confidence}.";
                 }
 
                 return result;
@@ -188,7 +188,8 @@ namespace QRiskTreeEditor.ViewModels
             set
             {
                 if (_fact is FactHardNumber hardNumber && string.CompareOrdinal(Value, value) != 0 &&
-                    Value.TryChangeValue(value, out var calculated))
+                    Value.TryChangeValue(value, _model.Properties.CurrencySymbol, _model.Properties.MonetaryScale, 
+                        out var calculated))
                 {
                     hardNumber.Value = calculated;
                     OnPropertyChanged(nameof(Value));
@@ -201,12 +202,13 @@ namespace QRiskTreeEditor.ViewModels
         [PT.VisibleBy("IsRange")]
         public string Min
         {
-            get => (_fact as FactRange)?.Range?.GetMin() ?? string.Empty;
+            get => (_fact as FactRange)?.Range?.GetMin(_model.Properties.CurrencySymbol, _model.Properties.MonetaryScale) ?? string.Empty;
 
             set
             {
                 if ((_fact as FactRange)?.Range is QRiskTree.Engine.Range range && 
-                    Min.TryChangeValue(value, out var calculated))
+                    Min.TryChangeValue(value, _model.Properties.CurrencySymbol, _model.Properties.MonetaryScale, 
+                        out var calculated))
                 {
                     try
                     {
@@ -227,12 +229,13 @@ namespace QRiskTreeEditor.ViewModels
         [PT.VisibleBy("IsRange")]
         public string Mode
         {
-            get => (_fact as FactRange)?.Range?.GetMode() ?? string.Empty;
+            get => (_fact as FactRange)?.Range?.GetMode(_model.Properties.CurrencySymbol, _model.Properties.MonetaryScale) ?? string.Empty;
 
             set
             {
                 if ((_fact as FactRange)?.Range is QRiskTree.Engine.Range range &&
-                    Mode.TryChangeValue(value, out var calculated))
+                    Mode.TryChangeValue(value, _model.Properties.CurrencySymbol, _model.Properties.MonetaryScale, 
+                        out var calculated))
                 {
                     try
                     {
@@ -253,12 +256,13 @@ namespace QRiskTreeEditor.ViewModels
         [PT.VisibleBy("IsRange")]
         public string Max
         {
-            get => (_fact as FactRange)?.Range?.GetMax() ?? string.Empty;
+            get => (_fact as FactRange)?.Range?.GetMax(_model.Properties.CurrencySymbol, _model.Properties.MonetaryScale) ?? string.Empty;
 
             set
             {
                 if ((_fact as FactRange)?.Range is QRiskTree.Engine.Range range &&
-                    Max.TryChangeValue(value, out var calculated))
+                    Max.TryChangeValue(value, _model.Properties.CurrencySymbol, _model.Properties.MonetaryScale, 
+                    out var calculated))
                 {
                     try
                     {

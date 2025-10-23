@@ -47,6 +47,26 @@ namespace QRiskTree.Engine.ExtendedModel
         /// Indicates whether the mitigation is enabled.
         /// </summary>
         public bool IsEnabled => MitigationCost?.IsEnabled ?? false;
+
+        [JsonProperty("auxiliary")]
+        private bool _auxiliary { get; set; } = false;
+
+        /// <summary>
+        /// Flags the Applied Mitigation as auxiliary.
+        /// </summary>
+        /// <remarks>Auxiliary mitigations have no effect on the mitigation, but they increase the cost.</remarks>
+        public bool IsAuxiliary
+        {
+            get => _auxiliary;
+            set
+            {
+                if (_auxiliary != value)
+                {
+                    _auxiliary = value;
+                    Update();
+                }
+            }
+        }
         #endregion
 
         #region Baseline management.
@@ -115,6 +135,11 @@ namespace QRiskTree.Engine.ExtendedModel
             confidence = Confidence;
 
             return false;
+        }
+
+        protected override bool? CanBeSimulated()
+        {
+            return _auxiliary ? true : null;
         }
         #endregion
     }
