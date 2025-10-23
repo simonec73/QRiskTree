@@ -148,7 +148,7 @@ Other models might produce even better results. Consider for example the [Big Mo
 
 ![The Comparison chart for the Big Model](./Pictures/BigModelComparison.png)
 
-These Comparison chart is slightly different from the other charts. First, the left and right axis apply respectively to the baseline distribution and to the optimized distribution. It is important to separate them, otherwise the chart might not be readable: given that each distribution is obtained with the same number of samples, the optimized one tends to be much taller as it is more compressed. We also have a legend, which is missing from the other charts, to ensure you can quickly determine the meaning of each distribution.
+This Comparison chart is slightly different from the other charts. First, the left and right axis apply respectively to the baseline distribution and to the optimized distribution. It is important to separate them, otherwise the chart might not be readable: given that each distribution is obtained with the same number of samples, the optimized one tends to be much taller as it is more compressed. We also have a legend, which is missing from the other charts, to ensure you can quickly determine the meaning of each distribution.
 
 #### How to use the charts
 
