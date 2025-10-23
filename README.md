@@ -72,7 +72,7 @@ Note: this doesn't mean that you cannot execute multiple simulations on differen
 Please watch this video to get a quick introduction to QRiskTree Editor.
 [![Welcome to QRiskTree Editor!](https://img.youtube.com/vi/u9vN_SIq5KY/maxresdefault.jpg)](https://youtu.be/u9vN_SIq5KY)
 
-This guidance applies to version 0.2.0 and is still valid for version 0.3.0. With version 0.4.0, I've introduced some key changes, which augment but do not revolutionize the tool. You can find their detailed description below. The prefix ([0.4]) specifies when the feature has been introduced.
+This guidance applies to version 0.2.0 and is still valid for version 0.3.0. With version 0.4.0, I've introduced some key changes, which expand QRiskTree Editor's capabilities. You can find their detailed description below. The prefix ([0.4]) specifies when the feature has been introduced. I'm planning to eventually extend this list in the future.
 
 ### [0.4] Control Types
 
@@ -89,6 +89,8 @@ It is now possible to specify the Control Type for Mitigations. There is a new p
 
 Control Types are purely informative. Assigning a specific Control Type doesn't have any effect on the simulations.
 
+Finally, you can only set the Control Type in the Mitigations panel. You cannot set it on the Mitigations shown in any other panel.
+
 ### [0.4] Auxiliary Mitigations
 
 Some controls have no direct effect on the residual risk. For example, purely Detective controls will only alert you for attacks in progress, but will do nothing about that. They are enablers for other controls, namely the Corrective ones. As such, they represent just a cost, as the effectiveness is given by the controls they enable.
@@ -101,11 +103,28 @@ Auxiliary mitigations are always considered as implemented. Therefore, they alwa
 
 You are not required to provide an estimation for the effectiveness of Auxiliary mitigations, as it is ignored. This means that you will not receive an error during the validation that is performed before the optimization activities.
 
+#### Consequences of the Auxiliary Mitigations
+
+The chosen implementation of the Auxiliary Mitigations has a couple of attention points you should be aware of.
+
+First, the Auxiliary flag is applied to the Mitigations applied to Risks, not to the Mitigations themselves. This means that you might decide that for some Risk, a Mitigation is auxiliary to some other Mitigation, while for other Risks it is not. The effectiveness will be ignored only when the Auxiliary flag is set. Moreover, a Mitigation that has the Auxiliary flag set for some Risk will be always included in the optimized set, even if that flag is not set for that Mitigation everywhere.
+
+The second consequence is that a Mitigation that is flagged as Auxiliary for some Mitigation, will be always included even if it is not necessary. This might create a situation like the following example:
+
+- You have three Mitigations: a preventive control, P, a detective control, D, and a corrective control, C. 
+- D is auxiliary for C. 
+- The optimization identifies P and D as the optimal mitigations. 
+- Given that D is marked as auxiliary, it is always included, even when it's not necessary. 
+- You know that D is auxiliary for C, which is not included in the optimal list. Therefore, D is not necessary and the optimal mitigation is just P. 
+- The estimated loss will be lower than the range calculated by the optimization. If you want to estimate the total cost range with only P, you can disable D and C in the Mitigations panel, and then repeat the optimization. There is no need to repeat the calculation of the baseline.
+
+You might wonder why the Auxiliary flag is implemented as such, instead of specifying the Mitigations towards which your Mitigation is Auxiliary. This is because that approach would complicate the model and the user interface, without improving significantly what QRiskTree can do. It's an arbitrary decision, and you might want to propose a different implementation. Feel free to [contribute](#how-can-i-contribute) with your code, if you come up with a smart way to do so without impacting too much the solution.
+
 ### [0.4] Currency Symbol and Monetary Scale
 
 Version 0.4 introduces the possibility to specify a different currency than the one set for your OS. It also allows you to specify the Monetary Scale, which can be empty or represent the scale like K for thousands, M for millions, B for billions and so on. All currency numbers are represented based on these parameters.
 
-For example, with the configuration shown below, one hundred thousands will be represented as **€100,000K** on systems having comma as the thousands separator.
+For example, with the configuration shown below, two hundred thousands will be represented as **€200,000K** on systems having comma as the thousands separator.
 
 ![Currency Symbol and Monetary Scale](./Pictures/Properties.png)
 
@@ -123,13 +142,28 @@ The fourth and last chart, called **Comparison** provides a quick representation
 
 ![The Comparison chart.](./Pictures/Comparison.png)
 
-The chart shows quite effectively how much you can save by implementing the selected mitigations. If the saving here doesn't look like much, you must consider that this includes the implementation and operation costs for the mitigations. Therefore, it represents real net savings.
+The chart shows quite effectively how much you can save by implementing the selected mitigations. If the saving here doesn't look like much, you must consider that this includes the implementation and operation costs for the mitigations.
 
-Other models might produce even better results. Consider for example the [Big Model reference model](./Samples/Big%20model.json). This is what you can get by simulating it. Isn't that convincing?
+Other models might produce even better results. Consider for example the [Big Model reference model](./Samples/Big%20model.json). This is what you can get by optimizing it. Isn't that convincing?
 
 ![The Comparison chart for the Big Model](./Pictures/BigModelComparison.png)
 
-These Comparison chart is slightly different from the other charts. First, the left and right axis apply respectively to the baseline distribution and to the optimized distribution. It is important to separate them otherwise the chart might not be readable: given that each distribution is obtained with the same number of samples, the optimized one tends to be much taller as it is more compressed. We also have a legend, which is missing from the other charts, to ensure you can quickly determine the meaning of each distribution.
+These Comparison chart is slightly different from the other charts. First, the left and right axis apply respectively to the baseline distribution and to the optimized distribution. It is important to separate them, otherwise the chart might not be readable: given that each distribution is obtained with the same number of samples, the optimized one tends to be much taller as it is more compressed. We also have a legend, which is missing from the other charts, to ensure you can quickly determine the meaning of each distribution.
+
+#### How to use the charts
+
+The charts created by QRiskTree Editor are interactive. For example, you can use your mouse to move the chart, zoom or change some axis' scale. 
+
+- Use the right mouse button to move the chart or the axis.
+- Use the left mouse button on the chart to show the exact numbers related to the selected point.
+- Use the mouse wheel, to change the scale.
+- Use the mouse wheel button to zoom to an area of the chart.
+
+That said, whatever change you do, it is most important to ensure that the two histograms in the Comparison chart have approximately the same height, otherwise you might provide a wrong representation of the reality, like that the optimized situation is worse than the baseline, which is typically wrong.
+
+#### Using the charts in other tools
+
+QRiskTree Editor does not include the ability to export the charts as images. If you need to export one of the charts and reuse in some tool, like PowerPoint, you can use the Snipping tool that is available with Windows 11 by clicking ⊞+SHIFT+S and then selecting the area to be copied. As an alternative, you can search for "Snipping" in the Start menu or using ⊞+R and then typing "snippingtool", both without the quotes.
 
 ## What are the improvements to QRiskTree Editor?
 
