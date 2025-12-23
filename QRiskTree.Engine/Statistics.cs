@@ -1,12 +1,24 @@
 ﻿using MathNet.Numerics.Distributions;
 using MathNet.Numerics.Statistics;
+using System.ComponentModel.DataAnnotations;
 
 namespace QRiskTree.Engine
 {
+    /// <summary>
+    /// Utility class for statistical calculations.
+    /// </summary>
     public static class Statistics
     {
-        public static Range? ToRange(this double[]? samples, RangeType rangeType, 
-            int minPercentile, int maxPercentile, Confidence confidence = Confidence.Moderate)
+        /// <summary>
+        /// Converts an array of samples into a Range object based on specified percentiles.
+        /// </summary>
+        /// <param name="samples">Samples to be converted into a Range.</param>
+        /// <param name="rangeType">Type of range to be created.</param>
+        /// <param name="minPercentile">Minimum percentile to define the range.</param>
+        /// <param name="maxPercentile">Maximum percentile to define the range.</param>
+        /// <returns>A Range object representing the specified percentiles of the samples.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Percentiles must be between 0 and 100.</exception>
+        public static Range? ToRange(this double[]? samples, RangeType rangeType, int minPercentile, int maxPercentile)
         {
             if (minPercentile < 0 || minPercentile > 100)
                 throw new ArgumentOutOfRangeException(nameof(minPercentile));
@@ -22,6 +34,7 @@ namespace QRiskTree.Engine
                 var mode = samples.CalculateMode();
 #pragma warning restore CS8604 // Possible null reference argument.
                 var max = samples.Percentile(maxPercentile);
+                var confidence = samples.CalculateConfidence();
                 result = new Range(rangeType, min, mode, max, confidence);
             }
 
@@ -130,6 +143,25 @@ namespace QRiskTree.Engine
 
             int maxBin = Array.IndexOf(bins, bins.Max());
             return binCenters[maxBin];
+        }
+
+        internal static Confidence CalculateConfidence(this double[] data)
+        {
+            if (data == null || data.Length == 0)
+                throw new ArgumentException("Data array is null or empty.", nameof(data));
+
+            // Calculate kurtosis (peakedness) of the distribution
+            var kurtosis = data.Kurtosis();
+
+            // Map kurtosis to confidence levels
+            // Higher kurtosis = more peaked = higher confidence
+            // Negative kurtosis (platykurtic) = flatter = lower confidence
+            if (kurtosis < -0.5)
+                return Confidence.Low;
+            else if (kurtosis < 1.5)
+                return Confidence.Moderate;
+            else
+                return Confidence.High;
         }
     }
 }
