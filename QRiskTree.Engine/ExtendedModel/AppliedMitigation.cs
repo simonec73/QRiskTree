@@ -120,6 +120,11 @@ namespace QRiskTree.Engine.ExtendedModel
             return false; // No children allowed for Applied Mitigation nodes
         }
 
+        protected override bool? CanBeSimulated()
+        {
+            return true;
+        }
+
         protected override bool Simulate(int minPercentile, int maxPercentile, uint iterations, 
             ISimulationContainer? container, out double[]? samples)
         {
@@ -127,11 +132,6 @@ namespace QRiskTree.Engine.ExtendedModel
             samples = null;
 
             return false;
-        }
-
-        protected override bool? CanBeSimulated()
-        {
-            return _auxiliary ? true : null;
         }
         #endregion
     }

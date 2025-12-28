@@ -21,6 +21,11 @@ namespace QRiskTree.Engine.Model
             return false;
         }
 
+        protected override bool? CanBeSimulated()
+        {
+            return true;
+        }
+
         protected override bool Simulate(int minPercentile, int maxPercentile, uint iterations, ISimulationContainer? container, out double[]? samples)
         {
             // This value cannot be simulated. User must provide it.
