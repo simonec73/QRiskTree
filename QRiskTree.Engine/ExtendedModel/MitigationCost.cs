@@ -119,25 +119,13 @@ namespace QRiskTree.Engine.ExtendedModel
         public double[]? OperationBaseline => _operationBaseline?.ToArray();
 
         /// <summary>
-        /// Gets the confidence level of the implementation baseline.
-        /// </summary>
-        public Confidence ImplementationBaselineConfidence { get; private set; } = Confidence.Low;
-
-        /// <summary>
-        /// Gets the confidence level of the operation baseline.
-        /// </summary>
-        public Confidence OperationBaselineConfidence { get; private set; } = Confidence.Low;
-
-        /// <summary>
         /// Sets the baseline values and their associated confidence levels for implementation and operation metrics.
         /// </summary>
         /// <param name="implementationBaseline">An array of doubles representing the baseline values for implementation metrics. Cannot be null or empty.</param>
-        /// <param name="implementationConfidence">The confidence level associated with the implementation baseline values.</param>
         /// <param name="operationBaseline">An array of doubles representing the baseline values for operation metrics. Cannot be null or empty.</param>
-        /// <param name="operationConfidence">The confidence level associated with the operation baseline values.</param>
         /// <exception cref="ArgumentException">Thrown if <paramref name="implementationBaseline"/> or <paramref name="operationBaseline"/> is null or
         /// empty.</exception>
-        public void SetBaselines(double[] implementationBaseline, Confidence implementationConfidence, double[] operationBaseline, Confidence operationConfidence)
+        public void SetBaselines(double[] implementationBaseline, double[] operationBaseline)
         {
             if (implementationBaseline == null || implementationBaseline.Length == 0)
                 throw new ArgumentException("Implementation baseline cannot be null or empty.", nameof(implementationBaseline));
@@ -145,9 +133,7 @@ namespace QRiskTree.Engine.ExtendedModel
                 throw new ArgumentException("Operation baseline cannot be null or empty.", nameof(operationBaseline));
 
             _implementationBaseline = implementationBaseline.ToArray();
-            ImplementationBaselineConfidence = implementationConfidence;
             _operationBaseline = operationBaseline.ToArray();
-            OperationBaselineConfidence = operationConfidence;
         }
 
         /// <summary>
@@ -157,8 +143,6 @@ namespace QRiskTree.Engine.ExtendedModel
         {
             _implementationBaseline = null;
             _operationBaseline = null;
-            ImplementationBaselineConfidence = Confidence.Low;
-            OperationBaselineConfidence = Confidence.Low;
         }
         #endregion
 
@@ -168,11 +152,15 @@ namespace QRiskTree.Engine.ExtendedModel
             return false; // No children allowed for Mitigation nodes
         }
 
-        protected override bool Simulate(uint iterations, out double[]? samples, out Confidence confidence)
+        protected override bool? CanBeSimulated()
+        {
+            return true;
+        }
+
+        protected override bool Simulate(int minPercentile, int maxPercentile, uint iterations, ISimulationContainer? container, out double[]? samples)
         {
             // This value cannot be simulated. User must provide it.
             samples = null;
-            confidence = Confidence;
 
             return false;
         }

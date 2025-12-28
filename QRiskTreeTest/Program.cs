@@ -137,10 +137,14 @@ if (baseline != null)
 
 #region Step 3 - Identification of the optimal set of mitigations.
 var stopwatch2 = System.Diagnostics.Stopwatch.StartNew();
-var mitigations = model.OptimizeMitigations(out var firstYearCosts, out var followingYearsCosts, iterations: iterations);
+var simulationResult = model.OptimizeMitigations(iterations: iterations);
 stopwatch2.Stop();
 
 Console.WriteLine($"\nOptimization completed in {stopwatch2.ElapsedMilliseconds}ms.\n");
+
+var firstYearCosts = simulationResult?.FirstYear;
+var followingYearsCosts = simulationResult?.FollowingYears;
+var mitigations = simulationResult?.SelectedMitigations;
 
 if (firstYearCosts != null)
 {
@@ -189,11 +193,16 @@ if (mitigations?.Any() ?? false)
     Console.WriteLine("\n--- Mitigations to be applied:");
     foreach (var mitigation in mitigations)
     {
-        Console.WriteLine($"\n{mitigation.Name}");
-        Console.WriteLine($"- Implementation Costs: {mitigation.Min} - {mitigation.Mode} - {mitigation.Max} ({mitigation.Confidence})");
-        if (mitigation.OperationCosts != null)
+        var mitigationCost = model.GetMitigation(mitigation);
+
+        if (mitigationCost != null)
         {
-            Console.WriteLine($"- Operation Costs: {mitigation.OperationCosts.Min} - {mitigation.OperationCosts.Mode} - {mitigation.OperationCosts.Max} ({mitigation.OperationCosts.Confidence})");
+            Console.WriteLine($"\n{mitigationCost.Name}");
+            Console.WriteLine($"- Implementation Costs: {mitigationCost.Min} - {mitigationCost.Mode} - {mitigationCost.Max} ({mitigationCost.Confidence})");
+            if (mitigationCost.OperationCosts != null)
+            {
+                Console.WriteLine($"- Operation Costs: {mitigationCost.OperationCosts.Min} - {mitigationCost.OperationCosts.Mode} - {mitigationCost.OperationCosts.Max} ({mitigationCost.OperationCosts.Confidence})");
+            }
         }
     }
 }

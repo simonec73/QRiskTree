@@ -126,21 +126,14 @@ namespace QRiskTree.Engine.ExtendedModel
         public double[]? Baseline => _baseline?.ToArray();
 
         /// <summary>
-        /// Gets the confidence level of the baseline.
-        /// </summary>
-        public Confidence BaselineConfidence { get; private set; } = Confidence.Low;
-
-        /// <summary>
         /// Set the baseline values and confidence.
         /// </summary>
         /// <param name="baseline">New baseline.</param>
-        /// <param name="confidence">New confidence level.</param>
-        public void SetBaseline(double[] baseline, Confidence confidence)
+        public void SetBaseline(double[] baseline)
         {
-            if ((baseline?.Any() ?? false) && (confidence != Confidence.Low))
+            if ((baseline?.Any() ?? false))
             {
                 _baseline = baseline.ToArray();
-                BaselineConfidence = confidence;
             }
         }
 
@@ -150,7 +143,6 @@ namespace QRiskTree.Engine.ExtendedModel
         public void ClearBaseline()
         {
             _baseline = null;
-            BaselineConfidence = Confidence.Low;
         }
         #endregion
 
@@ -168,15 +160,16 @@ namespace QRiskTree.Engine.ExtendedModel
         /// <summary>
         /// Simulates this risk, applying any mitigation costs from enabled AppliedMitigation child nodes.
         /// </summary>
+        /// <param name="minPercentile">Value of the minimum percentile.</param>
+        /// <param name="maxPercentile">Value of the maximum percentile.</param>
         /// <param name="iterations">Number of iterations for the simulation.</param>
+        /// <param name="container">Simulation container.</param>
         /// <param name="samples">[out] Generated samples.</param>
-        /// <param name="confidence"></param>
         /// <returns></returns>
-        protected override bool Simulate(uint iterations, out double[]? samples, out Confidence confidence)
+        protected override bool Simulate(int minPercentile, int maxPercentile, uint iterations, ISimulationContainer? container, out double[]? samples)
         {
             var result = false;
             samples = null;
-            confidence = Confidence;
 
             if (IsEnabled)
             {
@@ -184,66 +177,14 @@ namespace QRiskTree.Engine.ExtendedModel
                 {
                     // Use the baseline values as samples.
                     samples = Baseline;
-                    confidence = BaselineConfidence;
                     result = true;
                 }
-                else if (base.Simulate(iterations, out samples, out confidence) && (samples?.Length ?? 0) == iterations)
+                else if (base.Simulate(minPercentile, maxPercentile, iterations, container, out samples) && (samples?.Length ?? 0) == iterations)
                 {
                     result = true;
 
                     // Set the baseline.
                     _baseline = samples?.ToArray();
-                    BaselineConfidence = confidence;
-                }
-
-                if (result)
-                {
-                    var appliedMitigations = _children?.OfType<AppliedMitigation>().Where(x => x.IsEnabled).ToArray();
-                    if (appliedMitigations?.Any() ?? false)
-                    {
-                        // Apply each mitigation cost to the samples
-                        foreach (var appliedMitigation in appliedMitigations)
-                        {
-                            // Auxiliary mitigations do not affect the residual risk,
-                            // only the implementation and operation costs.
-                            if (!appliedMitigation.IsAuxiliary)
-                            {
-                                double[]? amSamples = null;
-                                Confidence amConfidence = Confidence.Low;
-                                bool ok = false;
-
-                                if (appliedMitigation.HasBaseline && ((appliedMitigation.Baseline?.Length ?? 0) == iterations))
-                                {
-                                    amSamples = appliedMitigation.Baseline;
-                                    amConfidence = appliedMitigation.BaselineConfidence;
-                                    ok = true;
-                                }
-                                else if (Simulate(appliedMitigation, iterations, out amSamples) &&
-                                    (amSamples?.Length ?? 0) == iterations)
-                                {
-                                    ok = true;
-                                    amConfidence = appliedMitigation.Confidence;
-#pragma warning disable CS8604 // Possible null reference argument.
-                                    appliedMitigation.SetBaseline(amSamples, amConfidence);
-#pragma warning restore CS8604 // Possible null reference argument.
-                                }
-
-                                if (ok)
-                                {
-                                    // Subtract the effect of the mitigation from each value.
-                                    for (int i = 0; i < iterations; i++)
-                                    {
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-                                        samples[i] *= (1 - amSamples[i]);
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-                                    }
-
-                                    if (appliedMitigation.Confidence < confidence)
-                                        confidence = amConfidence;
-                                }
-                            }
-                        }
-                    }
                 }
             }
 

@@ -34,11 +34,11 @@ The remaining projects, [QRiskTreeTest](https://github.com/simonec73/QRiskTree/t
 
 ## How can I use QRiskTree?
 
-The most immediate way to use QRiskTree is to simply use QRiskTreeEditor, but this is not the only way: QRiskTree.Engine is designed to be easily used in most applications. Here are some typical use cases.
+The most immediate way to use QRiskTree is to simply use QRiskTreeEditor, but this is not the only way: QRiskTree.Engine is designed to be easily used in your applications. Here are some typical use cases.
 
 ### Interactive scripting
 
-Do you want to use it to run scripts interactively? You can do that, for example using [LINQPad](https://www.linqpad.net/). Here is the receipt:
+Do you want to use it to run scripts interactively? You can do that, for example using [LINQPad](https://www.linqpad.net/). Here is the recipe:
 
 1. Open LINQPad and add QRiskTree.Engine.dll as a reference using **Reference and Properties** command from the **Query** menu. 
 2. Insert the code you want to execute in the Query pane. You might take the code included in [Program.cs](https://github.com/simonec73/QRiskTree/blob/main/QRiskTreeTest/Program.cs) for testing purposes. You might need to make some simple adjustments, like removing the lines starting with **#region** and **#endregion**.
@@ -55,24 +55,29 @@ Starting from version 0.2.0 of the QRiskTree.Engine, you can host it in server a
 
 ### Modifying it to fit your specific requirements
 
-You are welcome to fork QRiskTree and make the changes that are required for you. Do you need to comply with a specific Quantitative Risk Analysis standard? Or integrate it with some Risk Management tool is in use by your Company? Feel free to do so. If you feel like the changes you have made might be of interest for the QRiskTree users community, please feel free to provide them to the main repo with a Pull Request (but I cannot guarantee they will be actually included), otherwise you are welcome to keep them for your own.
+You are welcome to fork QRiskTree and make the changes that are required for you. Do you need to comply with a specific Quantitative Risk Analysis standard? Or integrate it with some Risk Management tool is in use by your Company? Feel free to do so. If you feel like the changes you have made might be of interest for the QRiskTree users community, please provide them to the main repo with a Pull Request (but I cannot guarantee they will be actually included), otherwise you are welcome to keep them for your own.
 
-QRiskTree has been designed to be well structured and easily understandable. At least, I hope that it will be easily understandable. It currently lack comments, but that's a priority for the future.
+QRiskTree has been designed to be well structured and easily understandable. At least, I hope that it will be easily understandable. It currently lack part of the comments, but that's a priority for the future.
 
 ## What are the requirements for QRiskTree Editor?
 
-QRiskTree Editor requires a computer with Windows 10 x64 or Windows 11 and runs with minimal hardware. As of today, the QRiskTree library is single thread: this means that you might get better execution times with CPUs having better single-core performance.
+QRiskTree Editor requires a computer with Windows 10 x64 or Windows 11 with at least 8GBytes of RAM.
+The recommendation is to use QRiskTree Editor on computers with a fast multi-core CPU and at least 16GBytes or RAM.
 
-QRiskTree Editor 0.3.0 on a computer based on AMD Ryzen 9 8945HS is able to optimize the [Big Model reference model](./Samples/Big%20model.json) with 10 risks defined at the Loss Event Frequency and Loss Magnitude level, and the same 10 mitigations assigned to every threat in about 2 minutes. The previous version, 0.2.0, took over 30 minutes for the same job. During the execution, the process has used around 350 to 550 MBytes of RAM (the previous version took around 250MBytes of RAM) and has fully used a little more than one core (around 7-8% of the CPU). As it is, the behavior is ideal for being incorporated in server applications serving multiple requests at the same time. Moreover, you can start an optimization job while you can safely continue to use your PC. For these reasons, I will not change it to support parallel execution of the simulation anytime soon. 
+QRiskTree Editor 0.3.0 on a computer based on AMD Ryzen 9 8945HS is able to optimize the [Big Model reference model](./Samples/Big%20model.json) with 10 risks defined at the Loss Event Frequency and Loss Magnitude level, and the same 10 mitigations assigned to every threat in about 2 minutes. The previous version, 0.2.0, took over 30 minutes for the same job. During the execution, the process has used around 350 to 550 MBytes of RAM (the previous version took around 250MBytes of RAM) and has fully used a little more than one core (around 7-8% of the CPU). 
 
-Note: this doesn't mean that you cannot execute multiple simulations on different models at the same time on server applications. You can do that since version 0.2.0. The above limitation is only related to a single model simulation: given that the model is a tree, you might execute the simulation splitting it on multiple threads, potentially cutting the time by executing multiple parallel sub-tasks. While possible, this is not a goal for this version of the QRiskTree Engine, as I want to prioritize the possibility to execute models on server applications shared by multiple users at the same time.
+With version 0.5.0, I have introduced the possibility to execute the optimization on multiple threads. This is ideal for execution on client-side applications like QRiskTree Editor. The code is designed to use only a portion of the CPU, ensuring that at least 20% is available for other activities. The execution of the Big Model now uses up to 65% of the CPU, which has 16 logical processors, to complete the optimization in a little over 12 seconds, about ten times less than 0.3.0 and 150 times less than 0.2.0. Memory usage has increased, with peaks of over 2GBytes.
+
+> Note: the original Big Model didn't have Operational costs. There is a [new version of the Big Model]((./Samples/Big%20model%20(new).json) which addresses the problem. This new version increases the execution time to 15 seconds.
 
 ## Do you have some guidance on how to use QRiskTree Editor?
 
 Please watch this video to get a quick introduction to QRiskTree Editor.
 [![Welcome to QRiskTree Editor!](https://img.youtube.com/vi/u9vN_SIq5KY/maxresdefault.jpg)](https://youtu.be/u9vN_SIq5KY)
 
-This guidance applies to version 0.2.0 and is still valid for version 0.3.0. With version 0.4.0, I've introduced some key changes, which expand QRiskTree Editor's capabilities. You can find their detailed description below. The prefix ([0.4]) specifies when the feature has been introduced. I'm planning to eventually extend this list in the future.
+This guidance applies to version 0.2.0 and is still valid for version 0.3.0. With version 0.4.0, I've introduced some key changes, which expand QRiskTree Editor's capabilities. You can find their detailed description below. The prefix ([0.4]) specifies when the feature has been introduced. Version 0.5.0 has not introduced any new feature.
+
+I'm planning to eventually extend this list in the future.
 
 ### [0.4] Control Types
 
@@ -169,16 +174,19 @@ QRiskTree Editor does not include the ability to export the charts as images. If
 
 QRiskTree Editor has already had a few versions. Here are the key improvements for the most important releases, from the latest to the first.
 
-- **0.4.0**: First major features improvement
+- **0.5.0**: Parallelization for Clients.
+  - Introduced the possibility to execute the Optimization process on multiple threads. This is useful when the optimization is run on some Client-side application, like QRiskTree Editor. By default, optimizations use up to 80% of the CPU, more typically around 60%. This, combined with other optimizations implemented with this version, has allowed to improve the optimization time significantly, around 10 times better than the previous version.
+  - Automatic calculation of the Confidence.
+  - Various optimizations and bug fixes.
+- **0.4.0**: First major features improvement.
   - Improved Mitigations management: Control Types and Auxiliary Mitigations.
   - Added the possibility to customize the currency: Currency Symbol and Monetary Scale.
   - Added Charts to improve the readability of the calculation results.
-
-- **0.3.0**: Intelligent Caching
+- **0.3.0**: Intelligent Caching.
   - Major performance improvement. The [Big Model reference model](./Samples/Big%20model.json) is now about 15 times faster.
   - Improved consistency of the results.
-- **0.2.0**: Parallel Execution
-  - Added support for parallel execution.
+- **0.2.0**: Parallel Execution for Servers.
+  - Added support for parallel execution on Servers.
   - Corrected the optimal ranges shown by the tool.
 - **0.1.1**: Fixed minor bugs.
 - **0.1.0**: First public version.

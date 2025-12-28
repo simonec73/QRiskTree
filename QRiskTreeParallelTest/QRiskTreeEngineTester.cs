@@ -15,19 +15,20 @@ namespace QRiskTreeParallelTest
 
         public RiskModel Model => _model;
 
-        public Task<SimulationResult?> SimulateAsync(uint iterations)
+        public Task<ParallelTestSimulationResult?> SimulateAsync(uint iterations)
         {
             return Task.Run(() => Simulate(iterations));
         }
 
-        private SimulationResult? Simulate(uint iterations)
+        private ParallelTestSimulationResult? Simulate(uint iterations)
         {
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-            QRiskTree.Engine.Range? costs = null;
+            SimulationResult? simulationResult = null;
 
             try
             {
+#pragma warning disable SCS0005 // Weak random number generator.
                 var rng = new Random();
 
                 for (int i = 0; i < 5; i++)
@@ -59,16 +60,30 @@ namespace QRiskTreeParallelTest
                         }
                     }
                 }
+#pragma warning restore SCS0005 // Weak random number generator.
 
                 var baseline = _model.Simulate(iterations);
-                _model.OptimizeMitigations(out costs, out var followingYearsCosts, iterations: iterations);
+                simulationResult = _model.OptimizeMitigations(iterations: iterations);
             }
             finally
             {
                 stopwatch.Stop();
             }
 
-            return new SimulationResult(stopwatch.ElapsedMilliseconds, costs?.Min ?? 0.0, costs?.Mode ?? 0.0, costs?.Max ?? 0.0);
+            ParallelTestSimulationResult result;
+            if (simulationResult == null)
+            {
+                result = null;
+            }
+            else
+            {
+                result = new ParallelTestSimulationResult(stopwatch.ElapsedMilliseconds, 
+                    simulationResult?.FirstYear?.Min ?? 0.0, 
+                    simulationResult?.FirstYear?.Mode ?? 0.0, 
+                    simulationResult?.FirstYear?.Max ?? 0.0);
+            }
+                
+            return result;
         }
     }
 }

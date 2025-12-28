@@ -83,23 +83,16 @@ namespace QRiskTree.Engine.ExtendedModel
         public double[]? Baseline => _baseline?.ToArray();
 
         /// <summary>
-        /// Gets the confidence level of the baseline.
-        /// </summary>
-        public Confidence BaselineConfidence { get; private set; } = Confidence.Low;
-
-        /// <summary>
         /// Set the baseline values and confidence.
         /// </summary>
         /// <param name="values">Baseline values.</param>
-        /// <param name="confidence">Baseline confidence.</param>
         /// <exception cref="ArgumentException">Thrown if <paramref name="values"/> is null or empty.</exception>
-        public void SetBaseline(double[] values, Confidence confidence)
+        public void SetBaseline(double[] values)
         {
             if (values == null || values.Length == 0)
                 throw new ArgumentException("Baseline values cannot be null or empty.", nameof(values));
 
             _baseline = values.ToArray();
-            BaselineConfidence = confidence;
         }
 
         /// <summary>
@@ -108,7 +101,6 @@ namespace QRiskTree.Engine.ExtendedModel
         public void ClearBaseline()
         {
             _baseline = null;
-            BaselineConfidence = Confidence.Low;
         }
         #endregion
 
@@ -128,18 +120,18 @@ namespace QRiskTree.Engine.ExtendedModel
             return false; // No children allowed for Applied Mitigation nodes
         }
 
-        protected override bool Simulate(uint iterations, out double[]? samples, out Confidence confidence)
+        protected override bool? CanBeSimulated()
+        {
+            return true;
+        }
+
+        protected override bool Simulate(int minPercentile, int maxPercentile, uint iterations, 
+            ISimulationContainer? container, out double[]? samples)
         {
             // This value cannot be simulated. User must provide it.
             samples = null;
-            confidence = Confidence;
 
             return false;
-        }
-
-        protected override bool? CanBeSimulated()
-        {
-            return _auxiliary ? true : null;
         }
         #endregion
     }

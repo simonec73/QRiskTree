@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace QRiskTreeParallelTest
 {
-    internal class SimulationResult
+    internal class ParallelTestSimulationResult
     {
-        public SimulationResult(long elapsedTime, double min, double mode, double max)
+        public ParallelTestSimulationResult(long elapsedTime, double min, double mode, double max)
         {
             ElapsedTime = elapsedTime;
             Min = min;

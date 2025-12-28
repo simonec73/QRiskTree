@@ -80,20 +80,19 @@ namespace QRiskTree.Engine.Model
                 (_children?.OfType<ProbabilityOfAction>().Any() ?? false);
         }
 
-        protected override bool Simulate(uint iterations, out double[]? samples, out Confidence confidence)
+        protected override bool Simulate(int minPercentile, int maxPercentile, uint iterations, ISimulationContainer? container, out double[]? samples)
         {
             var result = false;
             samples = null;
-            confidence = Confidence;
 
             var contactFrequency = _children?.OfType<ContactFrequency>().FirstOrDefault();
             var probabilityOfAction = _children?.OfType<ProbabilityOfAction>().FirstOrDefault();
 
             if (contactFrequency != null && probabilityOfAction != null)
             {
-                if (Simulate(contactFrequency, iterations, out var cSamples) && 
+                if (contactFrequency.SimulateAndGetSamples(out var cSamples, minPercentile, maxPercentile, iterations, container) && 
                     (cSamples?.Length ?? 0) == iterations &&
-                    Simulate(probabilityOfAction, iterations, out var pSamples) && 
+                    probabilityOfAction.SimulateAndGetSamples(out var pSamples, minPercentile, maxPercentile, iterations, container) && 
                     (pSamples?.Length ?? 0) == iterations)
                 {
                     // Assign to samples the product of cSamples and pSamples.
@@ -104,10 +103,6 @@ namespace QRiskTree.Engine.Model
                         samples[i] = cSamples[i] * pSamples[i];
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                     }
-
-                    confidence = contactFrequency.Confidence < probabilityOfAction.Confidence
-                        ? contactFrequency.Confidence
-                        : probabilityOfAction.Confidence;
 
                     result = true;
                 }
