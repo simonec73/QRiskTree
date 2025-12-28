@@ -737,12 +737,12 @@ namespace QRiskTreeEditor
                     if (invalidRiskName == null)
                     {
                         int parallelization = RiskModel.OptimalParallelism;
-                        int countTreeSize = (int)Math.Ceiling(((decimal)RecursiveCount(risks)) / parallelization);
+                        int countIterations = (int)Math.Ceiling(((decimal)risks.Length) / parallelization);
+                        int countAverageTreeSize = (int)Math.Ceiling(((decimal)RecursiveCount(risks)) / risks.Length);
                         int countMitigations = mitigations.Length;
-                        int countIterations = (1 << countMitigations) - 1;
-                        int estimatedRequiredTime = countTreeSize * countIterations * 4;
+                        int estimatedRequiredTime = (countIterations * countAverageTreeSize + countMitigations) * 500;
                         bool proceed;
-                        if (estimatedRequiredTime > 30000)
+                        if (estimatedRequiredTime > 60000)
                         {
                             proceed = MessageBox.Show($"The calculation of the optimal mitigations might require about {(estimatedRequiredTime / 60000).ToString("N0")} minutes. Do you want to proceed?",
                                 "Long running calculation", MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK;
@@ -916,13 +916,15 @@ namespace QRiskTreeEditor
             {
                 foreach (var node in nodes)
                 {
-                    if (node.IsSetByUser)
-                        count++;
                     var children = node.Components?.OfType<NodeViewModel>()?.ToArray();
-                    if (children?.Any() ?? false)
+                    var mitigations = node.Mitigations?.OfType<AppliedMitigationViewModel>()?.ToArray();
+                    if (node.IsSetByUser || !(children?.Any() ?? false))
+                        count++;
+                    else if (children?.Any() ?? false)
                     {
                         count += RecursiveCount(children);
                     }
+                    count += mitigations?.Count() ?? 0;
                 }
             }
 
