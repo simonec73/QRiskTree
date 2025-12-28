@@ -68,7 +68,7 @@ QRiskTree Editor 0.3.0 on a computer based on AMD Ryzen 9 8945HS is able to opti
 
 With version 0.5.0, I have introduced the possibility to execute the optimization on multiple threads. This is ideal for execution on client-side applications like QRiskTree Editor. The code is designed to use only a portion of the CPU, ensuring that at least 20% is available for other activities. The execution of the Big Model now uses up to 65% of the CPU, which has 16 logical processors, to complete the optimization in a little over 12 seconds, about ten times less than 0.3.0 and 150 times less than 0.2.0. Memory usage has increased, with peaks of over 2GBytes.
 
-> Note: the original Big Model didn't have Operational costs. There is a [new version of the Big Model]((./Samples/Big%20model%20(new).json) which addresses the problem. This new version increases the execution time to 15 seconds.
+The original Big Model didn't have Operational costs. There is a [new version of the Big Model]((./Samples/Big%20model%20(new).json) which addresses the problem. This new version increases the execution time to 15 seconds.
 
 ## Do you have some guidance on how to use QRiskTree Editor?
 
