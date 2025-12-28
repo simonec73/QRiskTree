@@ -4,6 +4,9 @@ using System.Runtime.Serialization;
 
 namespace QRiskTree.Engine
 {
+    /// <summary>
+    /// Base class for all nodes in the risk tree.
+    /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
     public abstract class Node : Range
     {
@@ -98,6 +101,9 @@ namespace QRiskTree.Engine
             }
         }
 
+        /// <summary>
+        /// Internal storage for child nodes.
+        /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Security",
             "SCS0028:TypeNameHandling is set to the other value than 'None'. It may lead to deserialization vulnerability.",
             Justification = "We use SerializationBinders (KnownTypesBinder and FactsTypesBinder) to ensure that we deserialize only known and approved objects.")]
@@ -179,7 +185,7 @@ namespace QRiskTree.Engine
         protected abstract bool IsValidChild(Node node);
         #endregion
 
-        #region Member functions: simulation and statistics.
+        #region Public member functions: simulation and statistics.
         /// <summary>
         /// Verifies if the node can be simulated.
         /// </summary>
@@ -225,6 +231,41 @@ namespace QRiskTree.Engine
         }
 
         /// <summary>
+        /// Performs a Monte Carlo simulation for the node.
+        /// </summary>
+        /// <param name="samples">Calculated samples.</param>
+        /// <param name="minPercentile">Value corresponding to the minimum percentile.</param>
+        /// <param name="maxPercentile">Value corresponding to the maximum percentile.</param>
+        /// <param name="iterations">Number of samples to be generated. it must be between 1000 and 1048576.</param>
+        /// <param name="container">Container for the simulation results.</param>
+        /// <returns>True if the simulation has been performed, false otherwise.</returns>
+        /// <remarks>The simulation is not performed if the node has been assigned its values.</remarks>
+        public bool SimulateAndGetSamples(out double[]? samples, int minPercentile, int maxPercentile,
+            uint iterations = DefaultIterations, ISimulationContainer? container = null)
+        {
+            if (iterations < MinIterations || iterations > MaxIterations)
+                throw new ArgumentOutOfRangeException(nameof(iterations), $"Samples must be between {MinIterations} and {MaxIterations}.");
+
+            return Simulate(this, minPercentile, maxPercentile, iterations, container, out samples);
+        }
+
+        /// <summary>
+        /// Performs a Monte Carlo simulation for the node.
+        /// </summary>
+        /// <param name="minPercentile">Value corresponding to the minimum percentile.</param>
+        /// <param name="maxPercentile">Value corresponding to the maximum percentile.</param>
+        /// <param name="iterations">Number of samples to be generated. it must be between 1000 and 1048576.</param>
+        /// <param name="container">Container for the simulation results.</param>
+        /// <returns>True if the simulation has been performed, false otherwise.</returns>
+        /// <remarks>The simulation is not performed if the node has been assigned its values.</remarks>
+        public bool Simulate(int minPercentile, int maxPercentile, uint iterations = DefaultIterations, ISimulationContainer? container = null)
+        {
+            return SimulateAndGetSamples(out _, minPercentile, maxPercentile, iterations, container);
+        }
+        #endregion
+
+        #region Protected/Private member functions: simulation and statistics.
+        /// <summary>
         /// Function to be overridden in derived classes which allows them to override the default verification.
         /// </summary>
         /// <returns>Null, if the basic behavior must be applied. 
@@ -244,68 +285,27 @@ namespace QRiskTree.Engine
         }
 
         /// <summary>
-        /// Performs a Monte Carlo simulation for the node.
-        /// </summary>
-        /// <param name="samples">Calculated samples.</param>
-        /// <param name="iterations">Number of samples to be generated. it must be between 1000 and 1048576.</param>
-        /// <returns>True if the simulation has been performed, false otherwise.</returns>
-        /// <remarks>The simulation is not performed if the node has been assigned its values.</remarks>
-        public bool SimulateAndGetSamples(out double[]? samples, uint iterations = DefaultIterations)
-        {
-            if (iterations < MinIterations || iterations > MaxIterations)
-                throw new ArgumentOutOfRangeException(nameof(iterations), $"Samples must be between {MinIterations} and {MaxIterations}.");
-
-            var result = false;
-            samples = null;
-
-            if (!Calculated.HasValue || Calculated.Value)
-            {
-                if (Simulate(iterations, out samples, out var confidence) && (samples?.Any() ?? false))
-                {
-                    UpdateStatistics(samples, iterations, confidence);
-                    result = true;
-                }
-            }
-            else
-            {
-                // The values have been set by the user, so we can use them directly to generate the samples.
-                if (this.GenerateSamples(iterations, out samples) && (samples?.Any() ?? false))
-                {
-                    result = true;
-                }
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Performs a Monte Carlo simulation for the node.
-        /// </summary>
-        /// <param name="iterations">Number of samples to be generated. it must be between 1000 and 1048576.</param>
-        /// <returns>True if the simulation has been performed, false otherwise.</returns>
-        /// <remarks>The simulation is not performed if the node has been assigned its values.</remarks>
-        public bool Simulate(uint iterations = DefaultIterations)
-        {
-            return SimulateAndGetSamples(out _, iterations);
-        }
-
-        /// <summary>
         /// Determine the statistics for the current node by simulating it based on the information collected for its children.
         /// </summary>
+        /// <param name="minPercentile">Value corresponding to the minimum percentile.</param>
+        /// <param name="maxPercentile">Value corresponding to the maximum percentile.</param>
         /// <param name="iterations">Number of iterations which must be performed.</param>
+        /// <param name="container">Container for the simulation results.</param>
         /// <param name="samples">[out] Calculated samples.</param>
-        /// <param name="confidence">[out] Calculated confidence.</param>
         /// <returns>True if the simulation has succeeded, false otherwise.</returns>
-        protected abstract bool Simulate(uint iterations, out double[]? samples, out Confidence confidence);
+        protected abstract bool Simulate(int minPercentile, int maxPercentile, uint iterations, ISimulationContainer? container, out double[]? samples);
 
         /// <summary>
         /// Simulate a child node.
         /// </summary>
         /// <param name="node">Child node to be simulated.</param>
+        /// <param name="minPercentile">Value corresponding to the minimum percentile.</param>
+        /// <param name="maxPercentile">Value corresponding to the maximum percentile.</param>
         /// <param name="iterations">Number of iterations.</param>
+        /// <param name="container">Container for the simulation results.</param>
         /// <param name="samples">Calculated samples.</param>
         /// <returns>True if the simulation succeeds, otherwise false.</returns>
-        protected bool Simulate(Node node, uint iterations, out double[]? samples)
+        protected bool Simulate(Node node, int minPercentile, int maxPercentile, uint iterations, ISimulationContainer? container, out double[]? samples)
         {
             bool result = false;
             samples = null;
@@ -313,38 +313,29 @@ namespace QRiskTree.Engine
             if (!node.Calculated.HasValue || node.Calculated.Value)
             {
                 // The values have not been set by the user, so we shall calculate them.
-                result = node.Simulate(iterations, out samples, out var confidence);
-                if (result && (samples?.Length ?? 0) > 0)
+                result = node.Simulate(minPercentile, maxPercentile, iterations, container, out samples);
+                if (result && samples != null && samples.Length > 0)
                 {
-                    node.UpdateStatistics(samples, iterations, confidence);
+                    container?.AddSimulation(node, samples);
+                    _min = samples.Percentile(minPercentile);
+                    _mode = samples.CalculateMode();
+                    _max = samples.Percentile(maxPercentile);
+                    _confidence = samples.CalculateConfidence();
+                    _calculated = true;
+                    Update();
                 }
             }
             else
             {
                 // The values have been set by the user, so we can use them directly to generate the samples.
                 result = node.GenerateSamples(iterations, out samples);
+                if (result && samples != null && samples.Length > 0)
+                {
+                    container?.AddSimulation(node, samples);
+                }
             }
 
             return result;
-        }
-
-        private void UpdateStatistics(double[]? samples, uint iterations, Confidence confidence)
-        {
-            if (samples != null && samples.Length == iterations)
-            {
-                // Assign the calculated values to the current node.
-
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-                _min = samples.Percentile(10);
-#pragma warning disable CS8604 // Possible null reference argument.
-                _mode = samples.CalculateMode();
-#pragma warning restore CS8604 // Possible null reference argument.
-                _max = samples.Percentile(90);
-                _confidence = confidence;
-                _calculated = true;
-                Update();
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-            }
         }
 
         internal override void Update()
@@ -353,46 +344,22 @@ namespace QRiskTree.Engine
         }
         #endregion
 
-        #region Range value storing and retrieval.
-        private Range? _storedRange;
-
-        internal void StoreRange()
+        #region Range value storing.
+        /// <summary>
+        /// Forces a value for the range of the node.
+        /// </summary>
+        /// <param name="range">Range definition</param>
+        /// <exception cref="ArgumentNullException">Input range cannot be null.</exception>
+        public void SetRange(Range range)
         {
-            if (_calculated.HasValue && _calculated.Value)
-            {
-                _storedRange = new Range(this);
-
-                var children = _children?.ToArray();
-                if (children?.Any() ?? false)
-                {
-                    foreach (var child in children)
-                    {
-                        child.StoreRange();
-                    }
-                }
-            }
-        }
-
-        internal void RestoreRange()
-        {
-            if (_storedRange != null)
-            {
-                _min = _storedRange.Min;
-                _mode = _storedRange.Mode;
-                _max = _storedRange.Max;
-                _confidence = _storedRange.Confidence;
-                _calculated = _storedRange.Calculated;
-                Update();
-            }
-
-            var children = _children?.ToArray();
-            if (children?.Any() ?? false)
-            {
-                foreach (var child in children)
-                {
-                    child.RestoreRange();
-                }
-            }
+            if (range == null)
+                throw new ArgumentNullException(nameof(range), "Range cannot be null.");
+            _min = range.Min;
+            _mode = range.Mode;
+            _max = range.Max;
+            _confidence = range.Confidence;
+            _calculated = range.Calculated;
+            Update();
         }
         #endregion
     }

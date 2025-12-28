@@ -15,7 +15,7 @@ try
     }
 
     // Step 2: Start 4 tasks to run SimulateAsync in parallel
-    var tasks = new Task<SimulationResult?>[runs];
+    var tasks = new Task<ParallelTestSimulationResult?>[runs];
     for (int i = 0; i < runs; i++)
     {
         tasks[i] = testers[i].SimulateAsync(iterations);

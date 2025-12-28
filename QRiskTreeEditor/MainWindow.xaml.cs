@@ -702,8 +702,19 @@ namespace QRiskTreeEditor
                 }
             }
         }
+        private async void _calculateOptimalMitigations_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await _calculateOptimalMitigations_ClickAsync(sender, e);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error during optimization: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
 
-        private void _calculateOptimalMitigations_Click(object sender, RoutedEventArgs e)
+        private async Task _calculateOptimalMitigations_ClickAsync(object sender, RoutedEventArgs e)
         {
             if (DataContext is RiskModelViewModel modelVM)
             {
@@ -725,10 +736,11 @@ namespace QRiskTreeEditor
 
                     if (invalidRiskName == null)
                     {
-                        int countTreeSize = RecursiveCount(risks);
+                        int parallelization = RiskModel.OptimalParallelism;
+                        int countTreeSize = (int)Math.Ceiling(((decimal)RecursiveCount(risks)) / parallelization);
                         int countMitigations = mitigations.Length;
                         int countIterations = (1 << countMitigations) - 1;
-                        int estimatedRequiredTime = countIterations * 120;
+                        int estimatedRequiredTime = countTreeSize * countIterations * 4;
                         bool proceed;
                         if (estimatedRequiredTime > 30000)
                         {
@@ -777,8 +789,15 @@ namespace QRiskTreeEditor
                             try
                             {
                                 Mouse.OverrideCursor = Cursors.Wait;
-                                optimized = modelVM.Model.OptimizeMitigations(out firstYearCosts, out followingYearsCosts,
-                                    iterations: iterations, optimizationParameter: optParameter, optimizeForFollowingYears: ignoreImplementationCosts);
+                                var simulationResult = await modelVM.Model.OptimizeMitigationsAsync(optParameter, ignoreImplementationCosts, iterations);
+                                if (simulationResult != null)
+                                {
+                                    firstYearCosts = simulationResult.FirstYear;
+                                    followingYearsCosts = simulationResult.FollowingYears;
+                                    optimized = modelVM.Model.Mitigations
+                                        .Where(x => simulationResult.SelectedMitigations?.Contains(x.Id) ?? false)
+                                        .ToArray();
+                                }
                             }
                             finally
                             {
@@ -883,8 +902,7 @@ namespace QRiskTreeEditor
                 var monetaryScale = modelVM.Properties.MonetaryScale;
 
                 var range = samples.ToRange(RangeType.Money, 
-                    modelVM.Properties.MinPercentile, modelVM.Properties.MaxPercentile, 
-                    Confidence.Moderate);
+                    modelVM.Properties.MinPercentile, modelVM.Properties.MaxPercentile);
                 _output.AppendText($"Simulation with {selectedMitigations?.Count() ?? 0} mitigations - Min: {range?.GetMin(currencySymbol, monetaryScale)} - Mode: {range?.GetMode(currencySymbol, monetaryScale)} - Max: {range?.GetMax(currencySymbol, monetaryScale)} ({range?.Confidence}).\n");
             }
         }

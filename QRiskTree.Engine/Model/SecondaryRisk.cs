@@ -93,11 +93,10 @@ namespace QRiskTree.Engine.Model
                 (_children?.OfType<SecondaryLossMagnitude>().Any() ?? false);
         }
 
-        protected override bool Simulate(uint iterations, out double[]? samples, out Confidence confidence)
+        protected override bool Simulate(int minPercentile, int maxPercentile, uint iterations, ISimulationContainer? container, out double[]? samples)
         {
             var result = false;
             samples = null;
-            confidence = Confidence;
 
             // We must determine the statistics for the current node by 
             var lossEventFrequency = _children?.OfType<SecondaryLossEventFrequency>().FirstOrDefault();
@@ -105,9 +104,9 @@ namespace QRiskTree.Engine.Model
 
             if (lossEventFrequency != null && lossMagnitude != null)
             {
-                if (Simulate(lossEventFrequency, iterations, out var lefSamples) && 
+                if (lossEventFrequency.SimulateAndGetSamples(out var lefSamples, minPercentile, maxPercentile, iterations, container) && 
                     (lefSamples?.Length ?? 0) == iterations &&
-                    Simulate(lossMagnitude, iterations, out var lmSamples) && 
+                    lossMagnitude.SimulateAndGetSamples(out var lmSamples, minPercentile, maxPercentile, iterations, container) && 
                     (lmSamples?.Length ?? 0) == iterations)
                 {
                     // Assign to samples the product of lefSamples and lmSamples.
@@ -118,10 +117,6 @@ namespace QRiskTree.Engine.Model
                         samples[i] = lefSamples[i] * lmSamples[i];
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                     }
-
-                    confidence = lossEventFrequency.Confidence < lossMagnitude.Confidence
-                        ? lossEventFrequency.Confidence
-                        : lossMagnitude.Confidence;
 
                     result = true;
                 }

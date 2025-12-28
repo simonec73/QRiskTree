@@ -78,11 +78,10 @@ namespace QRiskTree.Engine.Model
                 (_children?.OfType<SecondaryRisk>().Any() ?? false);
         }
 
-        protected override bool Simulate(uint iterations, out double[]? samples, out Confidence confidence)
+        protected override bool Simulate(int minPercentile, int maxPercentile, uint iterations, ISimulationContainer? container, out double[]? samples)
         {
             var result = true;
             samples = new double[iterations];
-            confidence = Confidence.High;
 
             var primaryLosses = _children?.OfType<PrimaryLoss>().ToArray();
             var secondaryRisks = _children?.OfType<SecondaryRisk>().ToArray();
@@ -91,7 +90,8 @@ namespace QRiskTree.Engine.Model
             {
                 foreach (var primaryLoss in primaryLosses)
                 {
-                    if (Simulate(primaryLoss, iterations, out var plSamples) && (plSamples?.Length ?? 0) == iterations)
+                    if (primaryLoss.SimulateAndGetSamples(out var plSamples, minPercentile, maxPercentile, iterations, container) && 
+                        (plSamples?.Length ?? 0) == iterations)
                     {
                         for (int i = 0; i < iterations; i++)
                         {
@@ -99,10 +99,6 @@ namespace QRiskTree.Engine.Model
                             samples[i] += plSamples[i];
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                         }
-
-                        confidence = primaryLoss.Confidence < confidence
-                            ? primaryLoss.Confidence
-                            : confidence;
                     }
                     else
                     {
@@ -116,7 +112,7 @@ namespace QRiskTree.Engine.Model
             {
                 foreach (var secondaryRisk in secondaryRisks)
                 {
-                    if (Simulate(secondaryRisk, iterations, out var srSamples) && (srSamples?.Length ?? 0) == iterations)
+                    if (secondaryRisk.SimulateAndGetSamples(out var srSamples, minPercentile, maxPercentile, iterations, container) && (srSamples?.Length ?? 0) == iterations)
                     {
                         for (int i = 0; i < iterations; i++)
                         {
@@ -124,10 +120,6 @@ namespace QRiskTree.Engine.Model
                             samples[i] += srSamples[i];
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                         }
-
-                        confidence = secondaryRisk.Confidence < confidence
-                            ? secondaryRisk.Confidence
-                            : confidence;
                     }
                     else
                     {                         

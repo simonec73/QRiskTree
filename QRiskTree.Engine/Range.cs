@@ -138,7 +138,7 @@ namespace QRiskTree.Engine
         protected double _min { get; set; } = 0.0;
 
         /// <summary>
-        /// 10th Percentile.
+        /// Min Percentile.
         /// </summary>
         public double Min
         {
@@ -184,7 +184,7 @@ namespace QRiskTree.Engine
         protected double _max { get; set; } = 0.0;
 
         /// <summary>
-        /// 90th Percentile.
+        /// Max Percentile.
         /// </summary>
         public double Max
         {
