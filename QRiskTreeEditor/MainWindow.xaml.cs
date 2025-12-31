@@ -50,6 +50,8 @@ namespace QRiskTreeEditor
             _chartFollowing.SetModel(model, RelevantEvent.FollowingYears);
             _chartComparison.SetModel(model, RelevantEvent.BaselineAndOptimizationTarget);
             SubscribeMitigatedRisks();
+
+            _output.Text = string.Empty;
         }
 
         #region Baseline management.
