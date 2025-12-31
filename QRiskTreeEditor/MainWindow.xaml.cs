@@ -737,10 +737,14 @@ namespace QRiskTreeEditor
                     if (invalidRiskName == null)
                     {
                         int parallelization = RiskModel.OptimalParallelism;
-                        int countIterations = (int)Math.Ceiling(((decimal)risks.Length) / parallelization);
+                        int totalCombinations = (1 << risks.Length) - 1;
+                        int countIterations = (int)Math.Ceiling(((decimal)totalCombinations) / parallelization);
                         int countAverageTreeSize = (int)Math.Ceiling(((decimal)RecursiveCount(risks)) / risks.Length);
+                        int countAverageAppliedMitigations = (int)Math.Ceiling(((decimal)risks.Sum(x => (x.Node.Children?.OfType<AppliedMitigation>()?.Count() ?? 0))) / risks.Length);
                         int countMitigations = mitigations.Length;
-                        int estimatedRequiredTime = (countIterations * countAverageTreeSize + countMitigations) * 500;
+                        int estimatedRequiredTime = (int) Math.Ceiling((decimal)
+                            (countIterations * (countAverageTreeSize + countAverageAppliedMitigations) + countMitigations * 2) 
+                            * 10 * ((decimal)modelVM.Properties.Iterations) / ((decimal)Node.DefaultIterations));
                         bool proceed;
                         if (estimatedRequiredTime > 60000)
                         {
