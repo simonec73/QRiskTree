@@ -3,6 +3,11 @@
     public enum RangeType
     {
         /// <summary>
+        /// The range is a simple numeric value.
+        /// </summary>
+        /// <remarks>Acceptable values are between 0 and Double.Max.</remarks>
+        Number,
+        /// <summary>
         /// The range is a monetary value.
         /// </summary>
         /// <remarks>Acceptable values are between 0 and Double.Max.</remarks>

@@ -66,6 +66,8 @@ namespace QRiskTree.Engine
         {
             switch (rangeType)
             {
+                case RangeType.Number:
+                    return double.MaxValue; // No upper limit for numbers
                 case RangeType.Money:
                     return double.MaxValue; // No upper limit for money
                 case RangeType.Frequency:

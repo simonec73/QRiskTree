@@ -153,6 +153,27 @@ namespace QRiskTreeEditor.ViewModels
             }
         }
 
+        [Category("Fact")]
+        [DisplayName("Fact Type")]
+        public string FactType
+        {
+            get
+            {
+                var result = string.Empty;
+
+                if (_fact is FactHardNumber hardNumber)
+                {
+                    result = "Number";
+                }
+                else if (_fact is FactRange factRange && factRange.Range is QRiskTree.Engine.Range range)
+                {
+                    result = $"{range.RangeType} range";
+                }
+
+                return result;
+            }
+        }
+
         [Browsable(false)]
         public string FormattedValue
         {

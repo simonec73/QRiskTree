@@ -241,6 +241,15 @@ namespace QRiskTreeEditor
             }
         }
 
+        private void _editCreateFactWithNumericRange_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is RiskModelViewModel modelVM)
+            {
+                modelVM.AddFact(new FactRange("Context", "Name of the source", "New Fact",
+                    new QRiskTree.Engine.Range(QRiskTree.Engine.RangeType.Number, 0.0, 0.0, 0.0, QRiskTree.Engine.Confidence.Low)));
+            }
+        }
+
         private void _editCreateFactWithMonetaryRange_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is RiskModelViewModel modelVM)
@@ -1304,6 +1313,9 @@ namespace QRiskTreeEditor
                     item = new MenuItem { Header = "Create a simple Fact" };
                     item.Click += Item_CreateFact;
                     contextMenu.Items.Add(item);
+                    item = new MenuItem { Header = "Create a Fact based on a numeric range" };
+                    item.Click += Item_CreateFactWithNumericRange;
+                    contextMenu.Items.Add(item);
                     item = new MenuItem { Header = "Create a Fact based on a monetary range" };
                     item.Click += Item_CreateFactWithMonetaryRange;
                     contextMenu.Items.Add(item);
@@ -1358,6 +1370,7 @@ namespace QRiskTreeEditor
                     menuItem.Click -= Item_CreateRisk;
                     menuItem.Click -= Item_CreateMitigation;
                     menuItem.Click -= Item_CreateFact;
+                    menuItem.Click -= Item_CreateFactWithNumericRange;
                     menuItem.Click -= Item_CreateFactWithMonetaryRange;
                     menuItem.Click -= Item_CreateFactWithFrequencyRange;
                     menuItem.Click -= Item_CreateFactWithPercentageRange;
@@ -1623,6 +1636,11 @@ namespace QRiskTreeEditor
         private void Item_CreateFact(object sender, RoutedEventArgs e)
         {
             _editCreateFact_Click(sender, e);
+        }
+
+        private void Item_CreateFactWithNumericRange(object sender, RoutedEventArgs e)
+        {
+            _editCreateFactWithNumericRange_Click(sender, e);
         }
 
         private void Item_CreateFactWithMonetaryRange(object sender, RoutedEventArgs e)
