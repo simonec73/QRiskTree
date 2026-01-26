@@ -9,6 +9,7 @@
         xmlns:engine="clr-namespace:QRiskTree.Engine;assembly=QRiskTree.Engine"
         xmlns:extendedModel="clr-namespace:QRiskTree.Engine.ExtendedModel;assembly=QRiskTree.Engine" xmlns:controls="clr-namespace:QRiskTreeEditor.Controls"
         mc:Ignorable="d"
+        xmlns:mdxam="clr-namespace:MdXaml;assembly=MdXaml"
         Title="QRiskTree Editor" Height="576" Width="1024" WindowState="Maximized">
     <Window.Resources>
         <ObjectDataProvider x:Key="ConfidenceValues" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
@@ -562,7 +563,6 @@
             </TabItem>
         </TabControl>
         <GridSplitter x:Name="_splitter"  Grid.Row="2" Height="3" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="Gray"/>
-        <TextBox x:Name="_output" Grid.Row="3" Background="Black" Foreground="White" IsReadOnly="True" IsEnabled="True" VerticalScrollBarVisibility="Auto">
-        </TextBox>
+        <mdxam:MarkdownScrollViewer x:Name="_output" Grid.Row="3" MarkdownStyleName="GithubLike"/>
     </Grid>
 </Window>

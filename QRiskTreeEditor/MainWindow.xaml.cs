@@ -29,6 +29,7 @@ namespace QRiskTreeEditor
         private string _fileName = string.Empty;
         private QRiskTree.Engine.Range? _baseline;
         private double _outputHeight;
+        private StringBuilder _markdown = new StringBuilder();
 
         public MainWindow()
         {
@@ -51,7 +52,8 @@ namespace QRiskTreeEditor
             _chartComparison.SetModel(model, RelevantEvent.BaselineAndOptimizationTarget);
             SubscribeMitigatedRisks();
 
-            _output.Text = string.Empty;
+            _output.Markdown = string.Empty;
+            _markdown.Clear();
         }
 
         #region Baseline management.
@@ -268,7 +270,8 @@ namespace QRiskTreeEditor
 
         private void _clearOutput_Click(object sender, RoutedEventArgs e)
         {
-            _output.Text = string.Empty;
+            _output.Markdown = string.Empty;
+            _markdown.Clear();
         }
         #endregion
 
@@ -609,15 +612,15 @@ namespace QRiskTreeEditor
             var saveFileDialog = new Microsoft.Win32.SaveFileDialog
             {
                 Title = "Save Output",
-                Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
-                DefaultExt = ".txt"
+                Filter = "Markdown files (*.md)|*.md|Text files (*.txt)|*.txt|All files (*.*)|*.*",
+                DefaultExt = ".md"
             };
 
             if (saveFileDialog.ShowDialog() == true)
             {
                 try
                 {
-                    File.WriteAllText(saveFileDialog.FileName, _output.Text);
+                    File.WriteAllText(saveFileDialog.FileName, _output.Markdown);
                 }
                 catch (Exception ex)
                 {
@@ -649,12 +652,15 @@ namespace QRiskTreeEditor
 
                     if (invalidRiskName == null)
                     {
-                        _output.AppendText("--- Calculating Baseline Risk ---\n");
-
-                        _output.AppendText("Included Risks:\n");
+                        AppendText("# Calculating Baseline Risk");
+                        AppendText($"**Model:** {modelVM.Properties.Name}");
+                        AppendText();
+                        AppendText($"**Created on:** {DateTime.Now.ToString("yyyy-MM-dd HH:mm")}");
+                        AppendText();
+                        AppendText("## Baseline Definition");
                         foreach (var risk in risks)
                         {
-                            _output.AppendText($"- Risk: {risk.Name}\n");
+                            AppendText($"- Risk: {risk.Name}");
                         }
 
                         uint iterations = modelVM.Properties.Iterations;
@@ -671,20 +677,22 @@ namespace QRiskTreeEditor
                             stopwatch.Stop();
                         }
 
-                        _output.AppendText($"Risk for the baseline calculated in {stopwatch.ElapsedMilliseconds}ms.\n");
+                        AppendText("## Baseline Risk Results");
 
                         var currencySymbol = modelVM.Properties.CurrencySymbol;
                         var monetaryScale = modelVM.Properties.MonetaryScale;
 
                         if (_baseline != null)
                         {
-                            _output.AppendText($"- {modelVM.Properties.MinPercentile}th percentile: {_baseline.GetMin(currencySymbol, monetaryScale)}\n");
-                            _output.AppendText($"- Mode: {_baseline.GetMode(currencySymbol, monetaryScale)}\n");
-                            _output.AppendText($"- {modelVM.Properties.MaxPercentile}th percentile: {_baseline.GetMax(currencySymbol, monetaryScale)}\n");
-                            _output.AppendText($"- Confidence: {_baseline.Confidence}\n");
+                            AppendText($"- {modelVM.Properties.MinPercentile}th percentile: {_baseline.GetMin(currencySymbol, monetaryScale)}");
+                            AppendText($"- Mode: {_baseline.GetMode(currencySymbol, monetaryScale)}");
+                            AppendText($"- {modelVM.Properties.MaxPercentile}th percentile: {_baseline.GetMax(currencySymbol, monetaryScale)}");
+                            AppendText($"- Confidence: {_baseline.Confidence}");
                         }
-
-                        _output.AppendText("--- Baseline Risk Calculation Completed ---\n\n");
+                        AppendText();
+                        AppendText($"Risk for the baseline calculated in {stopwatch.ElapsedMilliseconds}ms.");
+                        AppendText();
+                        AppendText();
                     }
                     else
                     {
@@ -760,29 +768,35 @@ namespace QRiskTreeEditor
 
                         if (proceed)
                         {
-                            _output.AppendText("--- Calculating Optimal Mitigations Set ---\n");
+                            AppendText("# Optimal Mitigations Set Calculation");
+                            AppendText($"**Model:** {modelVM.Properties.Name}");
+                            AppendText();
+                            AppendText($"**Created on:** {DateTime.Now.ToString("yyyy-MM-dd HH:mm")}");
+                            AppendText();
+                            AppendText("## Baseline Definition");
 
 #if DEBUG
                             modelVM.Model.FirstYearSimulationCompleted += Model_FirstYearSimulationCompleted;
 #endif
 
-                            _output.AppendText("Included Risks:\n");
+                            AppendText("## Population Definition");
+                            AppendText("### Included Risks");
                             foreach (var risk in risks)
                             {
-                                _output.AppendText($"- Risk: {risk.Name}\n");
+                                AppendText($"- Risk: {risk.Name}");
                             }
 
-                            _output.AppendText("Included Mitigations:\n");
+                            AppendText("### Included Mitigations");
                             foreach (var mitigation in mitigations)
                             {
-                                _output.AppendText($"- Mitigation: {mitigation.Name}\n");
+                                AppendText($"- Mitigation: {mitigation.Name}");
                             }
 
                             uint iterations = modelVM.Properties.Iterations;
                             var optParameter = modelVM.Properties.OptimizationParameter;
                             var ignoreImplementationCosts = modelVM.Properties.IgnoreImplementationCosts;
                             var notText = ignoreImplementationCosts ? "not " : "";
-                            _output.AppendText($"Optimization has been calculated on the {optParameter} parameter, and has {notText}considered the Implementation costs.\n");
+                            AppendText($"Optimization has been calculated on the {optParameter} parameter, and has {notText}considered the Implementation costs.");
 
                             var currencySymbol = modelVM.Properties.CurrencySymbol;
                             var monetaryScale = modelVM.Properties.MonetaryScale;
@@ -815,69 +829,106 @@ namespace QRiskTreeEditor
 #endif
                             }
 
-                            _output.AppendText($"Optimization completed in {stopwatch.ElapsedMilliseconds}ms.\n");
+                            AppendText("## Optimization Results");
 
+                            var builder = new StringBuilder();
+                            var negativeDelta = false;
                             if (firstYearCosts != null)
                             {
                                 var format = firstYearCosts.GetFormat(currencySymbol, monetaryScale);
 
-                                _output.AppendText("\nEstimation of the Minimal Overall Yearly Cost for the first year:\n");
-                                _output.AppendText($"- {modelVM.Properties.MinPercentile}th percentile: {firstYearCosts.GetMin(currencySymbol, monetaryScale)}");
+                                AppendText("### Estimation of the Minimal Overall Yearly Cost for the first year");
+                                builder.Append($"- {modelVM.Properties.MinPercentile}th percentile: {firstYearCosts.GetMin(currencySymbol, monetaryScale)}");
                                 if (_baseline != null)
-                                    _output.AppendText($" (saving {(_baseline.Min - firstYearCosts.Min).ToString(format)}, equal to {((_baseline.Min - firstYearCosts.Min) / _baseline.Min).ToString("P2")})\n");
-                                else
-                                    _output.AppendText("\n");
-                                _output.AppendText($"- Mode: {firstYearCosts.GetMode(currencySymbol, monetaryScale)}");
+                                {
+                                    builder.Append($" (saving {(_baseline.Min - firstYearCosts.Min).ToString(format)}, equal to {((_baseline.Min - firstYearCosts.Min) / _baseline.Min).ToString("P2")})");
+                                    if (_baseline.Min - firstYearCosts.Min < 0)
+                                        negativeDelta = true;
+                                }
+                                AppendText(builder.ToString());
+                                builder.Clear();
+                                builder.Append($"- Mode: {firstYearCosts.GetMode(currencySymbol, monetaryScale)}");
                                 if (_baseline != null)
-                                    _output.AppendText($" (saving {(_baseline.Mode - firstYearCosts.Mode).ToString(format)}, equal to {((_baseline.Mode - firstYearCosts.Mode) / _baseline.Mode).ToString("P2")})\n");
-                                else
-                                    _output.AppendText("\n");
-                                _output.AppendText($"- {modelVM.Properties.MaxPercentile}th percentile: {firstYearCosts.GetMax(currencySymbol, monetaryScale)}");
+                                {
+                                    builder.Append($" (saving {(_baseline.Mode - firstYearCosts.Mode).ToString(format)}, equal to {((_baseline.Mode - firstYearCosts.Mode) / _baseline.Mode).ToString("P2")})");
+                                    if (_baseline.Mode - firstYearCosts.Mode < 0)
+                                        negativeDelta = true;
+                                }
+                                AppendText(builder.ToString());
+                                builder.Clear();
+                                builder.Append($"- {modelVM.Properties.MaxPercentile}th percentile: {firstYearCosts.GetMax(currencySymbol, monetaryScale)}");
                                 if (_baseline != null)
-                                    _output.AppendText($" (saving {(_baseline.Max - firstYearCosts.Max).ToString(format)}, equal to {((_baseline.Max - firstYearCosts.Max) / _baseline.Max).ToString("P2")})\n");
-                                else
-                                    _output.AppendText("\n");
-                                _output.AppendText($"- Confidence: {firstYearCosts.Confidence}\n");
+                                {
+                                    builder.Append($" (saving {(_baseline.Max - firstYearCosts.Max).ToString(format)}, equal to {((_baseline.Max - firstYearCosts.Max) / _baseline.Max).ToString("P2")})");
+                                    if (_baseline.Max - firstYearCosts.Max < 0)
+                                        negativeDelta = true;
+                                }
+                                AppendText(builder.ToString());
+                                AppendText($"- Confidence: {firstYearCosts.Confidence}\n");
                             }
 
                             if (followingYearsCosts != null)
                             {
                                 var format = followingYearsCosts.GetFormat(currencySymbol, monetaryScale);
 
-                                _output.AppendText("\nEstimation of the Minimal Overall Yearly Cost for the following years:\n");
-                                _output.AppendText($"- {modelVM.Properties.MinPercentile}th percentile: {followingYearsCosts.GetMin(currencySymbol, monetaryScale)}");
+                                AppendText("### Estimation of the Minimal Overall Yearly Cost for the following years");
+                                builder.Clear();
+                                builder.Append($"- {modelVM.Properties.MinPercentile}th percentile: {followingYearsCosts.GetMin(currencySymbol, monetaryScale)}");
                                 if (_baseline != null)
-                                    _output.AppendText($" (saving {(_baseline.Min - followingYearsCosts.Min).ToString(format)}, equal to {((_baseline.Min - followingYearsCosts.Min) / _baseline.Min).ToString("P2")})\n");
-                                else
-                                    _output.AppendText("\n");
-                                _output.AppendText($"- Mode: {followingYearsCosts.GetMode(currencySymbol, monetaryScale)}");
+                                {
+                                    builder.Append($" (saving {(_baseline.Min - followingYearsCosts.Min).ToString(format)}, equal to {((_baseline.Min - followingYearsCosts.Min) / _baseline.Min).ToString("P2")})");
+                                    if (_baseline.Min - followingYearsCosts.Min < 0)
+                                        negativeDelta = true;
+                                }
+                                AppendText(builder.ToString());
+                                builder.Clear();
+                                builder.Append($"- Mode: {followingYearsCosts.GetMode(currencySymbol, monetaryScale)}");
                                 if (_baseline != null)
-                                    _output.AppendText($" (saving {(_baseline.Mode - followingYearsCosts.Mode).ToString(format)}, equal to {((_baseline.Mode - followingYearsCosts.Mode) / _baseline.Mode).ToString("P2")})\n");
-                                else
-                                    _output.AppendText("\n");
-                                _output.AppendText($"- {modelVM.Properties.MaxPercentile}th percentile: {followingYearsCosts.GetMax(currencySymbol, monetaryScale)}");
+                                {
+                                    builder.Append($" (saving {(_baseline.Mode - followingYearsCosts.Mode).ToString(format)}, equal to {((_baseline.Mode - followingYearsCosts.Mode) / _baseline.Mode).ToString("P2")})");
+                                    if (_baseline.Mode - followingYearsCosts.Mode < 0)
+                                        negativeDelta = true;
+                                }
+                                AppendText(builder.ToString());
+                                builder.Clear();
+                                builder.Append($"- {modelVM.Properties.MaxPercentile}th percentile: {followingYearsCosts.GetMax(currencySymbol, monetaryScale)}");
                                 if (_baseline != null)
-                                    _output.AppendText($" (saving {(_baseline.Max - followingYearsCosts.Max).ToString(format)}, equal to {((_baseline.Max - followingYearsCosts.Max) / _baseline.Max).ToString("P2")})\n");
-                                else
-                                    _output.AppendText("\n");
-                                _output.AppendText($"- Confidence: {followingYearsCosts.Confidence}\n");
+                                {
+                                    builder.Append($" (saving {(_baseline.Max - followingYearsCosts.Max).ToString(format)}, equal to {((_baseline.Max - followingYearsCosts.Max) / _baseline.Max).ToString("P2")})");
+                                    if (_baseline.Max - followingYearsCosts.Max < 0)
+                                        negativeDelta = true;
+                                }
+                                AppendText(builder.ToString());
+                                AppendText($"- Confidence: {followingYearsCosts.Confidence}\n");
                             }
 
                             if (optimized?.Any() ?? false)
                             {
-                                _output.AppendText("\nMitigations to be applied:\n");
-                                foreach (var mitigation in optimized)
+                                if (negativeDelta)
                                 {
-                                    _output.AppendText($"- {mitigation.Name}\n");
-                                    _output.AppendText($"  - Implementation Costs: {mitigation.GetMin(currencySymbol, monetaryScale)} - {mitigation.GetMode(currencySymbol, monetaryScale)} - {mitigation.GetMax(currencySymbol, monetaryScale)} ({mitigation.Confidence})\n");
-                                    if (mitigation.OperationCosts != null)
+                                    AppendText("**Warning:** Some costs savings are negative, meaning that the selected mitigations increase the overall risk cost compared to the baseline. Please review the mitigations' costs and risk reductions. If everything is fine, please repeat the Optimization. If this happens again, it might be the case that the identified mitigations do not improve the situation and should be avoided.");
+                                }
+                                else
+                                {
+                                    AppendText("### Optimal mitigations");
+                                    foreach (var mitigation in optimized)
                                     {
-                                        _output.AppendText($"  - Operation Costs: {mitigation.OperationCosts.GetMin(currencySymbol, monetaryScale)} - {mitigation.OperationCosts.GetMode(currencySymbol, monetaryScale)} - {mitigation.OperationCosts.GetMax(currencySymbol, monetaryScale)} ({mitigation.OperationCosts.Confidence})\n");
+                                        AppendText($"- {mitigation.Name}");
+                                        AppendText($"  - Implementation Costs: {mitigation.GetMin(currencySymbol, monetaryScale)} - {mitigation.GetMode(currencySymbol, monetaryScale)} - {mitigation.GetMax(currencySymbol, monetaryScale)} ({mitigation.Confidence})");
+                                        if (mitigation.OperationCosts != null)
+                                        {
+                                            AppendText($"  - Operation Costs: {mitigation.OperationCosts.GetMin(currencySymbol, monetaryScale)} - {mitigation.OperationCosts.GetMode(currencySymbol, monetaryScale)} - {mitigation.OperationCosts.GetMax(currencySymbol, monetaryScale)} ({mitigation.OperationCosts.Confidence})");
+                                        }
                                     }
                                 }
                             }
-
-                            _output.AppendText("--- Calculation of the Optimal Set of Mitigations Completed ---\n\n");
+                            else
+                            {
+                                AppendText("The selected mitigations increase the overall risk cost compared to the baseline. Please review the mitigations' costs and risk reductions. If everything is fine, please repeat the Optimization. If this happens again, it might be the case that the identified mitigations do not improve the situation and should be avoided.");
+                            }
+                            AppendText();
+                            AppendText($"Optimization completed in {stopwatch.ElapsedMilliseconds}ms.");
+                            AppendText();
                         }
                     }
                     else
@@ -909,7 +960,7 @@ namespace QRiskTreeEditor
 
                 var range = samples.ToRange(RangeType.Money, 
                     modelVM.Properties.MinPercentile, modelVM.Properties.MaxPercentile);
-                _output.AppendText($"Simulation with {selectedMitigations?.Count() ?? 0} mitigations - Min: {range?.GetMin(currencySymbol, monetaryScale)} - Mode: {range?.GetMode(currencySymbol, monetaryScale)} - Max: {range?.GetMax(currencySymbol, monetaryScale)} ({range?.Confidence}).\n");
+                AppendText($"Simulation with {selectedMitigations?.Count() ?? 0} mitigations - Min: {range?.GetMin(currencySymbol, monetaryScale)} - Mode: {range?.GetMode(currencySymbol, monetaryScale)} - Max: {range?.GetMax(currencySymbol, monetaryScale)} ({range?.Confidence}).");
             }
         }
 #endif
@@ -1628,6 +1679,14 @@ namespace QRiskTreeEditor
             {
                 grid.AddHandler(DataGridRow.ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
             }
+        }
+        #endregion
+
+        #region Markdown helper.
+        private void AppendText(string? text = null)
+        {
+            _markdown.AppendLine(text);
+            _output.Markdown = _markdown.ToString();
         }
         #endregion
     }
