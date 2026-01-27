@@ -76,11 +76,11 @@ namespace QRiskTreeEditor.ViewModels
 
         public void Delete()
         {
-            if (_parent != null)
+            if (_parent is MitigatedRiskViewModel mrVM)
             {
                 _model.Mitigations?.OfType<MitigationCostViewModel>()
-                    .FirstOrDefault(m => m.Id == MitigationCostId)?.RemoveRelated(_parent);
-                _parent.RemoveChild(this);
+                    .FirstOrDefault(m => m.Id == MitigationCostId)?.RemoveRelated(mrVM);
+                mrVM.RemoveChild(this);
             }
         }
 

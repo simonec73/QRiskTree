@@ -82,10 +82,6 @@ namespace QRiskTreeEditor.ViewModels
             Components = CollectionViewSource.GetDefaultView(_components);
             Components.SortDescriptions.Add(new SortDescription(nameof(NodeType), ListSortDirection.Ascending));
             Components.SortDescriptions.Add(new SortDescription(nameof(Name), ListSortDirection.Ascending));
-
-            _mitigations = new ObservableCollection<AppliedMitigationViewModel>();
-            Mitigations = CollectionViewSource.GetDefaultView(_mitigations);
-            Mitigations.SortDescriptions.Add(new SortDescription(nameof(Name), ListSortDirection.Ascending));
         }
 
         // Expose the underlying object if needed
@@ -173,7 +169,7 @@ namespace QRiskTreeEditor.ViewModels
             OnPropertyChanged(nameof(IsSetByUser)); 
         }
 
-        public NodeViewModel? Clone(NodeViewModel? parent = null)
+        public virtual NodeViewModel? Clone(NodeViewModel? parent = null)
         {
             NodeViewModel? result = null;
 
@@ -256,30 +252,6 @@ namespace QRiskTreeEditor.ViewModels
                 if (rsVM != null)
                 {
                     result = rsVM;
-                }
-            }
-            else if (_node is MitigatedRisk mitigatedRisk)
-            {
-                var mrVM = _model.AddRisk($"{mitigatedRisk.Name} (copy)");
-                if (mrVM != null)
-                {
-                    mrVM.IsEnabled = mitigatedRisk.IsEnabled;
-
-                    var lefVM = _components.OfType<LossEventFrequencyViewModel>().FirstOrDefault();
-                    if (lefVM != null)
-                    {
-                        lefVM.Clone(mrVM);
-                    }
-
-                    var lmVM = _components.OfType<LossMagnitudeViewModel>().FirstOrDefault();
-                    if (lmVM != null)
-                    {
-                        lmVM.Clone(mrVM);
-                    }
-
-                    CloneMitigations(mrVM);
-
-                    result = mrVM;
                 }
             }
             else if (_node is SecondaryLossEventFrequency slef && parent is SecondaryRiskViewModel sr)
@@ -391,30 +363,6 @@ namespace QRiskTreeEditor.ViewModels
             }
 
             return result;
-        }
-
-        private void CloneMitigations(MitigatedRiskViewModel target)
-        {
-            var mitigations = Mitigations?.OfType<AppliedMitigationViewModel>()?.ToArray();
-            if (mitigations?.Any() ?? false)
-            {
-                foreach (var mitigation in mitigations)
-                {
-                    var mitigationCost = _model.Mitigations?.OfType<MitigationCostViewModel>()
-                        .FirstOrDefault(x => x.Id == mitigation.MitigationCostId);
-                    if (mitigationCost != null)
-                    {
-                        target.ApplyMitigation(mitigationCost, out var appliedMitigation);
-                        if (appliedMitigation != null)
-                        {
-                            appliedMitigation.Min = mitigation.Min;
-                            appliedMitigation.Mode = mitigation.Mode;
-                            appliedMitigation.Max = mitigation.Max;
-                            appliedMitigation.Confidence = mitigation.Confidence;
-                        }
-                    }
-                }
-            }
         }
         #endregion
 
@@ -632,22 +580,14 @@ namespace QRiskTreeEditor.ViewModels
         #region Children management.
         protected ObservableCollection<NodeViewModel> _components { get; }
 
-        protected ObservableCollection<AppliedMitigationViewModel> _mitigations { get; }
-
         [Browsable(false)]
         public ICollectionView Components { get; }
 
         [Browsable(false)]
-        public ICollectionView Mitigations { get; }
-
-        [Browsable(false)]
-        public override bool HasChildren => _components.Any() || _mitigations.Any() || base.HasChildren;
+        public override bool HasChildren => _components.Any() || base.HasChildren;
 
         [Browsable(false)]
         public bool HasComponents => _components.Any();
-
-        [Browsable(false)]
-        public bool HasMitigations => _mitigations.Any();
 
         public void AddChild(NodeViewModel child)
         {
@@ -661,18 +601,6 @@ namespace QRiskTreeEditor.ViewModels
             }
         }
 
-        public void AddChild(AppliedMitigationViewModel child)
-        {
-            if (child == null) throw new ArgumentNullException(nameof(child));
-            if (_node.Add(child.Node))
-            {
-                _mitigations.Add(child);
-                OnPropertyChanged(nameof(_mitigations));
-                OnPropertyChanged(nameof(HasMitigations));
-                OnPropertyChanged(nameof(HasChildren));
-            }
-        }
-
         public void RemoveChild(NodeViewModel child)
         {
             if (_node.Remove(child.Node))
@@ -680,17 +608,6 @@ namespace QRiskTreeEditor.ViewModels
                 _components.Remove(child);
                 OnPropertyChanged(nameof(_components));
                 OnPropertyChanged(nameof(HasComponents));
-                OnPropertyChanged(nameof(HasChildren));
-            }
-        }
-
-        public void RemoveChild(AppliedMitigationViewModel child)
-        {
-            if (_node.Remove(child.Node))
-            {
-                _mitigations.Remove(child);
-                OnPropertyChanged(nameof(_mitigations));
-                OnPropertyChanged(nameof(HasMitigations));
                 OnPropertyChanged(nameof(HasChildren));
             }
         }
