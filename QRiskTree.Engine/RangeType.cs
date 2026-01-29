@@ -5,7 +5,7 @@
         /// <summary>
         /// The range is a simple numeric value.
         /// </summary>
-        /// <remarks>Acceptable values are between 0 and Double.Max.</remarks>
+        /// <remarks>Acceptable values are between Double.MinValue and Double.MaxValue.</remarks>
         Number,
         /// <summary>
         /// The range is a monetary value.

@@ -59,7 +59,7 @@ namespace QRiskTree.Engine
         #region Static methods.
         public static double GetMinAllowed(RangeType rangeType)
         {
-            return 0.0; // Minimum value is always 0 for all range types.
+            return rangeType == RangeType.Number ? double.MinValue : 0.0; // Minimum value is always 0 for all range types with the exception of Number.
         }
 
         public static double GetMaxAllowed(RangeType rangeType)
