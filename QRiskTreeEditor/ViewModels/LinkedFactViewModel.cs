@@ -63,6 +63,9 @@ namespace QRiskTreeEditor.ViewModels
         public string? Details => _fact.Details;
 
         [Category("Fact")]
+        public string? FactType => _fact.FactType;
+
+        [Category("Fact")]
         public string Value => _fact.FormattedValue;
         #endregion
     }
