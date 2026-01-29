@@ -122,20 +122,25 @@ namespace QRiskTreeEditor.ViewModels
         public MitigationCost? MitigationCost => (_node as AppliedMitigation)?.MitigationCost;
 
         [Category("General")]
+        [PT.SortIndex(10)]
         public bool IsEnabled => (_node as AppliedMitigation)?.IsEnabled ?? false;
 
         [Category("General")]
+        [PT.SortIndex(0)]
         public string? Name => _node.Name;
 
         [Category("General")]
+        [PT.SortIndex(1)]
         public string? Description => _node.Description;
 
         [Category("Mitigation")]
         [DisplayName("Control Type")]
+        [PT.SortIndex(201)]
         public ControlType ControlType => MitigationCost?.ControlType ?? ControlType.Unknown;
 
         [Category("Mitigation")]
         [DisplayName("Is Auxiliary")]
+        [PT.SortIndex(202)]
         public bool IsAuxiliary
         {
             get
@@ -189,6 +194,7 @@ namespace QRiskTreeEditor.ViewModels
 
         [Category("Range")]
         [DisplayName("Minimum Value")]
+        [PT.SortIndex(203)]
         public string FormattedMin
         {
             get
@@ -238,6 +244,7 @@ namespace QRiskTreeEditor.ViewModels
 
         [Category("Range")]
         [DisplayName("Mode Value")]
+        [PT.SortIndex(204)]
         public string FormattedMode
         {
             get
@@ -287,6 +294,7 @@ namespace QRiskTreeEditor.ViewModels
 
         [Category("Range")]
         [DisplayName("Maximum Value")]
+        [PT.SortIndex(205)]
         public string FormattedMax
         {
             get
@@ -315,6 +323,7 @@ namespace QRiskTreeEditor.ViewModels
 
         [Category("Range")]
         [PT.SelectorStyle(PT.SelectorStyle.ComboBox)]
+        [PT.SortIndex(206)]
         public Confidence Confidence
         {
             get => _node.Confidence;
@@ -330,18 +339,23 @@ namespace QRiskTreeEditor.ViewModels
 
         [Category("Range")]
         [DisplayName("Range set by User")]
+        [PT.SortIndex(207)]
         public bool IsSetByUser => !(_node.Calculated ?? true);
 
         [Category("Update")]
+        [PT.SortIndex(10000)]
         public string? CreatedBy => _node.CreatedBy;
 
         [Category("Update")]
+        [PT.SortIndex(10001)]
         public DateTime CreatedOn => _node.CreatedOn;
 
         [Category("Update")]
+        [PT.SortIndex(10002)]
         public string? ModifiedBy => _node.ModifiedBy;
 
         [Category("Update")]
+        [PT.SortIndex(10003)]
         public DateTime ModifiedOn => _node.ModifiedOn;
         #endregion
     }

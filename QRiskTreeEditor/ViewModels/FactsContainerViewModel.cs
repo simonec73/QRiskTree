@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Data;
+using PT = PropertyTools.DataAnnotations;
 
 namespace QRiskTreeEditor.ViewModels
 {
@@ -31,10 +32,14 @@ namespace QRiskTreeEditor.ViewModels
         public Guid Id => _node.Id;
 
         [Category("General")]
+        [PT.SortIndex(2)]
         public string NodeType => _node.GetType().Name.AddSpacesToCamelCase();
 
         [Browsable(false)]
         public ICollectionView? Facts { get; private set; }
+
+        [Browsable(false)]
+        public NodeViewModel? Parent => _parent;
 
         [Browsable(false)]
         public virtual bool HasChildren => _facts.Any();

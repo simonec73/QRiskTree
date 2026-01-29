@@ -1,4 +1,5 @@
 ﻿using QRiskTree.Engine.Model;
+using System.ComponentModel;
 
 namespace QRiskTreeEditor.ViewModels
 {
@@ -9,6 +10,8 @@ namespace QRiskTreeEditor.ViewModels
         }
 
         #region Properties.
+        [Category("Primary Loss")]
+        [DisplayName("Loss Form")]
         public LossForm Form
         {
             get => (_node as PrimaryLoss)?.Form ?? LossForm.Undetermined;

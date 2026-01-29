@@ -1,5 +1,6 @@
 ﻿using QRiskTreeEditor.Importers;
 using System.ComponentModel;
+using PT = PropertyTools.DataAnnotations;
 
 namespace QRiskTreeEditor.ViewModels
 {
@@ -72,9 +73,11 @@ namespace QRiskTreeEditor.ViewModels
         public Guid Id => _node.Id;
 
         [Category("General")]
+        [PT.SortIndex(2)]
         public string NodeType => _node.NodeType;
 
         [Category("General")]
+        [PT.SortIndex(0)]
         public string? Name
         {
             get
@@ -95,6 +98,7 @@ namespace QRiskTreeEditor.ViewModels
         }
 
         [Category("General")]
+        [PT.SortIndex(2)]
         public string? Description
         {
             get
@@ -115,6 +119,7 @@ namespace QRiskTreeEditor.ViewModels
 
         [Category("Range")]
         [DisplayName("Minimum Value")]
+        [PT.SortIndex(100)]
         public string Min
         {
             get
@@ -136,6 +141,7 @@ namespace QRiskTreeEditor.ViewModels
 
         [Category("Range")]
         [DisplayName("Mode Value")]
+        [PT.SortIndex(101)]
         public string Mode
         {
             get
@@ -157,6 +163,7 @@ namespace QRiskTreeEditor.ViewModels
 
         [Category("Range")]
         [DisplayName("Maximum Value")]
+        [PT.SortIndex(102)]
         public string Max
         {
             get
@@ -177,6 +184,7 @@ namespace QRiskTreeEditor.ViewModels
         }
 
         [Category("Range")]
+        [PT.SortIndex(103)]
         public string Confidence
         {
             get
@@ -196,7 +204,31 @@ namespace QRiskTreeEditor.ViewModels
             }
         }
 
+        [Category("Range")]
+        [DisplayName("Range set by User")]
+        [PT.SortIndex(104)]
+        public bool IsSetByUser
+        {
+            get
+            {
+                var result = false;
+
+                if (_node is NodeViewModel nodeViewModel)
+                {
+                    result = nodeViewModel.IsSetByUser;
+                }
+                else if (_node is AppliedMitigationViewModel appliedMitigationViewModel)
+                {
+                    result = appliedMitigationViewModel.IsSetByUser;
+                }
+
+                return result;
+            }
+        }
+
+
         [Category("Update")]
+        [PT.SortIndex(10000)]
         public string? CreatedBy
         {
             get
@@ -217,6 +249,7 @@ namespace QRiskTreeEditor.ViewModels
         }
 
         [Category("Update")]
+        [PT.SortIndex(10001)]
         public DateTime CreatedOn
         {
             get
@@ -237,6 +270,7 @@ namespace QRiskTreeEditor.ViewModels
         }
 
         [Category("Update")]
+        [PT.SortIndex(10002)]
         public string? ModifiedBy
         {
             get
@@ -258,6 +292,7 @@ namespace QRiskTreeEditor.ViewModels
 
 
         [Category("Update")]
+        [PT.SortIndex(10004)]
         public DateTime ModifiedOn
         {
             get

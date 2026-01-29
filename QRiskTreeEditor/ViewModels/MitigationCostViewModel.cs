@@ -22,6 +22,7 @@ namespace QRiskTreeEditor.ViewModels
         #region Properties.
         [Category("Mitigation")]
         [DisplayName("Enabled")]
+        [PT.SortIndex(50)]
         public bool IsEnabled
         {
             get => (_node as MitigationCost)?.IsEnabled ?? false;
@@ -36,6 +37,7 @@ namespace QRiskTreeEditor.ViewModels
         }
 
         [DisplayName("Control Type")]
+        [PT.SortIndex(50)]
         public ControlType ControlType
         {
             get => (_node as MitigationCost)?.ControlType ?? ControlType.Unknown;
@@ -53,6 +55,7 @@ namespace QRiskTreeEditor.ViewModels
 
         [Category("Range")]
         [DisplayName("Operation Costs set by User")]
+        [PT.SortIndex(125)]
         public bool IsOperationCostSetByUser => !(OperationCosts?.Calculated ?? true);
 
 
@@ -84,6 +87,7 @@ namespace QRiskTreeEditor.ViewModels
 
         [Category("Range")]
         [DisplayName("Operation Minimum Value")]
+        [PT.SortIndex(120)]
         public string FormattedOperationMin
         {
             get
@@ -146,6 +150,7 @@ namespace QRiskTreeEditor.ViewModels
 
         [Category("Range")]
         [DisplayName("Operation Mode Value")]
+        [PT.SortIndex(121)]
         public string FormattedOperationMode
         {
             get
@@ -208,6 +213,7 @@ namespace QRiskTreeEditor.ViewModels
 
         [Category("Range")]
         [DisplayName("Operation Maximum Value")]
+        [PT.SortIndex(122)]
         public string FormattedOperationMax
         {
             get
@@ -245,6 +251,7 @@ namespace QRiskTreeEditor.ViewModels
         [Category("Range")]
         [DisplayName("Operation Confidence")]
         [PT.SelectorStyle(PT.SelectorStyle.ComboBox)]
+        [PT.SortIndex(123)]
         public Confidence OperationConfidence
         {
             get => OperationCosts?.Confidence ?? Confidence.Low;

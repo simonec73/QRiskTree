@@ -4,6 +4,7 @@ using QRiskTree.Engine.Model;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Data;
+using PT = PropertyTools.DataAnnotations;
 
 namespace QRiskTreeEditor.ViewModels
 {
@@ -19,6 +20,7 @@ namespace QRiskTreeEditor.ViewModels
         #region Properties.
         [Category("Mitigated Risk")]
         [DisplayName("Enabled")]
+        [PT.SortIndex(50)]
         public bool IsEnabled
         {
             get => (_node as MitigatedRisk)?.IsEnabled ?? false;
