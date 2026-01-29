@@ -31,6 +31,8 @@ namespace QRiskTreeEditor
         private double _outputHeight;
         private StringBuilder _markdown = new StringBuilder();
 
+        public static readonly RoutedCommand SaveCommand = new RoutedCommand();
+
         public MainWindow()
         {
             InitializeComponent();
@@ -41,6 +43,9 @@ namespace QRiskTreeEditor
             _risksContainer.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
             _mitigationsContainer.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
             _factsContainer.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
+            _factAnalyzersContainer.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
+            
+            CommandBindings.Add(new CommandBinding(SaveCommand, SaveCommand_Executed));
         }
 
         private void SetDataContext(RiskModelViewModel model)
@@ -50,10 +55,13 @@ namespace QRiskTreeEditor
             _chartFirst.SetModel(model, RelevantEvent.FirstYear);
             _chartFollowing.SetModel(model, RelevantEvent.FollowingYears);
             _chartComparison.SetModel(model, RelevantEvent.BaselineAndOptimizationTarget);
+            _tabFactAnalyzerResults.Visibility = Visibility.Collapsed;
             SubscribeMitigatedRisks();
 
             _output.Markdown = string.Empty;
             _markdown.Clear();
+
+            _tabControl.SelectedIndex = 0;
         }
 
         #region Baseline management.
@@ -176,6 +184,11 @@ namespace QRiskTreeEditor
             }
         }
 
+        private void SaveCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            _fileSave_Click(sender, e);
+        }
+
         private void _fileSaveAs_Click(object sender, RoutedEventArgs e)
         {
             var saveFileDialog = new Microsoft.Win32.SaveFileDialog
@@ -274,6 +287,14 @@ namespace QRiskTreeEditor
             {
                 modelVM.AddFact(new FactRange("Context", "Name of the source", "New Fact",
                     new QRiskTree.Engine.Range(QRiskTree.Engine.RangeType.Percentage, 0.0, 0.0, 0.0, QRiskTree.Engine.Confidence.Low)));
+            }
+        }
+
+        private void _editCreateFactAnalyzer_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is RiskModelViewModel modelVM)
+            {
+                modelVM.AddFactAnalyzer("New Fact Analyzer");
             }
         }
 
@@ -707,20 +728,21 @@ namespace QRiskTreeEditor
                     {
                         if (violatingNode != null && !(violatingNode is MitigatedRisk))
                         {
-                            MessageBox.Show($"Risk '{invalidRiskName}' is not valid for baseline risk calculation because {violatingNode.GetType().Name.AddSpacesToCamelCase()} '{violatingNode.Name}' is not set.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            MessageBox.Show($"Risk '{invalidRiskName}' is not valid for baseline factAnalyzer calculation because {violatingNode.GetType().Name.AddSpacesToCamelCase()} '{violatingNode.Name}' is not set.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                         else
                         {
-                            MessageBox.Show($"Risk '{invalidRiskName}' is not valid for baseline risk calculation.\nPlease check if it has all required children, or if you still must set its range.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            MessageBox.Show($"Risk '{invalidRiskName}' is not valid for baseline factAnalyzer calculation.\nPlease check if it has all required children, or if you still must set its range.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                     }
                 }
                 else
                 {
-                    MessageBox.Show("No risk has been selected for baseline risk calculation.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("No factAnalyzer has been selected for baseline factAnalyzer calculation.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
         }
+
         private async void _calculateOptimalMitigations_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -915,7 +937,7 @@ namespace QRiskTreeEditor
                             {
                                 if (negativeDelta)
                                 {
-                                    AppendText("**Warning:** Some costs savings are negative, meaning that the selected mitigations increase the overall risk cost compared to the baseline. Please review the mitigations' costs and risk reductions. If everything is fine, please repeat the Optimization. If this happens again, it might be the case that the identified mitigations do not improve the situation and should be avoided.");
+                                    AppendText("**Warning:** Some costs savings are negative, meaning that the selected mitigations increase the overall factAnalyzer cost compared to the baseline. Please review the mitigations' costs and factAnalyzer reductions. If everything is fine, please repeat the Optimization. If this happens again, it might be the case that the identified mitigations do not improve the situation and should be avoided.");
                                 }
                                 else
                                 {
@@ -933,7 +955,7 @@ namespace QRiskTreeEditor
                             }
                             else
                             {
-                                AppendText("The selected mitigations increase the overall risk cost compared to the baseline. Please review the mitigations' costs and risk reductions. If everything is fine, please repeat the Optimization. If this happens again, it might be the case that the identified mitigations do not improve the situation and should be avoided.");
+                                AppendText("The selected mitigations increase the overall factAnalyzer cost compared to the baseline. Please review the mitigations' costs and factAnalyzer reductions. If everything is fine, please repeat the Optimization. If this happens again, it might be the case that the identified mitigations do not improve the situation and should be avoided.");
                             }
                             AppendText();
                             AppendText($"Optimization completed in {stopwatch.ElapsedMilliseconds}ms.");
@@ -954,7 +976,7 @@ namespace QRiskTreeEditor
                 }
                 else
                 {
-                    MessageBox.Show("No risks or mitigations selected for optimized set calculation.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("No factAnalyzers or mitigations selected for optimized set calculation.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
         }
@@ -983,7 +1005,7 @@ namespace QRiskTreeEditor
                 foreach (var node in nodes)
                 {
                     var children = node.Components?.OfType<NodeViewModel>()?.ToArray();
-                    var mitigations = node.Mitigations?.OfType<AppliedMitigationViewModel>()?.ToArray();
+                    var mitigations = (node as MitigatedRiskViewModel)?.Mitigations?.OfType<AppliedMitigationViewModel>()?.ToArray();
                     if (node.IsSetByUser || !(children?.Any() ?? false))
                         count++;
                     else if (children?.Any() ?? false)
@@ -995,6 +1017,67 @@ namespace QRiskTreeEditor
             }
 
             return count;
+        }
+
+        private void _calculateAllFactAnalyzers_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is RiskModelViewModel modelVM)
+            {
+                var factAnalyzers = modelVM.FactAnalyzers?.OfType<FactAnalyzerViewModel>()?.ToArray();
+                if (factAnalyzers?.Any() ?? false)
+                {
+                    string? invalidFactAnalyzerName = null;
+                    Node? violatingNode = null;
+                    foreach (var factAnalyzer in factAnalyzers)
+                    {
+                        if (!factAnalyzer.Node.CanBeSimulated(out var node))
+                        {
+                            violatingNode = node;
+                            invalidFactAnalyzerName = factAnalyzer.Name;
+                            break;
+                        }
+                    }
+
+                    if (invalidFactAnalyzerName == null)
+                    {
+                        AppendText("# Calculating Fact Analyzers");
+                        AppendText($"**Model:** {modelVM.Properties.Name}");
+                        AppendText();
+                        AppendText($"**Created on:** {DateTime.Now.ToString("yyyy-MM-dd HH:mm")}");
+                        AppendText();
+                        foreach (var factAnalyzer in factAnalyzers)
+                        {
+                            if (factAnalyzer.Node.Simulate(modelVM.Properties.MinPercentile,
+                                modelVM.Properties.MaxPercentile, modelVM.Properties.Iterations))
+                            {
+                                AppendText($"## Fact Analyzer '{factAnalyzer.Name}'");
+                                AppendText($"- Operation: {factAnalyzer.Operation.ToString()}");
+                                AppendText($"- {modelVM.Properties.MinPercentile}th percentile: {factAnalyzer.Min.ToString("F2")}");
+                                AppendText($"- Mode: {factAnalyzer.Mode.ToString("F2")}");
+                                AppendText($"- {modelVM.Properties.MaxPercentile}th percentile: {factAnalyzer.Max.ToString("F2")}");
+                                AppendText($"- Confidence: {factAnalyzer.Confidence}");
+                            }
+                        }
+                        AppendText();
+                        AppendText();
+                    }
+                    else
+                    {
+                        if (violatingNode != null)
+                        {
+                            MessageBox.Show($"Fact Analyzer '{invalidFactAnalyzerName}' is not valid because {violatingNode.GetType().Name.AddSpacesToCamelCase()} '{violatingNode.Name}' is not set.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                        else
+                        {
+                            MessageBox.Show($"Fact Analyzer '{invalidFactAnalyzerName}' is not valid.\nPlease check if it has all required children, or if you still must set its range.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("No Fact Analyzer has been defined.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
         }
         #endregion
         #endregion
@@ -1267,6 +1350,33 @@ namespace QRiskTreeEditor
                 contextMenu.Items.Add(item);
                 contextMenu.Items.Add(new Separator());
             }
+            else if (row.DataContext is FactViewModel factVM)
+            {
+                item = new MenuItem { Header = "Clone the Fact" };
+                item.Click += Item_CloneFact;
+                item.Tag = factVM;
+                contextMenu.Items.Add(item);
+                contextMenu.Items.Add(new Separator());
+            }
+            else if (row.DataContext is FactAnalyzerViewModel factAnalyzerVM)
+            {
+                if (!(factAnalyzerVM.Parent is FactAnalyzerViewModel parent && parent.Parent is FactAnalyzerViewModel))
+                {
+                    item = new MenuItem { Header = "Add child Fact Analyzer" };
+                    item.Click += Item_AddChildFactAnalyzer;
+                    item.Tag = factAnalyzerVM;
+                    contextMenu.Items.Add(item);
+                }
+                item = new MenuItem { Header = "Calculate the Fact Analyzer" };
+                item.Click += Item_CalculateFactAnalyzer;
+                item.Tag = factAnalyzerVM;
+                contextMenu.Items.Add(item);
+                item = new MenuItem { Header = "Clone the Fact Analyzer" };
+                item.Click += Item_CloneFactAnalyzer;
+                item.Tag = factAnalyzerVM;
+                contextMenu.Items.Add(item);
+                contextMenu.Items.Add(new Separator());
+            }
 
             // Delete current row.
             item = new MenuItem { Header = $"Delete current {row.DataContext.GetType().Name.Replace("ViewModel", "").AddSpacesToCamelCase()}" };
@@ -1327,6 +1437,12 @@ namespace QRiskTreeEditor
                     contextMenu.Items.Add(item);
                     result = true;
                     break;
+                case "_factAnalyzers":
+                    item = new MenuItem { Header = "Create a new Fact Analyzer" };
+                    item.Click += Item_CreateFactAnalyzer;
+                    contextMenu.Items.Add(item);
+                    result = true;
+                    break;
             }
 
             if (result)
@@ -1367,6 +1483,8 @@ namespace QRiskTreeEditor
                     menuItem.Click -= Item_ResetRange;
                     menuItem.Click -= Item_ResetOperationCostsRange;
                     menuItem.Click -= Item_CloneRisk;
+                    menuItem.Click -= Item_CloneFact;
+                    menuItem.Click -= Item_CloneFactAnalyzer;
                     menuItem.Click -= Item_CreateRisk;
                     menuItem.Click -= Item_CreateMitigation;
                     menuItem.Click -= Item_CreateFact;
@@ -1374,6 +1492,9 @@ namespace QRiskTreeEditor
                     menuItem.Click -= Item_CreateFactWithMonetaryRange;
                     menuItem.Click -= Item_CreateFactWithFrequencyRange;
                     menuItem.Click -= Item_CreateFactWithPercentageRange;
+                    menuItem.Click -= Item_CreateFactAnalyzer;
+                    menuItem.Click -= Item_AddChildFactAnalyzer;
+                    menuItem.Click -= Item_CalculateFactAnalyzer;
                 }
             }
         }
@@ -1384,6 +1505,22 @@ namespace QRiskTreeEditor
             if (sender is MenuItem menuItem && menuItem.Tag is MitigatedRiskViewModel riskVM)
             {
                 riskVM?.Clone();
+            }
+        }
+
+        private void Item_CloneFact(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.Tag is FactViewModel factVM)
+            {
+                factVM?.Clone();
+            }
+        }
+
+        private void Item_CloneFactAnalyzer(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.Tag is FactAnalyzerViewModel factAnalyzerVM)
+            {
+                factAnalyzerVM?.Clone();
             }
         }
 
@@ -1610,12 +1747,78 @@ namespace QRiskTreeEditor
                         amVM.Delete();
                     }
                 }
+                else if (menuItem.Tag is FactAnalyzerViewModel faVM)
+                {
+                    if (MessageBox.Show($"Are you sure you want to delete Fact Analyzer '{faVM.Name}'?",
+                        "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                    {
+                        model.RemoveFactAnalyzer(faVM);
+                    }
+                }
                 else if (menuItem.Tag is NodeViewModel nodeVM)
                 {
                     if (MessageBox.Show($"Are you sure you want to delete {nodeVM.NodeType} '{nodeVM.Name}'?",
                         "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
                     {
                         nodeVM.Delete();
+                    }
+                }
+            }
+        }
+
+        private void Item_AddChildFactAnalyzer(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.Tag is FactAnalyzerViewModel faVM && DataContext is RiskModelViewModel modelVM)
+            {
+                if (faVM.Parent is FactAnalyzerViewModel parent && parent.Parent is FactAnalyzerViewModel)
+                {
+                    MessageBox.Show("Fact Analyzers in QRiskTree Editor can only have two levels of depth.\nYou cannot add a child to this Fact Analyzer.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                else
+                {
+                    faVM.AddFactAnalyzer("New Fact Analyzer");
+                }
+            }
+        }
+
+        private void Item_CalculateFactAnalyzer(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.Tag is FactAnalyzerViewModel faVM && DataContext is RiskModelViewModel modelVM)
+            {
+                if (faVM.Node.CanBeSimulated(out var node))
+                {
+                    AppendText("# Calculating Fact Analyzer");
+                    AppendText($"**Model:** {modelVM.Properties.Name}");
+                    AppendText();
+                    AppendText($"**Created on:** {DateTime.Now.ToString("yyyy-MM-dd HH:mm")}");
+                    AppendText();
+                    if (faVM.Node.SimulateAndGetSamples(out var samples, modelVM.Properties.MinPercentile,
+                        modelVM.Properties.MaxPercentile, modelVM.Properties.Iterations) &&
+                        samples != null && samples.Length == modelVM.Properties.Iterations)
+                    {
+                        AppendText($"## Fact Analyzer '{faVM.Name}'");
+                        AppendText($"- Operation: {faVM.Operation.ToString()}");
+                        AppendText($"- {modelVM.Properties.MinPercentile}th percentile: {faVM.Min.ToString("F2")}");
+                        AppendText($"- Mode: {faVM.Mode.ToString("F2")}");
+                        AppendText($"- {modelVM.Properties.MaxPercentile}th percentile: {faVM.Max.ToString("F2")}");
+                        AppendText($"- Confidence: {faVM.Confidence}");
+
+                        _chartFactAnalyzer.Plot(samples, modelVM.Properties.MinPercentile,
+                            modelVM.Properties.MaxPercentile);
+                        _tabFactAnalyzerResults.Visibility = Visibility.Visible;
+                    }
+                    AppendText();
+                    AppendText();
+                }
+                else
+                {
+                    if (node != null)
+                    {
+                        MessageBox.Show($"Fact Analyzer '{faVM.Name}' is not valid because {node.GetType().Name.AddSpacesToCamelCase()} '{node.Name}' is not set.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                    else
+                    {
+                        MessageBox.Show($"Fact Analyzer '{faVM.Name}' is not valid.\nPlease check if it has all required children, or if you still must set its range.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
             }
@@ -1656,6 +1859,11 @@ namespace QRiskTreeEditor
         private void Item_CreateFactWithPercentageRange(object sender, RoutedEventArgs e)
         {
             _editCreateFactWithPercentageRange_Click(sender, e);
+        }
+
+        private void Item_CreateFactAnalyzer(object sender, RoutedEventArgs e)
+        {
+            _editCreateFactAnalyzer_Click(sender, e);
         }
         #endregion
 

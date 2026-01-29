@@ -13,7 +13,7 @@ namespace QRiskTree.Engine.ExtendedModel
     {
         private static readonly Dictionary<Guid, RiskModel> _instances = new();
         private readonly FactsManager _factsManager = new FactsManager();
-        private const double CurrentSchemaVersion = 0.4;
+        private const double CurrentSchemaVersion = 0.6;
         private const double MinSchemaVersion = 0.0;
 
         /// <summary>
@@ -1176,6 +1176,16 @@ namespace QRiskTree.Engine.ExtendedModel
                         RecursiveRegisterWithFactsManager(risk, result._factsManager);
                     }
                 }
+
+                // Register all Fact Analyzers with the FactsManager.
+                var factAnalyzers = result._factAnalyzers?.ToArray();
+                if (factAnalyzers?.Any() ?? false)
+                {
+                    foreach (var factAnalyzer in factAnalyzers)
+                    {
+                        RecursiveRegisterWithFactsManager(factAnalyzer, result._factsManager);
+                    }
+                }
             }
 
             return result;
@@ -1277,6 +1287,99 @@ namespace QRiskTree.Engine.ExtendedModel
         public void ExportFacts(string filePath)
         {
             _factsManager.Export(filePath);
+        }
+        #endregion
+
+        #region Fact Analyzers Management.
+        [JsonProperty("factAnalyzers", Order = 13)]
+        private List<FactAnalyzerNode>? _factAnalyzers { get; set; }
+
+        /// <summary>
+        /// Get the collection of Fact Analyzers defined in the model.
+        /// </summary>
+        public IEnumerable<FactAnalyzerNode> FactAnalyzers => _factAnalyzers?.AsEnumerable() ?? [];
+
+        /// <summary>
+        /// Adds a new Fact Analyzer to the model.
+        /// </summary>
+        /// <returns>The created <see cref="FactAnalyzerNode"/>.</returns>
+        public FactAnalyzerNode AddFactAnalyzer()
+        {
+            var result = new FactAnalyzerNode();
+            AddFactAnalyzer(result);
+            return result;
+        }
+
+        /// <summary>
+        /// Adds a new Fact Analyzer to the model.
+        /// </summary>
+        /// <param name="name">The name of the new fact analyzer.</param>
+        /// <returns>The created <see cref="FactAnalyzerNode"/>.</returns>
+        public FactAnalyzerNode AddFactAnalyzer(string name)
+        {
+            var result = new FactAnalyzerNode(name);
+            AddFactAnalyzer(result);
+            return result;
+        }
+
+        private void AddFactAnalyzer(FactAnalyzerNode factAnalyzer)
+        {
+            factAnalyzer.AssignFactsManager(_factsManager);
+            _factAnalyzers ??= new List<FactAnalyzerNode>();
+            _factAnalyzers.Add(factAnalyzer);
+            factAnalyzer.ChildAdded += OnChildAdded;
+            factAnalyzer.ChildRemoved += OnChildRemoved;
+            factAnalyzer.FactAdded += OnFactAdded;
+            factAnalyzer.FactRemoved += OnFactRemoved;
+            Update();
+        }
+
+        /// <summary>
+        /// Get a Fact Analyzer by its unique identifier.
+        /// </summary>
+        /// <param name="id">Unique identifier of the fact analyzer.</param>
+        /// <returns>The <see cref="FactAnalyzerNode"/> with the specified ID, or null if not found.</returns>
+        public FactAnalyzerNode? GetFactAnalyzer(Guid id)
+        {
+            return _factAnalyzers?.FirstOrDefault(r => r.Id == id);
+        }
+
+        /// <summary>
+        /// Removes a Fact Analyzer by its unique identifier.
+        /// </summary>
+        /// <param name="id">Unique identifier of the fact analyzer to remove.</param>
+        /// <returns>True if the fact analyzer was successfully removed; otherwise, false.</returns>
+        public bool RemoveFactAnalyzer(Guid id)
+        {
+            var factAnalyzer = GetFactAnalyzer(id);
+            var result = factAnalyzer != null ? (_factAnalyzers?.Remove(factAnalyzer) ?? false) : false;
+            if (result)
+            {
+#pragma warning disable CS8604 // Possible null reference argument.
+                RecursivelyRemoveEvents(factAnalyzer);
+#pragma warning restore CS8604 // Possible null reference argument.
+                Update();
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Removes all Fact Analyzers from the model.
+        /// </summary>
+        public void ClearFactAnalyzers()
+        {
+            var factAnalyzers = _factAnalyzers?.ToArray();
+            if (factAnalyzers?.Any() ?? false)
+            {
+                foreach (var factAnalyzer in factAnalyzers)
+                {
+                    RecursivelyRemoveEvents(factAnalyzer);
+                }
+
+                _factAnalyzers?.Clear();
+                Update();
+            }
         }
         #endregion
     }

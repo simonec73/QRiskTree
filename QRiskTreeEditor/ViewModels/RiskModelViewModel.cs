@@ -15,7 +15,7 @@ using System.Windows.Markup;
 namespace QRiskTreeEditor.ViewModels
 {
     internal class RiskModelViewModel : INotifyPropertyChanged, 
-        IRiskSelectionReceiver, IMitigationSelectionReceiver, IFactSelectionReceiver
+        IRiskSelectionReceiver, IMitigationSelectionReceiver, IFactSelectionReceiver, IFactAnalyzerSelectionReceiver
     {
         private readonly RiskModel _model;
         private readonly RiskModelProperties _properties;
@@ -38,6 +38,25 @@ namespace QRiskTreeEditor.ViewModels
             else
             {
                 Facts = new ObservableCollection<FactViewModel>();
+            }
+            #endregion
+
+            #region Initialize the Fact Analyzers.
+            _factAnalyzers = new ObservableCollection<FactAnalyzerViewModel>();
+            var factAnalyzers = _model.FactAnalyzers.OfType<FactAnalyzerNode>().ToArray();
+            if (factAnalyzers.Any())
+            {
+                foreach (var factAnalyzer in factAnalyzers)
+                {
+                    var factAnalyzerViewModel = new FactAnalyzerViewModel(factAnalyzer, null, this);
+                    _factAnalyzers.Add(factAnalyzerViewModel);
+                }
+            }
+            FactAnalyzers = CollectionViewSource.GetDefaultView(_factAnalyzers);
+            FactAnalyzers.SortDescriptions.Add(new SortDescription(nameof(FactAnalyzerViewModel.Name), ListSortDirection.Ascending));
+            foreach (var factAnalyzer in _factAnalyzers)
+            {
+                factAnalyzer.InitializeFacts();
             }
             #endregion
 
@@ -159,6 +178,11 @@ namespace QRiskTreeEditor.ViewModels
             _risks.Remove(risk);
             OnPropertyChanged(nameof(_risks));
             OnPropertyChanged(nameof(HasRisks));
+
+            if (risk == _selectedRisk)
+            {
+                 SelectedRisk = null;
+            }
         }
 
         private object? _selectedRisk;
@@ -201,6 +225,11 @@ namespace QRiskTreeEditor.ViewModels
             _mitigations.Remove(mitigation);
             OnPropertyChanged(nameof(_mitigations));
             OnPropertyChanged(nameof(HasMitigations));
+
+            if (mitigation == _selectedMitigation)
+            {
+                SelectedMitigation = null;
+            }
         }
 
         private object? _selectedMitigation;
@@ -241,6 +270,11 @@ namespace QRiskTreeEditor.ViewModels
             Model.RemoveFact(fact.Fact);
             Facts.Remove(fact);
             OnPropertyChanged(nameof(Facts));
+
+            if (fact == _selectedFact)
+            {
+                SelectedFact = null;
+            }
         }
 
         private object? _selectedFact;
@@ -258,5 +292,53 @@ namespace QRiskTreeEditor.ViewModels
             }
         }
         #endregion
+
+        #region Fact Analyzer management.
+        private ObservableCollection<FactAnalyzerViewModel> _factAnalyzers { get; }
+
+        public ICollectionView FactAnalyzers { get; }
+
+        public bool HasFactAnalyzers => _factAnalyzers.Any();
+
+        public FactAnalyzerViewModel? AddFactAnalyzer(string name)
+        {
+            var factAnalyzer = _model.AddFactAnalyzer(name);
+            var result = new FactAnalyzerViewModel(factAnalyzer, null, this);
+            _factAnalyzers.Add(result);
+            OnPropertyChanged(nameof(FactAnalyzers));
+            OnPropertyChanged(nameof(HasFactAnalyzers));
+
+            return result;
+        }
+
+        public void RemoveFactAnalyzer(FactAnalyzerViewModel factAnalyzer)
+        {
+            _model.RemoveFactAnalyzer(factAnalyzer.Node.Id);
+            _factAnalyzers.Remove(factAnalyzer);
+            OnPropertyChanged(nameof(FactAnalyzers));
+            OnPropertyChanged(nameof(HasFactAnalyzers));
+
+            if (factAnalyzer == _selectedFactAnalyzer)
+            {
+                SelectedFactAnalyzer = null;
+            }
+        }
+
+        private object? _selectedFactAnalyzer;
+
+        public object? SelectedFactAnalyzer
+        {
+            get => _selectedFactAnalyzer;
+            set
+            {
+                if (_selectedFactAnalyzer != value)
+                {
+                    _selectedFactAnalyzer = value;
+                    OnPropertyChanged(nameof(SelectedFactAnalyzer));
+                }
+            }
+        }
+        #endregion
+
     }
 }

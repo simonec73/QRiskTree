@@ -33,6 +33,7 @@ namespace QRiskTree.Engine
             AddKnownType(typeof(MitigatedRisk));
             AddKnownType(typeof(MitigationCost));
             AddKnownType(typeof(RiskModel));
+            AddKnownType(typeof(FactAnalyzerNode));
         }
 
         public static void AddKnownType(Type type)

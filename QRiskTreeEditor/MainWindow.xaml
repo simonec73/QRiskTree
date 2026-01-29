@@ -7,6 +7,7 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:local="clr-namespace:QRiskTreeEditor"
         xmlns:engine="clr-namespace:QRiskTree.Engine;assembly=QRiskTree.Engine"
+        xmlns:facts="clr-namespace:QRiskTree.Engine.Facts;assembly=QRiskTree.Engine"
         xmlns:extendedModel="clr-namespace:QRiskTree.Engine.ExtendedModel;assembly=QRiskTree.Engine" xmlns:controls="clr-namespace:QRiskTreeEditor.Controls"
         mc:Ignorable="d"
         xmlns:mdxam="clr-namespace:MdXaml;assembly=MdXaml"
@@ -20,6 +21,11 @@
         <ObjectDataProvider x:Key="ControlTypeValues" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
             <ObjectDataProvider.MethodParameters>
                 <x:Type TypeName="extendedModel:ControlType"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+        <ObjectDataProvider x:Key="OperationValues" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="facts:FactAnalyzerOperation"/>
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
         <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
@@ -74,18 +80,21 @@
             <Setter Property="TextAlignment" Value="Center"/>
         </Style>
     </Window.Resources>
+    <Window.InputBindings>
+        <KeyBinding Key="S" Modifiers="Ctrl" Command="{x:Static local:MainWindow.SaveCommand}"/>
+    </Window.InputBindings>    
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="100" />
+            <RowDefinition Height="200" />
         </Grid.RowDefinitions>
         <Menu x:Name="_menu" Grid.Row="0" Background="White">
             <MenuItem x:Name="_menuFile" Header="File">
                 <MenuItem x:Name="_fileNew" Header="New" Click="_fileNew_Click"/>
                 <MenuItem x:Name="_fileOpen" Header="Open..." Click="_fileOpen_Click"/>
-                <MenuItem x:Name="_fileSave" Header="Save" Click="_fileSave_Click"/>
+                <MenuItem x:Name="_fileSave" Header="Save" Click="_fileSave_Click" InputGestureText="Ctrl+S"/>
                 <MenuItem x:Name="_fileSaveAs" Header="Save As..." Click="_fileSaveAs_Click"/>
                 <Separator/>
                 <MenuItem x:Name="_fileAbout" Header="About QRiskTree Editor..." Click="_fileAbout_Click"/>
@@ -102,6 +111,8 @@
                 <MenuItem x:Name="_editCreateFactWithFrequencyRange" Header="Create a Fact based on a frequency range" Click="_editCreateFactWithFrequencyRange_Click"/>
                 <MenuItem x:Name="_editCreateFactWithPercentageRange" Header="Create a Fact based on a percentage range" Click="_editCreateFactWithPercentageRange_Click"/>
                 <Separator/>
+                <MenuItem x:Name="_editCreateFactAnalyzer" Header="Create a Fact Analyzer" Click="_editCreateFactAnalyzer_Click"/>
+                <Separator/>
                 <MenuItem x:Name="_clearOutput" Header="Clear Output" Click="_clearOutput_Click"/>
             </MenuItem>
             <MenuItem x:Name="_menuView" Header="View">
@@ -116,6 +127,8 @@
             <MenuItem x:Name="_menuCalculate" Header="Calculate">
                 <MenuItem x:Name="_calculateBaseline" Header="Calculate Baseline" Click="_calculateBaseline_Click"/>
                 <MenuItem x:Name="_calculateOptimalMitigations" Header="Calculate Optimal Mitigations" Click="_calculateOptimalMitigations_Click"/>
+                <Separator/>
+                <MenuItem x:Name="_calculateAllFactAnalyzers" Header="Calculate All Fact Analyzers" Click="_calculateAllFactAnalyzers_Click"/>
             </MenuItem>
             <MenuItem x:Name="_menuImport" Header="Import">
                 <MenuItem x:Name="_importFacts" Header="Import Facts..." Click="_importFacts_Click"/>
@@ -295,6 +308,7 @@
                                                                                                     <DataGridTextColumn Header="Context" Binding="{Binding Context}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
                                                                                                     <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
                                                                                                     <DataGridTextColumn Header="Reference Date" Binding="{Binding ReferenceDate}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
+                                                                                                    <DataGridTextColumn Header="Fact Type" Binding="{Binding FactType}" Width="Auto" MinWidth="100" IsReadOnly="True" Foreground="Blue"/>
                                                                                                     <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
                                                                                                 </DataGrid.Columns>
                                                                                             </DataGrid>
@@ -313,6 +327,7 @@
                                                                                     <DataGridTextColumn Header="Context" Binding="{Binding Context}" Width="Auto" IsReadOnly="True"/>
                                                                                     <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="Auto" IsReadOnly="True"/>
                                                                                     <DataGridTextColumn Header="Reference Date" Binding="{Binding ReferenceDate}" Width="Auto" IsReadOnly="True"/>
+                                                                                    <DataGridTextColumn Header="Fact Type" Binding="{Binding FactType}" Width="Auto" MinWidth="100" IsReadOnly="True" Foreground="Blue"/>
                                                                                     <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="Auto" IsReadOnly="True"/>
                                                                                 </DataGrid.Columns>
                                                                             </DataGrid>
@@ -331,6 +346,7 @@
                                                                     <DataGridTextColumn Header="Context" Binding="{Binding Context}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
                                                                     <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
                                                                     <DataGridTextColumn Header="Reference Date" Binding="{Binding ReferenceDate}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
+                                                                    <DataGridTextColumn Header="Fact Type" Binding="{Binding FactType}" Width="Auto" MinWidth="100" IsReadOnly="True" Foreground="Blue"/>
                                                                     <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
                                                                 </DataGrid.Columns>
                                                             </DataGrid>
@@ -371,6 +387,7 @@
                                                     <DataGridTextColumn Header="Context" Binding="{Binding Context}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
                                                     <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
                                                     <DataGridTextColumn Header="Reference Date" Binding="{Binding ReferenceDate}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
+                                                    <DataGridTextColumn Header="Fact Type" Binding="{Binding FactType}" Width="Auto" MinWidth="100" IsReadOnly="True" Foreground="Blue"/>
                                                     <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
                                                 </DataGrid.Columns>
                                             </DataGrid>
@@ -454,6 +471,7 @@
                                                     <DataGridTextColumn Header="Context" Binding="{Binding Context}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
                                                     <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
                                                     <DataGridTextColumn Header="Reference Date" Binding="{Binding ReferenceDate}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
+                                                    <DataGridTextColumn Header="Fact Type" Binding="{Binding FactType}" Width="Auto" MinWidth="100" IsReadOnly="True" Foreground="Blue"/>
                                                     <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
                                                 </DataGrid.Columns>
                                             </DataGrid>
@@ -531,6 +549,179 @@
                     </ScrollViewer>
                 </DockPanel>
             </TabItem>
+            <TabItem Header="Fact Analyzers">
+                <DockPanel>
+                    <pt:PropertyGrid x:Name="_factAnalyzerProperties" Margin="8" SelectedObject="{Binding SelectedFactAnalyzer}" 
+                                     DockPanel.Dock="Bottom" Height="300"
+                                     TabHeaderTemplate="{StaticResource HeaderTemplate}"/>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" 
+                                CanContentScroll="false" Focusable="True" 
+                                PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
+                        <Grid x:Name="_factAnalyzersContainer" Background="#FFE5E5E5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <DataGrid Name="_factAnalyzers" ItemsSource="{Binding FactAnalyzers}" AutoGenerateColumns="False" 
+                                    IsReadOnly="False" Margin="10" RowDetailsVisibilityMode="Collapsed" 
+                                    AlternationCount="2" RowStyle="{StaticResource AlternatingRowStyle}"
+                                    local:FactAnalyzerSelectionTracker.TrackSelection="True"
+                                      Loaded="DataGrid_Loaded">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Width="30" IsReadOnly="True">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Content="+" Click="ToggleRowDetails" Tag="{Binding}" Width="20"
+                                                Visibility="{Binding HasChildren, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="Auto" MinWidth="400"/>
+                                    <DataGridComboBoxColumn Header="Operation" SelectedItemBinding="{Binding Operation}" 
+                                                        ItemsSource="{Binding Source={StaticResource OperationValues}}" Width="100"/>
+                                    <DataGridCheckBoxColumn Header="Opposite" Binding="{Binding Opposite}" Width="80"/>
+                                    <DataGridCheckBoxColumn Header="Reciprocal" Binding="{Binding Reciprocal}" Width="80"/>
+                                    <DataGridTextColumn Header="Min" Binding="{Binding FormattedMin}" Width="120"
+                                                    ElementStyle="{StaticResource RightAlignedTextStyle}" IsReadOnly="True" Foreground="Blue"/>
+                                    <DataGridTextColumn Header="Mode" Binding="{Binding FormattedMode}" Width="120"
+                                                    ElementStyle="{StaticResource RightAlignedTextStyle}" IsReadOnly="True" Foreground="Blue"/>
+                                    <DataGridTextColumn Header="Max" Binding="{Binding FormattedMax}" Width="120"
+                                                    ElementStyle="{StaticResource RightAlignedTextStyle}" IsReadOnly="True" Foreground="Blue"/>
+                                    <DataGridTextColumn Header="Confidence" Binding="{Binding Confidence}" Width="100" 
+                                                        ElementStyle="{StaticResource RightAlignedTextStyle}" IsReadOnly="True" Foreground="Blue"/>
+                                </DataGrid.Columns>
+                                <DataGrid.RowDetailsTemplate>
+                                    <DataTemplate>
+                                        <StackPanel>
+                                            <TextBlock Text="Child Fact Analyzers" FontWeight="Bold" Margin="0,5,0,2"
+                                                                       Visibility="{Binding HasComponents, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                            <DataGrid ItemsSource="{Binding Components}" AutoGenerateColumns="False" 
+                                            IsReadOnly="False" Margin="10" RowDetailsVisibilityMode="Collapsed" 
+                                            AlternationCount="2" RowStyle="{StaticResource AlternatingRowStyle}"
+                                            local:RiskSelectionTracker.TrackSelection="True"
+                                            Visibility="{Binding HasComponents, Converter={StaticResource BoolToVisibilityConverter}}"
+                                            Loaded="DataGrid_Loaded">
+                                                <DataGrid.Columns>
+                                                    <DataGridTemplateColumn Width="30" IsReadOnly="True">
+                                                        <DataGridTemplateColumn.CellTemplate>
+                                                            <DataTemplate>
+                                                                <Button Content="+" Click="ToggleRowDetails" Tag="{Binding}" Width="20"
+                                                Visibility="{Binding HasChildren, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                            </DataTemplate>
+                                                        </DataGridTemplateColumn.CellTemplate>
+                                                    </DataGridTemplateColumn>
+                                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="Auto" MinWidth="400"/>
+                                                    <DataGridComboBoxColumn Header="Operation" SelectedItemBinding="{Binding Operation}" 
+                                                        ItemsSource="{Binding Source={StaticResource OperationValues}}" Width="100"/>
+                                                    <DataGridCheckBoxColumn Header="Opposite" Binding="{Binding Opposite}" Width="80"/>
+                                                    <DataGridCheckBoxColumn Header="Reciprocal" Binding="{Binding Reciprocal}" Width="80"/>
+                                                    <DataGridTextColumn Header="Min" Binding="{Binding FormattedMin}" Width="120"
+                                                    ElementStyle="{StaticResource RightAlignedTextStyle}" IsReadOnly="True" Foreground="Blue"/>
+                                                    <DataGridTextColumn Header="Mode" Binding="{Binding FormattedMode}" Width="120"
+                                                    ElementStyle="{StaticResource RightAlignedTextStyle}" IsReadOnly="True" Foreground="Blue"/>
+                                                    <DataGridTextColumn Header="Max" Binding="{Binding FormattedMax}" Width="120"
+                                                    ElementStyle="{StaticResource RightAlignedTextStyle}" IsReadOnly="True" Foreground="Blue"/>
+                                                    <DataGridTextColumn Header="Confidence" Binding="{Binding Confidence}" Width="100" 
+                                                        ElementStyle="{StaticResource RightAlignedTextStyle}" IsReadOnly="True" Foreground="Blue"/>
+                                                </DataGrid.Columns>
+                                                <DataGrid.RowDetailsTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel>
+                                                            <TextBlock Text="Child Fact Analyzers" FontWeight="Bold" Margin="0,5,0,2"
+                                                                       Visibility="{Binding HasComponents, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                            <DataGrid ItemsSource="{Binding Components}" AutoGenerateColumns="False" 
+                                                        IsReadOnly="False" Margin="10" RowDetailsVisibilityMode="Collapsed" 
+                                                        AlternationCount="2" RowStyle="{StaticResource AlternatingRowStyle}"
+                                                        local:RiskSelectionTracker.TrackSelection="True"
+                                                        Visibility="{Binding HasComponents, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                        Loaded="DataGrid_Loaded">
+                                                                <DataGrid.Columns>
+                                                                    <DataGridTemplateColumn Width="30" IsReadOnly="True">
+                                                                        <DataGridTemplateColumn.CellTemplate>
+                                                                            <DataTemplate>
+                                                                                <Button Content="+" Click="ToggleRowDetails" Tag="{Binding}" Width="20"
+                                                Visibility="{Binding HasChildren, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                                            </DataTemplate>
+                                                                        </DataGridTemplateColumn.CellTemplate>
+                                                                    </DataGridTemplateColumn>
+                                                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="Auto" MinWidth="400"/>
+                                                                    <DataGridComboBoxColumn Header="Operation" SelectedItemBinding="{Binding Operation}" 
+                                                        ItemsSource="{Binding Source={StaticResource OperationValues}}" Width="100"/>
+                                                                    <DataGridCheckBoxColumn Header="Opposite" Binding="{Binding Opposite}" Width="80"/>
+                                                                    <DataGridCheckBoxColumn Header="Reciprocal" Binding="{Binding Reciprocal}" Width="80"/>
+                                                                    <DataGridTextColumn Header="Min" Binding="{Binding FormattedMin}" Width="120"
+                                                    ElementStyle="{StaticResource RightAlignedTextStyle}" IsReadOnly="True" Foreground="Blue"/>
+                                                                    <DataGridTextColumn Header="Mode" Binding="{Binding FormattedMode}" Width="120"
+                                                    ElementStyle="{StaticResource RightAlignedTextStyle}" IsReadOnly="True" Foreground="Blue"/>
+                                                                    <DataGridTextColumn Header="Max" Binding="{Binding FormattedMax}" Width="120"
+                                                    ElementStyle="{StaticResource RightAlignedTextStyle}" IsReadOnly="True" Foreground="Blue"/>
+                                                                    <DataGridTextColumn Header="Confidence" Binding="{Binding Confidence}" Width="100" 
+                                                        ElementStyle="{StaticResource RightAlignedTextStyle}" IsReadOnly="True" Foreground="Blue"/>
+                                                                </DataGrid.Columns>
+                                                                <DataGrid.RowDetailsTemplate>
+                                                                    <DataTemplate>
+                                                                        <StackPanel>
+                                                                            <TextBlock Text="Facts" FontWeight="Bold" Margin="0,5,0,2"
+                                                                                       Visibility="{Binding HasFacts, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                                            <DataGrid Name="Facts" ItemsSource="{Binding Facts}" AutoGenerateColumns="False" 
+                                    IsReadOnly="True" Margin="10" AlternationCount="2" RowStyle="{StaticResource AlternatingRowStyle}"
+                                    local:RiskSelectionTracker.TrackSelection="True" Visibility="{Binding HasFacts, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                                                      Loaded="DataGrid_Loaded">
+                                                                                <DataGrid.Columns>
+                                                                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="Auto" MinWidth="400" IsReadOnly="True"/>
+                                                                                    <DataGridTextColumn Header="Context" Binding="{Binding Context}" Width="Auto" IsReadOnly="True"/>
+                                                                                    <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="Auto" IsReadOnly="True"/>
+                                                                                    <DataGridTextColumn Header="Reference Date" Binding="{Binding ReferenceDate}" Width="Auto" IsReadOnly="True"/>
+                                                                                    <DataGridTextColumn Header="Fact Type" Binding="{Binding FactType}" Width="Auto" MinWidth="100" IsReadOnly="True" Foreground="Blue"/>
+                                                                                    <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="Auto" IsReadOnly="True"/>
+                                                                                </DataGrid.Columns>
+                                                                            </DataGrid>
+                                                                        </StackPanel>
+                                                                    </DataTemplate>
+                                                                </DataGrid.RowDetailsTemplate>
+                                                            </DataGrid>
+                                                            <TextBlock Text="Facts" FontWeight="Bold" Margin="0,5,0,2"
+                                                                       Visibility="{Binding HasFacts, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                            <DataGrid Name="Facts" ItemsSource="{Binding Facts}" AutoGenerateColumns="False" 
+                                    IsReadOnly="True" Margin="10" AlternationCount="2" RowStyle="{StaticResource AlternatingRowStyle}"
+                                    local:RiskSelectionTracker.TrackSelection="True" Visibility="{Binding HasFacts, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                                      Loaded="DataGrid_Loaded">
+                                                                <DataGrid.Columns>
+                                                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="Auto" MinWidth="400" IsReadOnly="True" Foreground="Blue"/>
+                                                                    <DataGridTextColumn Header="Context" Binding="{Binding Context}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
+                                                                    <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
+                                                                    <DataGridTextColumn Header="Reference Date" Binding="{Binding ReferenceDate}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
+                                                                    <DataGridTextColumn Header="Fact Type" Binding="{Binding FactType}" Width="Auto" MinWidth="100" IsReadOnly="True" Foreground="Blue"/>
+                                                                    <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
+                                                                </DataGrid.Columns>
+                                                            </DataGrid>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </DataGrid.RowDetailsTemplate>
+                                            </DataGrid>
+                                            <TextBlock Text="Facts" FontWeight="Bold" Margin="0,5,0,2"
+                                                       Visibility="{Binding HasFacts, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                            <DataGrid Name="Facts" ItemsSource="{Binding Facts}" AutoGenerateColumns="False" 
+                                    IsReadOnly="True" Margin="10" AlternationCount="2" RowStyle="{StaticResource AlternatingRowStyle}"
+                                    local:RiskSelectionTracker.TrackSelection="True" Visibility="{Binding HasFacts, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                      Loaded="DataGrid_Loaded">
+                                                <DataGrid.Columns>
+                                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="Auto" MinWidth="400" IsReadOnly="True" Foreground="Blue"/>
+                                                    <DataGridTextColumn Header="Context" Binding="{Binding Context}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
+                                                    <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
+                                                    <DataGridTextColumn Header="Reference Date" Binding="{Binding ReferenceDate}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
+                                                    <DataGridTextColumn Header="Fact Type" Binding="{Binding FactType}" Width="Auto" MinWidth="100" IsReadOnly="True" Foreground="Blue"/>
+                                                    <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="Auto" IsReadOnly="True" Foreground="Blue"/>
+                                                </DataGrid.Columns>
+                                            </DataGrid>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGrid.RowDetailsTemplate>    
+                            </DataGrid>
+                        </Grid>
+                    </ScrollViewer>
+                </DockPanel>
+            </TabItem>
             <TabItem x:Name="_tabBaseline" Header="Baseline">
                 <Grid Background="White">
                     <Grid.RowDefinitions>
@@ -561,6 +752,14 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <controls:DistributionChart x:Name="_chartComparison"></controls:DistributionChart>
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="_tabFactAnalyzerResults" Header="Fact Analyzer Results" Visibility="Collapsed">
+                <Grid Background="White">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <controls:RangeDistributionChart x:Name="_chartFactAnalyzer"></controls:RangeDistributionChart>
                 </Grid>
             </TabItem>
         </TabControl>
