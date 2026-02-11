@@ -95,8 +95,8 @@ namespace QRiskTree.Encryption
             byte[]? result = null;
 
             var start = 0;
-            var end = 1;
-            var cipherSet = encryptedData[start];
+            var end = 2;
+            var cipherSet = (short) ConvertToShort(encryptedData[start..end]);
             if (cipherSet < 0 || cipherSet > DefaultCipherSet)
                 throw new NotSupportedException("Invalid cipher set.");
 

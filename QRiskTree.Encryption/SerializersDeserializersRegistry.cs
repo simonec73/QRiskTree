@@ -40,11 +40,17 @@
             var result = false;
             instance = null;
 
-            lock (_lock)
+            if (_serializersDeserializers.Any())
             {
-                instance = _serializersDeserializers.MaxBy(x => x.Key).Value
-                    .TypeInitializer?.Invoke(null, null) as IEncryptedSerializerDeserializer<T>;
-                result = instance != null;
+                lock (_lock)
+                {
+                    var max = _serializersDeserializers.Keys.Max();
+                    if (_serializersDeserializers.TryGetValue(max, out var type))
+                    {
+                        instance = Activator.CreateInstance(type) as IEncryptedSerializerDeserializer<T>;
+                        result = instance != null;
+                    }
+                }
             }
 
             return result;
@@ -65,7 +71,7 @@
             {
                 if (_serializersDeserializers.TryGetValue(typeId, out var type))
                 {
-                    instance = type.TypeInitializer?.Invoke(null, null) as IEncryptedSerializerDeserializer<T>;
+                    instance = Activator.CreateInstance(type) as IEncryptedSerializerDeserializer<T>;
                     result = instance != null;
                 }
             }
