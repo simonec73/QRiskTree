@@ -35,6 +35,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\QRiskTree.Encryption\QRiskTree.Encryption.csproj" />
     <ProjectReference Include="..\QRiskTree.Engine\QRiskTree.Engine.csproj" />
   </ItemGroup>
 

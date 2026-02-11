@@ -1,4 +1,5 @@
-﻿using QRiskTree.Engine;
+﻿using QRiskTree.Encryption;
+using QRiskTree.Engine;
 using QRiskTree.Engine.ExtendedModel;
 using QRiskTree.Engine.Facts;
 using QRiskTree.Engine.Model;
@@ -14,8 +15,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Xaml;
-using System.Xml.XPath;
 using TMFileParser;
 using TMFileParser.Models.output;
 
@@ -27,9 +26,11 @@ namespace QRiskTreeEditor
     public partial class MainWindow : Window
     {
         private string _fileName = string.Empty;
+        private bool _encrypted;
         private QRiskTree.Engine.Range? _baseline;
         private double _outputHeight;
         private StringBuilder _markdown = new StringBuilder();
+        private EncryptionManager _encryptionManager = new EncryptionManager();
 
         public static readonly RoutedCommand SaveCommand = new RoutedCommand();
 
@@ -122,13 +123,17 @@ namespace QRiskTreeEditor
                 {
                     modelVM.Model?.Dispose();
                     _fileName = string.Empty;
+                    _encrypted = false;
                     SetDataContext(new RiskModelViewModel(RiskModel.Create()));
+                    _encryptionManager.ResetPassphrase();
                 }
             }
             else
             {
                 _fileName = string.Empty;
+                _encrypted = false;
                 SetDataContext(new RiskModelViewModel(RiskModel.Create()));
+                _encryptionManager.ResetPassphrase();
             }
         }
 
@@ -143,7 +148,7 @@ namespace QRiskTreeEditor
                     var openFileDialog = new Microsoft.Win32.OpenFileDialog
                     {
                         Title = "Open QRiskTree File",
-                        Filter = "QRiskTree files (*.json)|*.json|All files (*.*)|*.*",
+                        Filter = "QRiskTree files (*.json)|*.json|QRiskTree encrypted files (*.qrisk)|*.qrisk|All files (*.*)|*.*",
                         DefaultExt = ".json",
                         CheckFileExists = true
                     };
@@ -153,7 +158,39 @@ namespace QRiskTreeEditor
                         try
                         {
                             _fileName = openFileDialog.FileName;
-                            var riskModel = RiskModel.Load(_fileName);
+                            RiskModel? riskModel = null;
+                            if (openFileDialog.FilterIndex == 2 || Path.GetExtension(_fileName).Equals(".qrisk", StringComparison.OrdinalIgnoreCase))
+                            {
+                                // Get the password
+                                var dialog = new SinglePassword();
+                                if (dialog.ShowDialog() == true)
+                                {
+                                    _encryptionManager.SetPassphrase(dialog.Password);
+                                }
+
+                                // Load the encrypted file.
+                                var binaryProtocol = new BinaryProtocol<RiskModel>();
+                                try
+                                {
+                                    using (var stream = File.OpenRead(_fileName))
+                                    {
+                                        riskModel = binaryProtocol.Read(stream, _encryptionManager);
+                                        if (riskModel != null)
+                                            _encrypted = true;
+                                    }
+                                }
+                                catch (Exception exc)
+                                {
+                                    MessageBox.Show(exc.Message, "Load from encrypted file failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                                }
+                            }
+                            else
+                            {
+                                // Regular file
+                                riskModel = RiskModel.Load(_fileName);
+                                _encryptionManager.ResetPassphrase();
+                            }
+
                             if (riskModel != null)
                             {
                                 SetDataContext(new RiskModelViewModel(riskModel));
@@ -179,7 +216,28 @@ namespace QRiskTreeEditor
             }
             else if (DataContext is RiskModelViewModel modelVM)
             {
-                modelVM.Model.Serialize(_fileName);
+                if (_encrypted)
+                {
+                    // Save encrypted
+                    var binaryProtocol = new BinaryProtocol<RiskModel>();
+                    try
+                    {
+                        using (var stream = File.Open(_fileName, FileMode.Create, FileAccess.Write))
+                        {
+                            binaryProtocol.Write(modelVM.Model, stream, _encryptionManager);
+                        }
+                    }
+                    catch (Exception exc)
+                    {
+                        MessageBox.Show(exc.Message, "Save to encrypted file failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+                }
+                else
+                {
+                    modelVM.Model.Serialize(_fileName);
+                }
+                    
                 MessageBox.Show("File saved successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
@@ -194,7 +252,7 @@ namespace QRiskTreeEditor
             var saveFileDialog = new Microsoft.Win32.SaveFileDialog
             {
                 Title = "Save QRiskTree File",
-                Filter = "QRiskTree files (*.json)|*.json|All files (*.*)|*.*",
+                Filter = "QRiskTree files (*.json)|*.json|QRiskTree encrypted files (*.qrisk)|*.qrisk|All files (*.*)|*.*",
                 DefaultExt = ".json"
             };
 
@@ -205,7 +263,44 @@ namespace QRiskTreeEditor
                     if (DataContext is RiskModelViewModel modelVM)
                     {
                         _fileName = saveFileDialog.FileName;
-                        modelVM.Model.Serialize(_fileName);
+
+                        if (saveFileDialog.FilterIndex == 2 || Path.GetExtension(_fileName).Equals(".qrisk", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Get the password
+                            var dialog = new DoublePassword();
+                            if (dialog.ShowDialog() == true)
+                            {
+                                _encrypted = true;
+                                _encryptionManager.SetPassphrase(dialog.Password);
+
+                                // Save encrypted
+                                var binaryProtocol = new BinaryProtocol<RiskModel>();
+                                try
+                                {
+                                    using (var stream = File.Open(_fileName, FileMode.Create, FileAccess.Write))
+                                    {
+                                        binaryProtocol.Write(modelVM.Model, stream, _encryptionManager);
+                                    }
+                                }
+                                catch (Exception exc)
+                                {
+                                    MessageBox.Show(exc.Message, "Save to encrypted file failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                                    return;
+                                }
+                            }
+                            else
+                            {
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            _encrypted = false;
+                            _encryptionManager.ResetPassphrase();
+                            modelVM.Model.Serialize(_fileName);
+                        }
+
+                        MessageBox.Show("File saved successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                 }
                 catch (Exception ex)
