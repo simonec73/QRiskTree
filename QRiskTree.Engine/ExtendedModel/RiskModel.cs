@@ -1135,60 +1135,66 @@ namespace QRiskTree.Engine.ExtendedModel
             };
             result = JsonConvert.DeserializeObject<RiskModel>(json, settings);
             if (result == null)
-            {
                 throw new InvalidOperationException($"Failed to load the Risk Model from '{filePath}'.");
-            }
-            else
-            {
-                // Check the model file version.
-                if (result.SchemaVersion < MinSchemaVersion)
-                {
-                    throw new NotSupportedException($"The model file version {result.SchemaVersion} is not supported.");
-                }
-
-                _instances.Add(result.Id, result);
-
-                // Register all the Facts in the FactsManager.
-                var facts = result._facts?.Facts?.ToArray();
-                if (facts?.Any() ?? false)
-                {
-                    foreach (var fact in facts)
-                    {
-                        result._factsManager?.Add(fact);
-                    }
-                }
-
-                // Register all NodeWithFacts with the FactsManager.
-                var risks = result._risks?.ToArray();
-                if (risks?.Any() ?? false)
-                {
-                    foreach (var risk in risks)
-                    {
-                        risk.AssignModel(result);
-                        var mitigations = risk.Children?.OfType<AppliedMitigation>().ToArray();
-                        if (mitigations?.Any() ?? false)
-                        {
-                            foreach (var mitigation in mitigations)
-                            {
-                                mitigation.AssignModel(result);
-                            }
-                        }
-                        RecursiveRegisterWithFactsManager(risk, result._factsManager);
-                    }
-                }
-
-                // Register all Fact Analyzers with the FactsManager.
-                var factAnalyzers = result._factAnalyzers?.ToArray();
-                if (factAnalyzers?.Any() ?? false)
-                {
-                    foreach (var factAnalyzer in factAnalyzers)
-                    {
-                        RecursiveRegisterWithFactsManager(factAnalyzer, result._factsManager);
-                    }
-                }
-            }
 
             return result;
+        }
+
+        /// <summary>
+        /// Complete the loading of the model after deserialization.
+        /// </summary>
+        /// <remarks>This method must be called after loading the model from a file
+        /// to ensure that all internal structures are properly initialized
+        /// and all references are correctly set up.</remarks>
+        /// <exception cref="NotSupportedException">The model file version is not supported.</exception>
+        public void CompleteLoad()
+        {
+            // Check the model file version.
+            if (SchemaVersion < MinSchemaVersion)
+            {
+                throw new NotSupportedException($"The model file version {SchemaVersion} is not supported.");
+            }
+
+            _instances.Add(Id, this);
+
+            // Register all the Facts in the FactsManager.
+            var facts = _facts?.Facts?.ToArray();
+            if (facts?.Any() ?? false)
+            {
+                foreach (var fact in facts)
+                {
+                    _factsManager?.Add(fact);
+                }
+            }
+
+            // Register all NodeWithFacts with the FactsManager.
+            var risks = _risks?.ToArray();
+            if (risks?.Any() ?? false)
+            {
+                foreach (var risk in risks)
+                {
+                    risk.AssignModel(this);
+                    var mitigations = risk.Children?.OfType<AppliedMitigation>().ToArray();
+                    if (mitigations?.Any() ?? false)
+                    {
+                        foreach (var mitigation in mitigations)
+                        {
+                            mitigation.AssignModel(this);
+                        }
+                    }
+                    RecursiveRegisterWithFactsManager(risk, _factsManager);
+                }
+            }
+
+            // Register all Fact Analyzers with the FactsManager.
+            var factAnalyzers = _factAnalyzers?.ToArray();
+            if (factAnalyzers?.Any() ?? false)
+            {
+                foreach (var factAnalyzer in factAnalyzers)
+                {
+                    RecursiveRegisterWithFactsManager(factAnalyzer, _factsManager);
+                }
+            }
         }
 
         private static void RecursiveRegisterWithFactsManager(Node node, FactsManager? factsManager)

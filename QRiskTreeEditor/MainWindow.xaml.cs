@@ -25,6 +25,7 @@ namespace QRiskTreeEditor
     /// </summary>
     public partial class MainWindow : Window
     {
+        private readonly string _captionBase;
         private string _fileName = string.Empty;
         private bool _encrypted;
         private QRiskTree.Engine.Range? _baseline;
@@ -37,6 +38,7 @@ namespace QRiskTreeEditor
         public MainWindow()
         {
             InitializeComponent();
+            _captionBase = Title;
 
             var riskModel = RiskModel.Create();
             SetDataContext(new RiskModelViewModel(riskModel));
@@ -123,6 +125,7 @@ namespace QRiskTreeEditor
                 {
                     modelVM.Model?.Dispose();
                     _fileName = string.Empty;
+                    Title = _captionBase;
                     _encrypted = false;
                     SetDataContext(new RiskModelViewModel(RiskModel.Create()));
                     _encryptionManager.ResetPassphrase();
@@ -131,6 +134,7 @@ namespace QRiskTreeEditor
             else
             {
                 _fileName = string.Empty;
+                Title = _captionBase;
                 _encrypted = false;
                 SetDataContext(new RiskModelViewModel(RiskModel.Create()));
                 _encryptionManager.ResetPassphrase();
@@ -193,7 +197,9 @@ namespace QRiskTreeEditor
 
                             if (riskModel != null)
                             {
+                                riskModel.CompleteLoad();
                                 SetDataContext(new RiskModelViewModel(riskModel));
+                                Title = $"{_captionBase} - {Path.GetFileName(_fileName)}";
 
                                 MessageBox.Show("File loaded successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                             }
@@ -300,6 +306,7 @@ namespace QRiskTreeEditor
                             modelVM.Model.Serialize(_fileName);
                         }
 
+                        Title = $"{_captionBase} - {Path.GetFileName(_fileName)}";
                         MessageBox.Show("File saved successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                 }
