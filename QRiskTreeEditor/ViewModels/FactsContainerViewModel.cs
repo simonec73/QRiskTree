@@ -33,7 +33,7 @@ namespace QRiskTreeEditor.ViewModels
 
         [Category("General")]
         [PT.SortIndex(2)]
-        public string NodeType => _node.GetType().Name.AddSpacesToCamelCase();
+        public virtual string NodeType => _node.GetType().Name.AddSpacesToCamelCase();
 
         [Browsable(false)]
         public ICollectionView? Facts { get; private set; }

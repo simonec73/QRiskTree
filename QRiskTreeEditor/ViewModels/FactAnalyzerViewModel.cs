@@ -12,6 +12,10 @@ namespace QRiskTreeEditor.ViewModels
         }
 
         #region Properties.
+        [Category("General")]
+        [PT.SortIndex(2)]
+        public override string NodeType => "Fact Analyzer";
+
         [Category("Fact Analysis")]
         [DisplayName("Operation")]
         [PT.SortIndex(50)]
