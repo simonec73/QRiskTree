@@ -453,6 +453,21 @@ namespace QRiskTreeEditor
             }
         }
 
+        private void _viewToggleFactAnalyzersProperties_Click(object sender, RoutedEventArgs e)
+        {
+            switch (_factAnalyzerProperties.Visibility)
+            {
+                case Visibility.Visible:
+                    _viewToggleFactAnalyzersProperties.Header = "Show Fact Analyzer Properties";
+                    _factAnalyzerProperties.Visibility = Visibility.Collapsed;
+                    break;
+                default:
+                    _viewToggleFactAnalyzersProperties.Header = "Hide Fact Analyzer Properties";
+                    _factAnalyzerProperties.Visibility = Visibility.Visible;
+                    break;
+            }
+        }
+
         private void _viewToggleOutput_Click(object sender, RoutedEventArgs e)
         {
             var grid = (Grid)_tabControl.Parent;
@@ -484,7 +499,9 @@ namespace QRiskTreeEditor
             _viewToggleMitigationProperties.Header = "Show Mitigation Properties";
             _mitigationProperties.Visibility = Visibility.Collapsed;
             _viewToggleFactsProperties.Header = "Show Fact Properties";
+            _viewToggleFactAnalyzersProperties.Header = "Show Fact Analyzer Properties";
             _factProperties.Visibility = Visibility.Collapsed;
+            _factAnalyzerProperties.Visibility = Visibility.Collapsed;
             var grid = (Grid)_tabControl.Parent;
             _viewToggleOutput.Header = "Show Output";
             _splitter.Visibility = Visibility.Collapsed;
@@ -501,7 +518,9 @@ namespace QRiskTreeEditor
             _viewToggleMitigationProperties.Header = "Hide Mitigation Properties";
             _mitigationProperties.Visibility = Visibility.Visible;
             _viewToggleFactsProperties.Header = "Hide Fact Properties";
+            _viewToggleFactAnalyzersProperties.Header = "Hide Fact Analyzer Properties";
             _factProperties.Visibility = Visibility.Visible;
+            _factAnalyzerProperties.Visibility = Visibility.Visible;
             var grid = (Grid)_tabControl.Parent;
             _viewToggleOutput.Header = "Hide Output";
             _splitter.Visibility = Visibility.Visible;
