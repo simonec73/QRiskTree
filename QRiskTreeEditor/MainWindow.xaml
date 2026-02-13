@@ -598,7 +598,7 @@
                                             <DataGrid ItemsSource="{Binding Components}" AutoGenerateColumns="False" 
                                             IsReadOnly="False" Margin="10" RowDetailsVisibilityMode="Collapsed" 
                                             AlternationCount="2" RowStyle="{StaticResource AlternatingRowStyle}"
-                                            local:RiskSelectionTracker.TrackSelection="True"
+                                            local:FactAnalyzerSelectionTracker.TrackSelection="True"
                                             Visibility="{Binding HasComponents, Converter={StaticResource BoolToVisibilityConverter}}"
                                             Loaded="DataGrid_Loaded">
                                                 <DataGrid.Columns>
@@ -632,7 +632,7 @@
                                                             <DataGrid ItemsSource="{Binding Components}" AutoGenerateColumns="False" 
                                                         IsReadOnly="False" Margin="10" RowDetailsVisibilityMode="Collapsed" 
                                                         AlternationCount="2" RowStyle="{StaticResource AlternatingRowStyle}"
-                                                        local:RiskSelectionTracker.TrackSelection="True"
+                                                        local:FactAnalyzerSelectionTracker.TrackSelection="True"
                                                         Visibility="{Binding HasComponents, Converter={StaticResource BoolToVisibilityConverter}}"
                                                         Loaded="DataGrid_Loaded">
                                                                 <DataGrid.Columns>
@@ -665,7 +665,7 @@
                                                                                        Visibility="{Binding HasFacts, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                                                             <DataGrid Name="Facts" ItemsSource="{Binding Facts}" AutoGenerateColumns="False" 
                                     IsReadOnly="True" Margin="10" AlternationCount="2" RowStyle="{StaticResource AlternatingRowStyle}"
-                                    local:RiskSelectionTracker.TrackSelection="True" Visibility="{Binding HasFacts, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    local:FactAnalyzerSelectionTracker.TrackSelection="True" Visibility="{Binding HasFacts, Converter={StaticResource BoolToVisibilityConverter}}"
                                                                                       Loaded="DataGrid_Loaded">
                                                                                 <DataGrid.Columns>
                                                                                     <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="Auto" MinWidth="400" IsReadOnly="True"/>
@@ -684,7 +684,7 @@
                                                                        Visibility="{Binding HasFacts, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                                             <DataGrid Name="Facts" ItemsSource="{Binding Facts}" AutoGenerateColumns="False" 
                                     IsReadOnly="True" Margin="10" AlternationCount="2" RowStyle="{StaticResource AlternatingRowStyle}"
-                                    local:RiskSelectionTracker.TrackSelection="True" Visibility="{Binding HasFacts, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    local:FactAnalyzerSelectionTracker.TrackSelection="True" Visibility="{Binding HasFacts, Converter={StaticResource BoolToVisibilityConverter}}"
                                                                       Loaded="DataGrid_Loaded">
                                                                 <DataGrid.Columns>
                                                                     <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="Auto" MinWidth="400" IsReadOnly="True" Foreground="Blue"/>
@@ -703,7 +703,7 @@
                                                        Visibility="{Binding HasFacts, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                             <DataGrid Name="Facts" ItemsSource="{Binding Facts}" AutoGenerateColumns="False" 
                                     IsReadOnly="True" Margin="10" AlternationCount="2" RowStyle="{StaticResource AlternatingRowStyle}"
-                                    local:RiskSelectionTracker.TrackSelection="True" Visibility="{Binding HasFacts, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    local:FactAnalyzerSelectionTracker.TrackSelection="True" Visibility="{Binding HasFacts, Converter={StaticResource BoolToVisibilityConverter}}"
                                                       Loaded="DataGrid_Loaded">
                                                 <DataGrid.Columns>
                                                     <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="Auto" MinWidth="400" IsReadOnly="True" Foreground="Blue"/>
