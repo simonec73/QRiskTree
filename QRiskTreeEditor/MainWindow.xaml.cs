@@ -1421,6 +1421,16 @@ namespace QRiskTreeEditor
                     }
                 }
             }
+            else if (row.DataContext is FactAnalyzerViewModel faVM)
+            {
+                if (!(faVM.Parent is FactAnalyzerViewModel parent && parent.Parent is FactAnalyzerViewModel))
+                {
+                    item = new MenuItem { Header = "Add child Fact Analyzer" };
+                    item.Click += Item_AddChildFactAnalyzer;
+                    item.Tag = faVM;
+                    contextMenu.Items.Add(item);
+                }
+            }
 
             if (contextMenu.Items.Count > 0)
             {
@@ -1481,13 +1491,6 @@ namespace QRiskTreeEditor
             }
             else if (row.DataContext is FactAnalyzerViewModel factAnalyzerVM)
             {
-                if (!(factAnalyzerVM.Parent is FactAnalyzerViewModel parent && parent.Parent is FactAnalyzerViewModel))
-                {
-                    item = new MenuItem { Header = "Add child Fact Analyzer" };
-                    item.Click += Item_AddChildFactAnalyzer;
-                    item.Tag = factAnalyzerVM;
-                    contextMenu.Items.Add(item);
-                }
                 item = new MenuItem { Header = "Calculate the Fact Analyzer" };
                 item.Click += Item_CalculateFactAnalyzer;
                 item.Tag = factAnalyzerVM;
