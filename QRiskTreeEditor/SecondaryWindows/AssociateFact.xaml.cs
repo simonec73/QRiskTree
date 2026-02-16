@@ -16,7 +16,7 @@ namespace QRiskTreeEditor.SecondaryWindows
         internal AssociateFact(NodeViewModel node, IEnumerable<FactViewModel> facts) : this()
         {
             _parent.Text = node.Name;
-            _items.ItemsSource = facts;
+            _items.ItemsSource = facts.OrderBy(x => x.Name);
         }
 
         internal FactViewModel? SelectedFact => _items.SelectedItem as FactViewModel;
