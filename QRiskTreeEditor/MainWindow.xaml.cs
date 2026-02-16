@@ -925,7 +925,6 @@ namespace QRiskTreeEditor
                             AppendText();
                             AppendText($"**Created on:** {DateTime.Now.ToString("yyyy-MM-dd HH:mm")}");
                             AppendText();
-                            AppendText("## Baseline Definition");
 
 #if DEBUG
                             modelVM.Model.FirstYearSimulationCompleted += Model_FirstYearSimulationCompleted;
@@ -948,6 +947,7 @@ namespace QRiskTreeEditor
                             var optParameter = modelVM.Properties.OptimizationParameter;
                             var ignoreImplementationCosts = modelVM.Properties.IgnoreImplementationCosts;
                             var notText = ignoreImplementationCosts ? "not " : "";
+                            AppendText();
                             AppendText($"Optimization has been calculated on the {optParameter} parameter, and has {notText}considered the Implementation costs.");
 
                             var currencySymbol = modelVM.Properties.CurrencySymbol;
@@ -982,6 +982,16 @@ namespace QRiskTreeEditor
                             }
 
                             AppendText("## Optimization Results");
+
+                            if (optimized?.Any() ?? false)
+                            {
+                                AppendText("### Optimal set of mitigations");
+                                
+                                foreach (var mitigation in optimized)
+                                {
+                                    AppendText($"- {mitigation.Name}");
+                                }
+                            }
 
                             var builder = new StringBuilder();
                             var negativeDelta = false;
@@ -1054,29 +1064,9 @@ namespace QRiskTreeEditor
                                 AppendText($"- Confidence: {followingYearsCosts.Confidence}\n");
                             }
 
-                            if (optimized?.Any() ?? false)
+                            if (negativeDelta)
                             {
-                                if (negativeDelta)
-                                {
-                                    AppendText("**Warning:** Some costs savings are negative, meaning that the selected mitigations increase the overall factAnalyzer cost compared to the baseline. Please review the mitigations' costs and factAnalyzer reductions. If everything is fine, please repeat the Optimization. If this happens again, it might be the case that the identified mitigations do not improve the situation and should be avoided.");
-                                }
-                                else
-                                {
-                                    AppendText("### Optimal mitigations");
-                                    foreach (var mitigation in optimized)
-                                    {
-                                        AppendText($"- {mitigation.Name}");
-                                        AppendText($"  - Implementation Costs: {mitigation.GetMin(currencySymbol, monetaryScale)} - {mitigation.GetMode(currencySymbol, monetaryScale)} - {mitigation.GetMax(currencySymbol, monetaryScale)} ({mitigation.Confidence})");
-                                        if (mitigation.OperationCosts != null)
-                                        {
-                                            AppendText($"  - Operation Costs: {mitigation.OperationCosts.GetMin(currencySymbol, monetaryScale)} - {mitigation.OperationCosts.GetMode(currencySymbol, monetaryScale)} - {mitigation.OperationCosts.GetMax(currencySymbol, monetaryScale)} ({mitigation.OperationCosts.Confidence})");
-                                        }
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                AppendText("The selected mitigations increase the overall factAnalyzer cost compared to the baseline. Please review the mitigations' costs and factAnalyzer reductions. If everything is fine, please repeat the Optimization. If this happens again, it might be the case that the identified mitigations do not improve the situation and should be avoided.");
+                                AppendText("**Warning:** Some costs savings are negative, meaning that the selected mitigations increase the overall cost compared to the baseline. Please review the mitigations' cost and effectiveness. If everything is fine, please repeat the Optimization. If this happens again, it might be the case that the identified mitigations do not improve the situation and should be avoided.");
                             }
                             AppendText();
                             AppendText($"Optimization completed in {stopwatch.ElapsedMilliseconds}ms.");
