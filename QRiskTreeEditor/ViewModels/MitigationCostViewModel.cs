@@ -75,6 +75,7 @@ namespace QRiskTreeEditor.ViewModels
                         {
                             mitigation.OperationCosts.Min = value;
                             OnPropertyChanged(nameof(OperationMin));
+                            OnPropertyChanged(nameof(IsOperationCostSetByUser));
                         }
                         catch
                         {
@@ -112,6 +113,7 @@ namespace QRiskTreeEditor.ViewModels
                             mitigation.OperationCosts.Min = calculated;
                             OnPropertyChanged(nameof(OperationMin));
                             OnPropertyChanged(nameof(FormattedOperationMin));
+                            OnPropertyChanged(nameof(IsOperationCostSetByUser));
                         }
                         catch
                         {
@@ -138,6 +140,7 @@ namespace QRiskTreeEditor.ViewModels
                         {
                             mitigation.OperationCosts.Mode = value;
                             OnPropertyChanged(nameof(OperationMode));
+                            OnPropertyChanged(nameof(IsOperationCostSetByUser));
                         }
                         catch
                         {
@@ -175,6 +178,7 @@ namespace QRiskTreeEditor.ViewModels
                             mitigation.OperationCosts.Mode = calculated;
                             OnPropertyChanged(nameof(OperationMode));
                             OnPropertyChanged(nameof(FormattedOperationMode));
+                            OnPropertyChanged(nameof(IsOperationCostSetByUser));
                         }
                         catch
                         {
@@ -201,6 +205,7 @@ namespace QRiskTreeEditor.ViewModels
                         {
                             mitigation.OperationCosts.Max = value;
                             OnPropertyChanged(nameof(OperationMax));
+                            OnPropertyChanged(nameof(IsOperationCostSetByUser));
                         }
                         catch
                         {
@@ -238,6 +243,7 @@ namespace QRiskTreeEditor.ViewModels
                             mitigation.OperationCosts.Max = calculated;
                             OnPropertyChanged(nameof(OperationMax));
                             OnPropertyChanged(nameof(FormattedOperationMax));
+                            OnPropertyChanged(nameof(IsOperationCostSetByUser));
                         }
                         catch
                         {
@@ -267,6 +273,7 @@ namespace QRiskTreeEditor.ViewModels
                         {
                             mitigation.OperationCosts.Confidence = value;
                             OnPropertyChanged(nameof(OperationConfidence));
+                            OnPropertyChanged(nameof(IsOperationCostSetByUser));
                         }
                         catch
                         {
