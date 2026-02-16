@@ -648,7 +648,7 @@ namespace QRiskTree.Engine.ExtendedModel
                 }
 
                 // Calculates the best combination of mitigations based on the optimization parameter.
-                var combinations = RemoveCombinationsWithoutAuxiliary(GetAllCombinations(mitigationIds)).ToArray();
+                var combinations = RemoveImpossibleCombinations(GetAllCombinations(mitigationIds)).ToArray();
                 var bestCombination = GetBestCombination(combinations, costs,
                     optimizationParameter, optimizeForFollowingYears, iterations);
                 if (bestCombination != null)
@@ -705,7 +705,7 @@ namespace QRiskTree.Engine.ExtendedModel
                 }
 
                 // Calculates the best combination of mitigations based on the optimization parameter.
-                var combinations = RemoveCombinationsWithoutAuxiliary(GetAllCombinations(mitigationIds)).ToArray();
+                var combinations = RemoveImpossibleCombinations(GetAllCombinations(mitigationIds)).ToArray();
                 var bestCombination = await GetBestCombinationAsync(combinations, costs,
                     optimizationParameter, optimizeForFollowingYears, iterations, parallelism);
                 if (bestCombination != null)
@@ -738,13 +738,22 @@ namespace QRiskTree.Engine.ExtendedModel
                 result = true;
             }
             else if (mitigation.GenerateSamples(iterations, out var samples1) &&
-                samples1 != null && samples1.Length == iterations &&
-                mitigation.OperationCosts != null &&
-                mitigation.OperationCosts.GenerateSamples(iterations, out var samples2) &&
-                samples2 != null && samples2.Length == iterations)
+                samples1 != null && samples1.Length == iterations)
             {
                 implementationCostSamples = samples1;
-                operationalCostSamples = samples2;
+
+                if (mitigation.OperationCosts != null &&
+                mitigation.OperationCosts.GenerateSamples(iterations, out var samples2) &&
+                samples2 != null && samples2.Length == iterations)
+                {
+                    operationalCostSamples = samples2;
+                }
+                else
+                {
+                    // If operation costs are not defined, consider them as zero.
+                    operationalCostSamples = new double[iterations];
+                }
+                    
                 mitigation.SetBaselines(implementationCostSamples, operationalCostSamples);
                 result = true;
             }
@@ -981,34 +990,27 @@ namespace QRiskTree.Engine.ExtendedModel
             }
         }
 
-        private IEnumerable<Guid>? GetMitigationIDs(IEnumerable<Guid>? selectedMitigations)
+        private IEnumerable<IEnumerable<Guid>> RemoveImpossibleCombinations(IEnumerable<IEnumerable<Guid>> inputCombinations)
         {
-            IEnumerable<Guid>? mitigationIds = null;
-            if (selectedMitigations == null)
-            {
-                mitigationIds = _mitigations?.Select(x => x.Id).ToArray();
-            }
-            else
-            {
-                mitigationIds = selectedMitigations.Where(x => _mitigations?.Any(y => x == y.Id) ?? false).ToArray();
-            }
-
-            return mitigationIds;
-        }
-
-        private IEnumerable<IEnumerable<Guid>> RemoveCombinationsWithoutAuxiliary(IEnumerable<IEnumerable<Guid>> inputCombinations)
-        {
-            var auxiliaryMitigationIds = _risks?
-                .SelectMany(risk => risk.Children?.OfType<AppliedMitigation>() ?? Enumerable.Empty<AppliedMitigation>())
-                .Where(mitigation => mitigation.IsAuxiliary)
-                .Select(x => x.MitigationCostId)
-                .Distinct()
+            // We must remove all combinations including corrective mitigations without any detective mitigation,
+            // or with a detective mitigation but without any corrective mitigation.
+            var detectiveMitigationIds = _mitigations?
+                .Where(x => x.ControlType == ControlType.Detective)
+                .Select(x => x.Id)
                 .ToArray();
 
-            if (auxiliaryMitigationIds == null || auxiliaryMitigationIds.Length == 0)
-                return inputCombinations;
+            var correctiveMitigationIds = _mitigations?
+                .Where(x => x.ControlType == ControlType.Corrective)
+                .Select(x => x.Id)
+                .ToArray();
 
-            return inputCombinations.Where(combination => auxiliaryMitigationIds.All(auxId => combination.Contains(auxId)));
+            return inputCombinations.Where(combination =>
+                // No Corrective or Detective mitigations.
+                (!combination.Any(mitigationId => correctiveMitigationIds?.Contains(mitigationId) ?? false) &&
+                !combination.Any(mitigationId => detectiveMitigationIds?.Contains(mitigationId) ?? false)) ||
+                // Both corrective and detective mitigations are present.
+                (combination.Any(mitigationId => correctiveMitigationIds?.Contains(mitigationId) ?? false) &&
+                combination.Any(mitigationId => detectiveMitigationIds?.Contains(mitigationId) ?? false)));
         }
 
         private void SetEnabledState(IEnumerable<Guid>? mitigations = null)
