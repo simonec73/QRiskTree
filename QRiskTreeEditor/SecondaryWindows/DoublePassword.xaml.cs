@@ -24,6 +24,7 @@ namespace QRiskTreeEditor.SecondaryWindows
         public DoublePassword()
         {
             InitializeComponent();
+            _password.Focus();
         }
 
         public SecureString Password => _password.SecurePassword;
