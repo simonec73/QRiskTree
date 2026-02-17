@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="MdXaml" Version="1.27.0" />
     <PackageReference Include="Microsoft.ThreatModeling.TMFileParser" Version="1.1.0" />
     <PackageReference Include="OxyPlot.Wpf" Version="2.2.0" />
     <PackageReference Include="PropertyTools.Wpf" Version="3.1.0" />
@@ -30,14 +31,18 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.Drawing.Common" Version="9.0.10" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.2" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\QRiskTree.Encryption\QRiskTree.Encryption.csproj" />
     <ProjectReference Include="..\QRiskTree.Engine\QRiskTree.Engine.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Controls\RangeDistributionChart.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Properties\Resources.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>

@@ -11,6 +11,13 @@ namespace QRiskTreeEditor
             return Regex.Replace(input, "(?<!^)([A-Z])", " $1");
         }
 
+        internal static string FormatMoney(this double value,
+            string? currencySymbol, string? monetaryScale)
+        {
+            currencySymbol ??= CultureInfo.CurrentCulture.NumberFormat.CurrencySymbol;
+            return value.ToString($"{currencySymbol}#,0{monetaryScale}");
+        }
+
         internal static string GetFormat(this QRiskTree.Engine.Range range, 
             string? currencySymbol, string? monetaryScale)
         {

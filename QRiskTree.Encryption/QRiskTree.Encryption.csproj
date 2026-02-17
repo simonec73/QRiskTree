@@ -11,7 +11,7 @@
     <ProductName>QRiskTree</ProductName>
     <VersionPrefix>0.6.0</VersionPrefix>
     <FileVersion>0.6.0</FileVersion>
-    <Title>QRiskTree Engine</Title>
+    <Title>QRiskTree Encryption</Title>
     <Description>QRiskTree, short for Quantitative Risk Tree, is a library and a tool designed to help organizations determine when security is enough and which mitigations offer the best Return on the Security Investment. It enables data-driven decisions by combining threat modeling with quantitative risk analysis.</Description>
     <PackageProjectUrl>https://github.com/simonec73/QRiskTree</PackageProjectUrl>
     <PackageIcon>Logo.png</PackageIcon>
@@ -19,12 +19,13 @@
     <RepositoryUrl>https://github.com/simonec73/QRiskTree</RepositoryUrl>
     <PackageTags>RiskAnalysis;ThreatModeling</PackageTags>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>    
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\LICENSE">
-      <Pack>True</Pack>
+    <None Include="..\LICENSE" Link="LICENSE">
       <PackagePath>\</PackagePath>
+      <Pack>True</Pack>
     </None>
     <None Include="..\README.md">
       <Pack>True</Pack>
@@ -33,8 +34,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Newtonsoft.Json.Bson" Version="1.0.3" />
     <PackageReference Include="SecurityCodeScan.VS2019" Version="5.6.7">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -43,8 +44,8 @@
 
   <ItemGroup>
     <None Update="Logo.png">
-      <Pack>True</Pack>
       <PackagePath>\</PackagePath>
+      <Pack>True</Pack>
     </None>
   </ItemGroup>
 

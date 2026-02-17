@@ -1,9 +1,10 @@
-﻿using PT = PropertyTools.DataAnnotations;
+﻿using QRiskTree.Engine;
 using QRiskTree.Engine.Facts;
+using QRiskTreeEditor.Importers;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using QRiskTree.Engine;
 using System.Windows.Data;
+using PT = PropertyTools.DataAnnotations;
 
 namespace QRiskTreeEditor.ViewModels
 {
@@ -45,12 +46,12 @@ namespace QRiskTreeEditor.ViewModels
             if (_fact is FactHardNumber hardNumber)
             {
                 result = _model.AddFact(new FactHardNumber(hardNumber.Context, hardNumber.Source, 
-                    hardNumber.Name, hardNumber.Value));
+                    $"{hardNumber.Name} (copy)", hardNumber.Value));
             }
             else if (_fact is FactRange factRange)
             {
                 var r = factRange.Range;
-                result = _model.AddFact(new FactRange(factRange.Context, factRange.Source, factRange.Name, 
+                result = _model.AddFact(new FactRange(factRange.Context, factRange.Source, $"{factRange.Name} (copy)", 
                     new QRiskTree.Engine.Range(r.RangeType, r.Min, r.Mode, r.Max, r.Confidence)));
             }
 
@@ -150,6 +151,27 @@ namespace QRiskTreeEditor.ViewModels
                     _fact.Details = value;
                     OnPropertyChanged(nameof(Details));
                 }
+            }
+        }
+
+        [Category("Fact")]
+        [DisplayName("Fact Type")]
+        public string FactType
+        {
+            get
+            {
+                var result = string.Empty;
+
+                if (_fact is FactHardNumber hardNumber)
+                {
+                    result = "Number";
+                }
+                else if (_fact is FactRange factRange && factRange.Range is QRiskTree.Engine.Range range)
+                {
+                    result = $"{range.RangeType} range";
+                }
+
+                return result;
             }
         }
 

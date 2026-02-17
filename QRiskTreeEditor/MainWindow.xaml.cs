@@ -1,4 +1,5 @@
-﻿using QRiskTree.Engine;
+﻿using QRiskTree.Encryption;
+using QRiskTree.Engine;
 using QRiskTree.Engine.ExtendedModel;
 using QRiskTree.Engine.Facts;
 using QRiskTree.Engine.Model;
@@ -14,8 +15,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Xaml;
-using System.Xml.XPath;
 using TMFileParser;
 using TMFileParser.Models.output;
 
@@ -26,13 +25,20 @@ namespace QRiskTreeEditor
     /// </summary>
     public partial class MainWindow : Window
     {
+        private readonly string _captionBase;
         private string _fileName = string.Empty;
+        private bool _encrypted;
         private QRiskTree.Engine.Range? _baseline;
         private double _outputHeight;
+        private StringBuilder _markdown = new StringBuilder();
+        private EncryptionManager _encryptionManager = new EncryptionManager();
+
+        public static readonly RoutedCommand SaveCommand = new RoutedCommand();
 
         public MainWindow()
         {
             InitializeComponent();
+            _captionBase = Title;
 
             var riskModel = RiskModel.Create();
             SetDataContext(new RiskModelViewModel(riskModel));
@@ -40,6 +46,9 @@ namespace QRiskTreeEditor
             _risksContainer.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
             _mitigationsContainer.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
             _factsContainer.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
+            _factAnalyzersContainer.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
+            
+            CommandBindings.Add(new CommandBinding(SaveCommand, SaveCommand_Executed));
         }
 
         private void SetDataContext(RiskModelViewModel model)
@@ -49,7 +58,13 @@ namespace QRiskTreeEditor
             _chartFirst.SetModel(model, RelevantEvent.FirstYear);
             _chartFollowing.SetModel(model, RelevantEvent.FollowingYears);
             _chartComparison.SetModel(model, RelevantEvent.BaselineAndOptimizationTarget);
+            _tabFactAnalyzerResults.Visibility = Visibility.Collapsed;
             SubscribeMitigatedRisks();
+
+            _output.Markdown = string.Empty;
+            _markdown.Clear();
+
+            _tabControl.SelectedIndex = 0;
         }
 
         #region Baseline management.
@@ -110,13 +125,19 @@ namespace QRiskTreeEditor
                 {
                     modelVM.Model?.Dispose();
                     _fileName = string.Empty;
+                    Title = _captionBase;
+                    _encrypted = false;
                     SetDataContext(new RiskModelViewModel(RiskModel.Create()));
+                    _encryptionManager.ResetPassphrase();
                 }
             }
             else
             {
                 _fileName = string.Empty;
+                Title = _captionBase;
+                _encrypted = false;
                 SetDataContext(new RiskModelViewModel(RiskModel.Create()));
+                _encryptionManager.ResetPassphrase();
             }
         }
 
@@ -131,7 +152,7 @@ namespace QRiskTreeEditor
                     var openFileDialog = new Microsoft.Win32.OpenFileDialog
                     {
                         Title = "Open QRiskTree File",
-                        Filter = "QRiskTree files (*.json)|*.json|All files (*.*)|*.*",
+                        Filter = "QRiskTree files (*.json)|*.json|QRiskTree encrypted files (*.qrisk)|*.qrisk|All files (*.*)|*.*",
                         DefaultExt = ".json",
                         CheckFileExists = true
                     };
@@ -141,10 +162,44 @@ namespace QRiskTreeEditor
                         try
                         {
                             _fileName = openFileDialog.FileName;
-                            var riskModel = RiskModel.Load(_fileName);
+                            RiskModel? riskModel = null;
+                            if (openFileDialog.FilterIndex == 2 || Path.GetExtension(_fileName).Equals(".qrisk", StringComparison.OrdinalIgnoreCase))
+                            {
+                                // Get the password
+                                var dialog = new SinglePassword();
+                                if (dialog.ShowDialog() == true)
+                                {
+                                    _encryptionManager.SetPassphrase(dialog.Password);
+                                }
+
+                                // Load the encrypted file.
+                                var binaryProtocol = new BinaryProtocol<RiskModel>();
+                                try
+                                {
+                                    using (var stream = File.OpenRead(_fileName))
+                                    {
+                                        riskModel = binaryProtocol.Read(stream, _encryptionManager);
+                                        if (riskModel != null)
+                                            _encrypted = true;
+                                    }
+                                }
+                                catch (Exception exc)
+                                {
+                                    MessageBox.Show(exc.Message, "Load from encrypted file failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                                }
+                            }
+                            else
+                            {
+                                // Regular file
+                                riskModel = RiskModel.Load(_fileName);
+                                _encryptionManager.ResetPassphrase();
+                            }
+
                             if (riskModel != null)
                             {
+                                riskModel.CompleteLoad();
                                 SetDataContext(new RiskModelViewModel(riskModel));
+                                Title = $"{_captionBase} - {Path.GetFileName(_fileName)}";
 
                                 MessageBox.Show("File loaded successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                             }
@@ -167,9 +222,35 @@ namespace QRiskTreeEditor
             }
             else if (DataContext is RiskModelViewModel modelVM)
             {
-                modelVM.Model.Serialize(_fileName);
+                if (_encrypted)
+                {
+                    // Save encrypted
+                    var binaryProtocol = new BinaryProtocol<RiskModel>();
+                    try
+                    {
+                        using (var stream = File.Open(_fileName, FileMode.Create, FileAccess.Write))
+                        {
+                            binaryProtocol.Write(modelVM.Model, stream, _encryptionManager);
+                        }
+                    }
+                    catch (Exception exc)
+                    {
+                        MessageBox.Show(exc.Message, "Save to encrypted file failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+                }
+                else
+                {
+                    modelVM.Model.Serialize(_fileName);
+                }
+                    
                 MessageBox.Show("File saved successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
+        }
+
+        private void SaveCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            _fileSave_Click(sender, e);
         }
 
         private void _fileSaveAs_Click(object sender, RoutedEventArgs e)
@@ -177,7 +258,7 @@ namespace QRiskTreeEditor
             var saveFileDialog = new Microsoft.Win32.SaveFileDialog
             {
                 Title = "Save QRiskTree File",
-                Filter = "QRiskTree files (*.json)|*.json|All files (*.*)|*.*",
+                Filter = "QRiskTree files (*.json)|*.json|QRiskTree encrypted files (*.qrisk)|*.qrisk|All files (*.*)|*.*",
                 DefaultExt = ".json"
             };
 
@@ -188,7 +269,45 @@ namespace QRiskTreeEditor
                     if (DataContext is RiskModelViewModel modelVM)
                     {
                         _fileName = saveFileDialog.FileName;
-                        modelVM.Model.Serialize(_fileName);
+
+                        if (saveFileDialog.FilterIndex == 2 || Path.GetExtension(_fileName).Equals(".qrisk", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Get the password
+                            var dialog = new DoublePassword();
+                            if (dialog.ShowDialog() == true)
+                            {
+                                _encrypted = true;
+                                _encryptionManager.SetPassphrase(dialog.Password);
+
+                                // Save encrypted
+                                var binaryProtocol = new BinaryProtocol<RiskModel>();
+                                try
+                                {
+                                    using (var stream = File.Open(_fileName, FileMode.Create, FileAccess.Write))
+                                    {
+                                        binaryProtocol.Write(modelVM.Model, stream, _encryptionManager);
+                                    }
+                                }
+                                catch (Exception exc)
+                                {
+                                    MessageBox.Show(exc.Message, "Save to encrypted file failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                                    return;
+                                }
+                            }
+                            else
+                            {
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            _encrypted = false;
+                            _encryptionManager.ResetPassphrase();
+                            modelVM.Model.Serialize(_fileName);
+                        }
+
+                        Title = $"{_captionBase} - {Path.GetFileName(_fileName)}";
+                        MessageBox.Show("File saved successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                 }
                 catch (Exception ex)
@@ -237,6 +356,15 @@ namespace QRiskTreeEditor
             }
         }
 
+        private void _editCreateFactWithNumericRange_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is RiskModelViewModel modelVM)
+            {
+                modelVM.AddFact(new FactRange("Context", "Name of the source", "New Fact",
+                    new QRiskTree.Engine.Range(QRiskTree.Engine.RangeType.Number, 0.0, 0.0, 0.0, QRiskTree.Engine.Confidence.Low)));
+            }
+        }
+
         private void _editCreateFactWithMonetaryRange_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is RiskModelViewModel modelVM)
@@ -264,9 +392,18 @@ namespace QRiskTreeEditor
             }
         }
 
+        private void _editCreateFactAnalyzer_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is RiskModelViewModel modelVM)
+            {
+                modelVM.AddFactAnalyzer("New Fact Analyzer");
+            }
+        }
+
         private void _clearOutput_Click(object sender, RoutedEventArgs e)
         {
-            _output.Text = string.Empty;
+            _output.Markdown = string.Empty;
+            _markdown.Clear();
         }
         #endregion
 
@@ -316,6 +453,21 @@ namespace QRiskTreeEditor
             }
         }
 
+        private void _viewToggleFactAnalyzersProperties_Click(object sender, RoutedEventArgs e)
+        {
+            switch (_factAnalyzerProperties.Visibility)
+            {
+                case Visibility.Visible:
+                    _viewToggleFactAnalyzersProperties.Header = "Show Fact Analyzer Properties";
+                    _factAnalyzerProperties.Visibility = Visibility.Collapsed;
+                    break;
+                default:
+                    _viewToggleFactAnalyzersProperties.Header = "Hide Fact Analyzer Properties";
+                    _factAnalyzerProperties.Visibility = Visibility.Visible;
+                    break;
+            }
+        }
+
         private void _viewToggleOutput_Click(object sender, RoutedEventArgs e)
         {
             var grid = (Grid)_tabControl.Parent;
@@ -347,7 +499,9 @@ namespace QRiskTreeEditor
             _viewToggleMitigationProperties.Header = "Show Mitigation Properties";
             _mitigationProperties.Visibility = Visibility.Collapsed;
             _viewToggleFactsProperties.Header = "Show Fact Properties";
+            _viewToggleFactAnalyzersProperties.Header = "Show Fact Analyzer Properties";
             _factProperties.Visibility = Visibility.Collapsed;
+            _factAnalyzerProperties.Visibility = Visibility.Collapsed;
             var grid = (Grid)_tabControl.Parent;
             _viewToggleOutput.Header = "Show Output";
             _splitter.Visibility = Visibility.Collapsed;
@@ -364,7 +518,9 @@ namespace QRiskTreeEditor
             _viewToggleMitigationProperties.Header = "Hide Mitigation Properties";
             _mitigationProperties.Visibility = Visibility.Visible;
             _viewToggleFactsProperties.Header = "Hide Fact Properties";
+            _viewToggleFactAnalyzersProperties.Header = "Hide Fact Analyzer Properties";
             _factProperties.Visibility = Visibility.Visible;
+            _factAnalyzerProperties.Visibility = Visibility.Visible;
             var grid = (Grid)_tabControl.Parent;
             _viewToggleOutput.Header = "Hide Output";
             _splitter.Visibility = Visibility.Visible;
@@ -607,15 +763,15 @@ namespace QRiskTreeEditor
             var saveFileDialog = new Microsoft.Win32.SaveFileDialog
             {
                 Title = "Save Output",
-                Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
-                DefaultExt = ".txt"
+                Filter = "Markdown files (*.md)|*.md|Text files (*.txt)|*.txt|All files (*.*)|*.*",
+                DefaultExt = ".md"
             };
 
             if (saveFileDialog.ShowDialog() == true)
             {
                 try
                 {
-                    File.WriteAllText(saveFileDialog.FileName, _output.Text);
+                    File.WriteAllText(saveFileDialog.FileName, _output.Markdown);
                 }
                 catch (Exception ex)
                 {
@@ -647,12 +803,15 @@ namespace QRiskTreeEditor
 
                     if (invalidRiskName == null)
                     {
-                        _output.AppendText("--- Calculating Baseline Risk ---\n");
-
-                        _output.AppendText("Included Risks:\n");
+                        AppendText("# Calculating Baseline Risk");
+                        AppendText($"**Model:** {modelVM.Properties.Name}");
+                        AppendText();
+                        AppendText($"**Created on:** {DateTime.Now.ToString("yyyy-MM-dd HH:mm")}");
+                        AppendText();
+                        AppendText("## Baseline Definition");
                         foreach (var risk in risks)
                         {
-                            _output.AppendText($"- Risk: {risk.Name}\n");
+                            AppendText($"- Risk: {risk.Name}");
                         }
 
                         uint iterations = modelVM.Properties.Iterations;
@@ -669,39 +828,42 @@ namespace QRiskTreeEditor
                             stopwatch.Stop();
                         }
 
-                        _output.AppendText($"Risk for the baseline calculated in {stopwatch.ElapsedMilliseconds}ms.\n");
+                        AppendText("## Baseline Risk Results");
 
                         var currencySymbol = modelVM.Properties.CurrencySymbol;
                         var monetaryScale = modelVM.Properties.MonetaryScale;
 
                         if (_baseline != null)
                         {
-                            _output.AppendText($"- {modelVM.Properties.MinPercentile}th percentile: {_baseline.GetMin(currencySymbol, monetaryScale)}\n");
-                            _output.AppendText($"- Mode: {_baseline.GetMode(currencySymbol, monetaryScale)}\n");
-                            _output.AppendText($"- {modelVM.Properties.MaxPercentile}th percentile: {_baseline.GetMax(currencySymbol, monetaryScale)}\n");
-                            _output.AppendText($"- Confidence: {_baseline.Confidence}\n");
+                            AppendText($"- {modelVM.Properties.MinPercentile}th percentile: {_baseline.GetMin(currencySymbol, monetaryScale)}");
+                            AppendText($"- Mode: {_baseline.GetMode(currencySymbol, monetaryScale)}");
+                            AppendText($"- {modelVM.Properties.MaxPercentile}th percentile: {_baseline.GetMax(currencySymbol, monetaryScale)}");
+                            AppendText($"- Confidence: {_baseline.Confidence}");
                         }
-
-                        _output.AppendText("--- Baseline Risk Calculation Completed ---\n\n");
+                        AppendText();
+                        AppendText($"Risk for the baseline calculated in {stopwatch.ElapsedMilliseconds}ms.");
+                        AppendText();
+                        AppendText();
                     }
                     else
                     {
                         if (violatingNode != null && !(violatingNode is MitigatedRisk))
                         {
-                            MessageBox.Show($"Risk '{invalidRiskName}' is not valid for baseline risk calculation because {violatingNode.GetType().Name.AddSpacesToCamelCase()} '{violatingNode.Name}' is not set.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            MessageBox.Show($"Risk '{invalidRiskName}' is not valid for baseline factAnalyzer calculation because {violatingNode.GetType().Name.AddSpacesToCamelCase()} '{violatingNode.Name}' is not set.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                         else
                         {
-                            MessageBox.Show($"Risk '{invalidRiskName}' is not valid for baseline risk calculation.\nPlease check if it has all required children, or if you still must set its range.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            MessageBox.Show($"Risk '{invalidRiskName}' is not valid for baseline factAnalyzer calculation.\nPlease check if it has all required children, or if you still must set its range.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                     }
                 }
                 else
                 {
-                    MessageBox.Show("No risk has been selected for baseline risk calculation.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("No factAnalyzer has been selected for baseline factAnalyzer calculation.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
         }
+
         private async void _calculateOptimalMitigations_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -737,10 +899,14 @@ namespace QRiskTreeEditor
                     if (invalidRiskName == null)
                     {
                         int parallelization = RiskModel.OptimalParallelism;
-                        int countIterations = (int)Math.Ceiling(((decimal)risks.Length) / parallelization);
+                        int totalCombinations = (1 << risks.Length) - 1;
+                        int countIterations = (int)Math.Ceiling(((decimal)totalCombinations) / parallelization);
                         int countAverageTreeSize = (int)Math.Ceiling(((decimal)RecursiveCount(risks)) / risks.Length);
+                        int countAverageAppliedMitigations = (int)Math.Ceiling(((decimal)risks.Sum(x => (x.Node.Children?.OfType<AppliedMitigation>()?.Count() ?? 0))) / risks.Length);
                         int countMitigations = mitigations.Length;
-                        int estimatedRequiredTime = (countIterations * countAverageTreeSize + countMitigations) * 500;
+                        int estimatedRequiredTime = (int) Math.Ceiling((decimal)
+                            (countIterations * (countAverageTreeSize + countAverageAppliedMitigations) + countMitigations * 2) 
+                            * 10 * ((decimal)modelVM.Properties.Iterations) / ((decimal)Node.DefaultIterations));
                         bool proceed;
                         if (estimatedRequiredTime > 60000)
                         {
@@ -754,29 +920,35 @@ namespace QRiskTreeEditor
 
                         if (proceed)
                         {
-                            _output.AppendText("--- Calculating Optimal Mitigations Set ---\n");
+                            AppendText("# Optimal Mitigations Set Calculation");
+                            AppendText($"**Model:** {modelVM.Properties.Name}");
+                            AppendText();
+                            AppendText($"**Created on:** {DateTime.Now.ToString("yyyy-MM-dd HH:mm")}");
+                            AppendText();
 
 #if DEBUG
                             modelVM.Model.FirstYearSimulationCompleted += Model_FirstYearSimulationCompleted;
 #endif
 
-                            _output.AppendText("Included Risks:\n");
+                            AppendText("## Population Definition");
+                            AppendText("### Included Risks");
                             foreach (var risk in risks)
                             {
-                                _output.AppendText($"- Risk: {risk.Name}\n");
+                                AppendText($"- Risk: {risk.Name}");
                             }
 
-                            _output.AppendText("Included Mitigations:\n");
+                            AppendText("### Included Mitigations");
                             foreach (var mitigation in mitigations)
                             {
-                                _output.AppendText($"- Mitigation: {mitigation.Name}\n");
+                                AppendText($"- Mitigation: {mitigation.Name}");
                             }
 
                             uint iterations = modelVM.Properties.Iterations;
                             var optParameter = modelVM.Properties.OptimizationParameter;
                             var ignoreImplementationCosts = modelVM.Properties.IgnoreImplementationCosts;
                             var notText = ignoreImplementationCosts ? "not " : "";
-                            _output.AppendText($"Optimization has been calculated on the {optParameter} parameter, and has {notText}considered the Implementation costs.\n");
+                            AppendText();
+                            AppendText($"Optimization has been calculated on the {optParameter} parameter, and has {notText}considered the Implementation costs.");
 
                             var currencySymbol = modelVM.Properties.CurrencySymbol;
                             var monetaryScale = modelVM.Properties.MonetaryScale;
@@ -809,69 +981,96 @@ namespace QRiskTreeEditor
 #endif
                             }
 
-                            _output.AppendText($"Optimization completed in {stopwatch.ElapsedMilliseconds}ms.\n");
+                            AppendText("## Optimization Results");
 
+                            if (optimized?.Any() ?? false)
+                            {
+                                AppendText("### Optimal set of mitigations");
+                                
+                                foreach (var mitigation in optimized)
+                                {
+                                    AppendText($"- {mitigation.Name}");
+                                }
+                            }
+
+                            var builder = new StringBuilder();
+                            var negativeDelta = false;
                             if (firstYearCosts != null)
                             {
                                 var format = firstYearCosts.GetFormat(currencySymbol, monetaryScale);
 
-                                _output.AppendText("\nEstimation of the Minimal Overall Yearly Cost for the first year:\n");
-                                _output.AppendText($"- {modelVM.Properties.MinPercentile}th percentile: {firstYearCosts.GetMin(currencySymbol, monetaryScale)}");
+                                AppendText("### Estimation of the Minimal Overall Yearly Cost for the first year");
+                                builder.Append($"- {modelVM.Properties.MinPercentile}th percentile: {firstYearCosts.GetMin(currencySymbol, monetaryScale)}");
                                 if (_baseline != null)
-                                    _output.AppendText($" (saving {(_baseline.Min - firstYearCosts.Min).ToString(format)}, equal to {((_baseline.Min - firstYearCosts.Min) / _baseline.Min).ToString("P2")})\n");
-                                else
-                                    _output.AppendText("\n");
-                                _output.AppendText($"- Mode: {firstYearCosts.GetMode(currencySymbol, monetaryScale)}");
+                                {
+                                    builder.Append($" (saving {(_baseline.Min - firstYearCosts.Min).ToString(format)}, equal to {((_baseline.Min - firstYearCosts.Min) / _baseline.Min).ToString("P2")})");
+                                    if (_baseline.Min - firstYearCosts.Min < 0)
+                                        negativeDelta = true;
+                                }
+                                AppendText(builder.ToString());
+                                builder.Clear();
+                                builder.Append($"- Mode: {firstYearCosts.GetMode(currencySymbol, monetaryScale)}");
                                 if (_baseline != null)
-                                    _output.AppendText($" (saving {(_baseline.Mode - firstYearCosts.Mode).ToString(format)}, equal to {((_baseline.Mode - firstYearCosts.Mode) / _baseline.Mode).ToString("P2")})\n");
-                                else
-                                    _output.AppendText("\n");
-                                _output.AppendText($"- {modelVM.Properties.MaxPercentile}th percentile: {firstYearCosts.GetMax(currencySymbol, monetaryScale)}");
+                                {
+                                    builder.Append($" (saving {(_baseline.Mode - firstYearCosts.Mode).ToString(format)}, equal to {((_baseline.Mode - firstYearCosts.Mode) / _baseline.Mode).ToString("P2")})");
+                                    if (_baseline.Mode - firstYearCosts.Mode < 0)
+                                        negativeDelta = true;
+                                }
+                                AppendText(builder.ToString());
+                                builder.Clear();
+                                builder.Append($"- {modelVM.Properties.MaxPercentile}th percentile: {firstYearCosts.GetMax(currencySymbol, monetaryScale)}");
                                 if (_baseline != null)
-                                    _output.AppendText($" (saving {(_baseline.Max - firstYearCosts.Max).ToString(format)}, equal to {((_baseline.Max - firstYearCosts.Max) / _baseline.Max).ToString("P2")})\n");
-                                else
-                                    _output.AppendText("\n");
-                                _output.AppendText($"- Confidence: {firstYearCosts.Confidence}\n");
+                                {
+                                    builder.Append($" (saving {(_baseline.Max - firstYearCosts.Max).ToString(format)}, equal to {((_baseline.Max - firstYearCosts.Max) / _baseline.Max).ToString("P2")})");
+                                    if (_baseline.Max - firstYearCosts.Max < 0)
+                                        negativeDelta = true;
+                                }
+                                AppendText(builder.ToString());
+                                AppendText($"- Confidence: {firstYearCosts.Confidence}\n");
                             }
 
                             if (followingYearsCosts != null)
                             {
                                 var format = followingYearsCosts.GetFormat(currencySymbol, monetaryScale);
 
-                                _output.AppendText("\nEstimation of the Minimal Overall Yearly Cost for the following years:\n");
-                                _output.AppendText($"- {modelVM.Properties.MinPercentile}th percentile: {followingYearsCosts.GetMin(currencySymbol, monetaryScale)}");
+                                AppendText("### Estimation of the Minimal Overall Yearly Cost for the following years");
+                                builder.Clear();
+                                builder.Append($"- {modelVM.Properties.MinPercentile}th percentile: {followingYearsCosts.GetMin(currencySymbol, monetaryScale)}");
                                 if (_baseline != null)
-                                    _output.AppendText($" (saving {(_baseline.Min - followingYearsCosts.Min).ToString(format)}, equal to {((_baseline.Min - followingYearsCosts.Min) / _baseline.Min).ToString("P2")})\n");
-                                else
-                                    _output.AppendText("\n");
-                                _output.AppendText($"- Mode: {followingYearsCosts.GetMode(currencySymbol, monetaryScale)}");
-                                if (_baseline != null)
-                                    _output.AppendText($" (saving {(_baseline.Mode - followingYearsCosts.Mode).ToString(format)}, equal to {((_baseline.Mode - followingYearsCosts.Mode) / _baseline.Mode).ToString("P2")})\n");
-                                else
-                                    _output.AppendText("\n");
-                                _output.AppendText($"- {modelVM.Properties.MaxPercentile}th percentile: {followingYearsCosts.GetMax(currencySymbol, monetaryScale)}");
-                                if (_baseline != null)
-                                    _output.AppendText($" (saving {(_baseline.Max - followingYearsCosts.Max).ToString(format)}, equal to {((_baseline.Max - followingYearsCosts.Max) / _baseline.Max).ToString("P2")})\n");
-                                else
-                                    _output.AppendText("\n");
-                                _output.AppendText($"- Confidence: {followingYearsCosts.Confidence}\n");
-                            }
-
-                            if (optimized?.Any() ?? false)
-                            {
-                                _output.AppendText("\nMitigations to be applied:\n");
-                                foreach (var mitigation in optimized)
                                 {
-                                    _output.AppendText($"- {mitigation.Name}\n");
-                                    _output.AppendText($"  - Implementation Costs: {mitigation.GetMin(currencySymbol, monetaryScale)} - {mitigation.GetMode(currencySymbol, monetaryScale)} - {mitigation.GetMax(currencySymbol, monetaryScale)} ({mitigation.Confidence})\n");
-                                    if (mitigation.OperationCosts != null)
-                                    {
-                                        _output.AppendText($"  - Operation Costs: {mitigation.OperationCosts.GetMin(currencySymbol, monetaryScale)} - {mitigation.OperationCosts.GetMode(currencySymbol, monetaryScale)} - {mitigation.OperationCosts.GetMax(currencySymbol, monetaryScale)} ({mitigation.OperationCosts.Confidence})\n");
-                                    }
+                                    builder.Append($" (saving {(_baseline.Min - followingYearsCosts.Min).ToString(format)}, equal to {((_baseline.Min - followingYearsCosts.Min) / _baseline.Min).ToString("P2")})");
+                                    if (_baseline.Min - followingYearsCosts.Min < 0)
+                                        negativeDelta = true;
                                 }
+                                AppendText(builder.ToString());
+                                builder.Clear();
+                                builder.Append($"- Mode: {followingYearsCosts.GetMode(currencySymbol, monetaryScale)}");
+                                if (_baseline != null)
+                                {
+                                    builder.Append($" (saving {(_baseline.Mode - followingYearsCosts.Mode).ToString(format)}, equal to {((_baseline.Mode - followingYearsCosts.Mode) / _baseline.Mode).ToString("P2")})");
+                                    if (_baseline.Mode - followingYearsCosts.Mode < 0)
+                                        negativeDelta = true;
+                                }
+                                AppendText(builder.ToString());
+                                builder.Clear();
+                                builder.Append($"- {modelVM.Properties.MaxPercentile}th percentile: {followingYearsCosts.GetMax(currencySymbol, monetaryScale)}");
+                                if (_baseline != null)
+                                {
+                                    builder.Append($" (saving {(_baseline.Max - followingYearsCosts.Max).ToString(format)}, equal to {((_baseline.Max - followingYearsCosts.Max) / _baseline.Max).ToString("P2")})");
+                                    if (_baseline.Max - followingYearsCosts.Max < 0)
+                                        negativeDelta = true;
+                                }
+                                AppendText(builder.ToString());
+                                AppendText($"- Confidence: {followingYearsCosts.Confidence}\n");
                             }
 
-                            _output.AppendText("--- Calculation of the Optimal Set of Mitigations Completed ---\n\n");
+                            if (negativeDelta)
+                            {
+                                AppendText("**Warning:** Some costs savings are negative, meaning that the selected mitigations increase the overall cost compared to the baseline. Please review the mitigations' cost and effectiveness. If everything is fine, please repeat the Optimization. If this happens again, it might be the case that the identified mitigations do not improve the situation and should be avoided.");
+                            }
+                            AppendText();
+                            AppendText($"Optimization completed in {stopwatch.ElapsedMilliseconds}ms.");
+                            AppendText();
                         }
                     }
                     else
@@ -888,7 +1087,7 @@ namespace QRiskTreeEditor
                 }
                 else
                 {
-                    MessageBox.Show("No risks or mitigations selected for optimized set calculation.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("No factAnalyzers or mitigations selected for optimized set calculation.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
         }
@@ -903,7 +1102,7 @@ namespace QRiskTreeEditor
 
                 var range = samples.ToRange(RangeType.Money, 
                     modelVM.Properties.MinPercentile, modelVM.Properties.MaxPercentile);
-                _output.AppendText($"Simulation with {selectedMitigations?.Count() ?? 0} mitigations - Min: {range?.GetMin(currencySymbol, monetaryScale)} - Mode: {range?.GetMode(currencySymbol, monetaryScale)} - Max: {range?.GetMax(currencySymbol, monetaryScale)} ({range?.Confidence}).\n");
+                AppendText($"Simulation with {selectedMitigations?.Count() ?? 0} mitigations - Min: {range?.GetMin(currencySymbol, monetaryScale)} - Mode: {range?.GetMode(currencySymbol, monetaryScale)} - Max: {range?.GetMax(currencySymbol, monetaryScale)} ({range?.Confidence}).");
             }
         }
 #endif
@@ -917,7 +1116,7 @@ namespace QRiskTreeEditor
                 foreach (var node in nodes)
                 {
                     var children = node.Components?.OfType<NodeViewModel>()?.ToArray();
-                    var mitigations = node.Mitigations?.OfType<AppliedMitigationViewModel>()?.ToArray();
+                    var mitigations = (node as MitigatedRiskViewModel)?.Mitigations?.OfType<AppliedMitigationViewModel>()?.ToArray();
                     if (node.IsSetByUser || !(children?.Any() ?? false))
                         count++;
                     else if (children?.Any() ?? false)
@@ -929,6 +1128,67 @@ namespace QRiskTreeEditor
             }
 
             return count;
+        }
+
+        private void _calculateAllFactAnalyzers_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is RiskModelViewModel modelVM)
+            {
+                var factAnalyzers = modelVM.FactAnalyzers?.OfType<FactAnalyzerViewModel>()?.ToArray();
+                if (factAnalyzers?.Any() ?? false)
+                {
+                    string? invalidFactAnalyzerName = null;
+                    Node? violatingNode = null;
+                    foreach (var factAnalyzer in factAnalyzers)
+                    {
+                        if (!factAnalyzer.Node.CanBeSimulated(out var node))
+                        {
+                            violatingNode = node;
+                            invalidFactAnalyzerName = factAnalyzer.Name;
+                            break;
+                        }
+                    }
+
+                    if (invalidFactAnalyzerName == null)
+                    {
+                        AppendText("# Calculating Fact Analyzers");
+                        AppendText($"**Model:** {modelVM.Properties.Name}");
+                        AppendText();
+                        AppendText($"**Created on:** {DateTime.Now.ToString("yyyy-MM-dd HH:mm")}");
+                        AppendText();
+                        foreach (var factAnalyzer in factAnalyzers)
+                        {
+                            if (factAnalyzer.Node.Simulate(modelVM.Properties.MinPercentile,
+                                modelVM.Properties.MaxPercentile, modelVM.Properties.Iterations))
+                            {
+                                AppendText($"## Fact Analyzer '{factAnalyzer.Name}'");
+                                AppendText($"- Operation: {factAnalyzer.Operation.ToString()}");
+                                AppendText($"- {modelVM.Properties.MinPercentile}th percentile: {factAnalyzer.Min.ToString("F2")}");
+                                AppendText($"- Mode: {factAnalyzer.Mode.ToString("F2")}");
+                                AppendText($"- {modelVM.Properties.MaxPercentile}th percentile: {factAnalyzer.Max.ToString("F2")}");
+                                AppendText($"- Confidence: {factAnalyzer.Confidence}");
+                            }
+                        }
+                        AppendText();
+                        AppendText();
+                    }
+                    else
+                    {
+                        if (violatingNode != null)
+                        {
+                            MessageBox.Show($"Fact Analyzer '{invalidFactAnalyzerName}' is not valid because {violatingNode.GetType().Name.AddSpacesToCamelCase()} '{violatingNode.Name}' is not set.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                        else
+                        {
+                            MessageBox.Show($"Fact Analyzer '{invalidFactAnalyzerName}' is not valid.\nPlease check if it has all required children, or if you still must set its range.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("No Fact Analyzer has been defined.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
         }
         #endregion
         #endregion
@@ -1151,6 +1411,16 @@ namespace QRiskTreeEditor
                     }
                 }
             }
+            else if (row.DataContext is FactAnalyzerViewModel faVM)
+            {
+                if (!(faVM.Parent is FactAnalyzerViewModel parent && parent.Parent is FactAnalyzerViewModel))
+                {
+                    item = new MenuItem { Header = "Add child Fact Analyzer" };
+                    item.Click += Item_AddChildFactAnalyzer;
+                    item.Tag = faVM;
+                    contextMenu.Items.Add(item);
+                }
+            }
 
             if (contextMenu.Items.Count > 0)
             {
@@ -1201,6 +1471,26 @@ namespace QRiskTreeEditor
                 contextMenu.Items.Add(item);
                 contextMenu.Items.Add(new Separator());
             }
+            else if (row.DataContext is FactViewModel factVM)
+            {
+                item = new MenuItem { Header = "Clone the Fact" };
+                item.Click += Item_CloneFact;
+                item.Tag = factVM;
+                contextMenu.Items.Add(item);
+                contextMenu.Items.Add(new Separator());
+            }
+            else if (row.DataContext is FactAnalyzerViewModel factAnalyzerVM)
+            {
+                item = new MenuItem { Header = "Calculate the Fact Analyzer" };
+                item.Click += Item_CalculateFactAnalyzer;
+                item.Tag = factAnalyzerVM;
+                contextMenu.Items.Add(item);
+                item = new MenuItem { Header = "Clone the Fact Analyzer" };
+                item.Click += Item_CloneFactAnalyzer;
+                item.Tag = factAnalyzerVM;
+                contextMenu.Items.Add(item);
+                contextMenu.Items.Add(new Separator());
+            }
 
             // Delete current row.
             item = new MenuItem { Header = $"Delete current {row.DataContext.GetType().Name.Replace("ViewModel", "").AddSpacesToCamelCase()}" };
@@ -1247,6 +1537,9 @@ namespace QRiskTreeEditor
                     item = new MenuItem { Header = "Create a simple Fact" };
                     item.Click += Item_CreateFact;
                     contextMenu.Items.Add(item);
+                    item = new MenuItem { Header = "Create a Fact based on a numeric range" };
+                    item.Click += Item_CreateFactWithNumericRange;
+                    contextMenu.Items.Add(item);
                     item = new MenuItem { Header = "Create a Fact based on a monetary range" };
                     item.Click += Item_CreateFactWithMonetaryRange;
                     contextMenu.Items.Add(item);
@@ -1255,6 +1548,12 @@ namespace QRiskTreeEditor
                     contextMenu.Items.Add(item);
                     item = new MenuItem { Header = "Create a Fact based on a percentage range" };
                     item.Click += Item_CreateFactWithPercentageRange;
+                    contextMenu.Items.Add(item);
+                    result = true;
+                    break;
+                case "_factAnalyzers":
+                    item = new MenuItem { Header = "Create a new Fact Analyzer" };
+                    item.Click += Item_CreateFactAnalyzer;
                     contextMenu.Items.Add(item);
                     result = true;
                     break;
@@ -1298,12 +1597,18 @@ namespace QRiskTreeEditor
                     menuItem.Click -= Item_ResetRange;
                     menuItem.Click -= Item_ResetOperationCostsRange;
                     menuItem.Click -= Item_CloneRisk;
+                    menuItem.Click -= Item_CloneFact;
+                    menuItem.Click -= Item_CloneFactAnalyzer;
                     menuItem.Click -= Item_CreateRisk;
                     menuItem.Click -= Item_CreateMitigation;
                     menuItem.Click -= Item_CreateFact;
+                    menuItem.Click -= Item_CreateFactWithNumericRange;
                     menuItem.Click -= Item_CreateFactWithMonetaryRange;
                     menuItem.Click -= Item_CreateFactWithFrequencyRange;
                     menuItem.Click -= Item_CreateFactWithPercentageRange;
+                    menuItem.Click -= Item_CreateFactAnalyzer;
+                    menuItem.Click -= Item_AddChildFactAnalyzer;
+                    menuItem.Click -= Item_CalculateFactAnalyzer;
                 }
             }
         }
@@ -1314,6 +1619,22 @@ namespace QRiskTreeEditor
             if (sender is MenuItem menuItem && menuItem.Tag is MitigatedRiskViewModel riskVM)
             {
                 riskVM?.Clone();
+            }
+        }
+
+        private void Item_CloneFact(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.Tag is FactViewModel factVM)
+            {
+                factVM?.Clone();
+            }
+        }
+
+        private void Item_CloneFactAnalyzer(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.Tag is FactAnalyzerViewModel factAnalyzerVM)
+            {
+                factAnalyzerVM?.Clone();
             }
         }
 
@@ -1540,12 +1861,85 @@ namespace QRiskTreeEditor
                         amVM.Delete();
                     }
                 }
+                else if (menuItem.Tag is FactAnalyzerViewModel faVM)
+                {
+                    if (MessageBox.Show($"Are you sure you want to delete Fact Analyzer '{faVM.Name}'?",
+                        "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                    {
+                        if (faVM.Parent is FactAnalyzerViewModel parent)
+                        {
+                            parent.RemoveChild(faVM);
+                        }
+                        else
+                        {
+                            model.RemoveFactAnalyzer(faVM);
+                        }
+                    }
+                }
                 else if (menuItem.Tag is NodeViewModel nodeVM)
                 {
                     if (MessageBox.Show($"Are you sure you want to delete {nodeVM.NodeType} '{nodeVM.Name}'?",
                         "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
                     {
                         nodeVM.Delete();
+                    }
+                }
+            }
+        }
+
+        private void Item_AddChildFactAnalyzer(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.Tag is FactAnalyzerViewModel faVM && DataContext is RiskModelViewModel modelVM)
+            {
+                if (faVM.Parent is FactAnalyzerViewModel parent && parent.Parent is FactAnalyzerViewModel)
+                {
+                    MessageBox.Show("Fact Analyzers in QRiskTree Editor can only have two levels of depth.\nYou cannot add a child to this Fact Analyzer.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                else
+                {
+                    faVM.AddFactAnalyzer("New Fact Analyzer");
+                }
+            }
+        }
+
+        private void Item_CalculateFactAnalyzer(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.Tag is FactAnalyzerViewModel faVM && DataContext is RiskModelViewModel modelVM)
+            {
+                if (faVM.Node.CanBeSimulated(out var node))
+                {
+                    AppendText("# Calculating Fact Analyzer");
+                    AppendText($"**Model:** {modelVM.Properties.Name}");
+                    AppendText();
+                    AppendText($"**Created on:** {DateTime.Now.ToString("yyyy-MM-dd HH:mm")}");
+                    AppendText();
+                    if (faVM.Node.SimulateAndGetSamples(out var samples, modelVM.Properties.MinPercentile,
+                        modelVM.Properties.MaxPercentile, modelVM.Properties.Iterations) &&
+                        samples != null && samples.Length == modelVM.Properties.Iterations)
+                    {
+                        AppendText($"## Fact Analyzer '{faVM.Name}'");
+                        AppendText($"- Operation: {faVM.Operation.ToString()}");
+                        AppendText($"- {modelVM.Properties.MinPercentile}th percentile: {faVM.Min.ToString("F2")}");
+                        AppendText($"- Mode: {faVM.Mode.ToString("F2")}");
+                        AppendText($"- {modelVM.Properties.MaxPercentile}th percentile: {faVM.Max.ToString("F2")}");
+                        AppendText($"- Confidence: {faVM.Confidence}");
+
+                        _chartFactAnalyzer.Plot(samples, modelVM.Properties.MinPercentile,
+                            modelVM.Properties.MaxPercentile);
+                        _tabFactAnalyzerResults.Visibility = Visibility.Visible;
+                    }
+                    AppendText();
+                    AppendText();
+                }
+                else
+                {
+                    if (node != null)
+                    {
+                        MessageBox.Show($"Fact Analyzer '{faVM.Name}' is not valid because {node.GetType().Name.AddSpacesToCamelCase()} '{node.Name}' is not set.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                    else
+                    {
+                        MessageBox.Show($"Fact Analyzer '{faVM.Name}' is not valid.\nPlease check if it has all required children, or if you still must set its range.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
             }
@@ -1568,6 +1962,11 @@ namespace QRiskTreeEditor
             _editCreateFact_Click(sender, e);
         }
 
+        private void Item_CreateFactWithNumericRange(object sender, RoutedEventArgs e)
+        {
+            _editCreateFactWithNumericRange_Click(sender, e);
+        }
+
         private void Item_CreateFactWithMonetaryRange(object sender, RoutedEventArgs e)
         {
             _editCreateFactWithMonetaryRange_Click(sender, e);
@@ -1581,6 +1980,11 @@ namespace QRiskTreeEditor
         private void Item_CreateFactWithPercentageRange(object sender, RoutedEventArgs e)
         {
             _editCreateFactWithPercentageRange_Click(sender, e);
+        }
+
+        private void Item_CreateFactAnalyzer(object sender, RoutedEventArgs e)
+        {
+            _editCreateFactAnalyzer_Click(sender, e);
         }
         #endregion
 
@@ -1622,6 +2026,14 @@ namespace QRiskTreeEditor
             {
                 grid.AddHandler(DataGridRow.ContextMenuOpeningEvent, new ContextMenuEventHandler(OpeningContextMenu), false);
             }
+        }
+        #endregion
+
+        #region Markdown helper.
+        private void AppendText(string? text = null)
+        {
+            _markdown.AppendLine(text);
+            _output.Markdown = _markdown.ToString();
         }
         #endregion
     }

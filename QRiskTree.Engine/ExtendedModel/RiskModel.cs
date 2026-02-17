@@ -13,7 +13,7 @@ namespace QRiskTree.Engine.ExtendedModel
     {
         private static readonly Dictionary<Guid, RiskModel> _instances = new();
         private readonly FactsManager _factsManager = new FactsManager();
-        private const double CurrentSchemaVersion = 0.4;
+        private const double CurrentSchemaVersion = 0.6;
         private const double MinSchemaVersion = 0.0;
 
         /// <summary>
@@ -648,7 +648,7 @@ namespace QRiskTree.Engine.ExtendedModel
                 }
 
                 // Calculates the best combination of mitigations based on the optimization parameter.
-                var combinations = RemoveCombinationsWithoutAuxiliary(GetAllCombinations(mitigationIds)).ToArray();
+                var combinations = RemoveImpossibleCombinations(GetAllCombinations(mitigationIds)).ToArray();
                 var bestCombination = GetBestCombination(combinations, costs,
                     optimizationParameter, optimizeForFollowingYears, iterations);
                 if (bestCombination != null)
@@ -705,7 +705,7 @@ namespace QRiskTree.Engine.ExtendedModel
                 }
 
                 // Calculates the best combination of mitigations based on the optimization parameter.
-                var combinations = RemoveCombinationsWithoutAuxiliary(GetAllCombinations(mitigationIds)).ToArray();
+                var combinations = RemoveImpossibleCombinations(GetAllCombinations(mitigationIds)).ToArray();
                 var bestCombination = await GetBestCombinationAsync(combinations, costs,
                     optimizationParameter, optimizeForFollowingYears, iterations, parallelism);
                 if (bestCombination != null)
@@ -738,13 +738,22 @@ namespace QRiskTree.Engine.ExtendedModel
                 result = true;
             }
             else if (mitigation.GenerateSamples(iterations, out var samples1) &&
-                samples1 != null && samples1.Length == iterations &&
-                mitigation.OperationCosts != null &&
-                mitigation.OperationCosts.GenerateSamples(iterations, out var samples2) &&
-                samples2 != null && samples2.Length == iterations)
+                samples1 != null && samples1.Length == iterations)
             {
                 implementationCostSamples = samples1;
-                operationalCostSamples = samples2;
+
+                if (mitigation.OperationCosts != null &&
+                mitigation.OperationCosts.GenerateSamples(iterations, out var samples2) &&
+                samples2 != null && samples2.Length == iterations)
+                {
+                    operationalCostSamples = samples2;
+                }
+                else
+                {
+                    // If operation costs are not defined, consider them as zero.
+                    operationalCostSamples = new double[iterations];
+                }
+                    
                 mitigation.SetBaselines(implementationCostSamples, operationalCostSamples);
                 result = true;
             }
@@ -981,34 +990,27 @@ namespace QRiskTree.Engine.ExtendedModel
             }
         }
 
-        private IEnumerable<Guid>? GetMitigationIDs(IEnumerable<Guid>? selectedMitigations)
+        private IEnumerable<IEnumerable<Guid>> RemoveImpossibleCombinations(IEnumerable<IEnumerable<Guid>> inputCombinations)
         {
-            IEnumerable<Guid>? mitigationIds = null;
-            if (selectedMitigations == null)
-            {
-                mitigationIds = _mitigations?.Select(x => x.Id).ToArray();
-            }
-            else
-            {
-                mitigationIds = selectedMitigations.Where(x => _mitigations?.Any(y => x == y.Id) ?? false).ToArray();
-            }
-
-            return mitigationIds;
-        }
-
-        private IEnumerable<IEnumerable<Guid>> RemoveCombinationsWithoutAuxiliary(IEnumerable<IEnumerable<Guid>> inputCombinations)
-        {
-            var auxiliaryMitigationIds = _risks?
-                .SelectMany(risk => risk.Children?.OfType<AppliedMitigation>() ?? Enumerable.Empty<AppliedMitigation>())
-                .Where(mitigation => mitigation.IsAuxiliary)
-                .Select(x => x.MitigationCostId)
-                .Distinct()
+            // We must remove all combinations including corrective mitigations without any detective mitigation,
+            // or with a detective mitigation but without any corrective mitigation.
+            var detectiveMitigationIds = _mitigations?
+                .Where(x => x.ControlType == ControlType.Detective)
+                .Select(x => x.Id)
                 .ToArray();
 
-            if (auxiliaryMitigationIds == null || auxiliaryMitigationIds.Length == 0)
-                return inputCombinations;
+            var correctiveMitigationIds = _mitigations?
+                .Where(x => x.ControlType == ControlType.Corrective)
+                .Select(x => x.Id)
+                .ToArray();
 
-            return inputCombinations.Where(combination => auxiliaryMitigationIds.All(auxId => combination.Contains(auxId)));
+            return inputCombinations.Where(combination =>
+                // No Corrective or Detective mitigations.
+                (!combination.Any(mitigationId => correctiveMitigationIds?.Contains(mitigationId) ?? false) &&
+                !combination.Any(mitigationId => detectiveMitigationIds?.Contains(mitigationId) ?? false)) ||
+                // Both corrective and detective mitigations are present.
+                (combination.Any(mitigationId => correctiveMitigationIds?.Contains(mitigationId) ?? false) &&
+                combination.Any(mitigationId => detectiveMitigationIds?.Contains(mitigationId) ?? false)));
         }
 
         private void SetEnabledState(IEnumerable<Guid>? mitigations = null)
@@ -1135,50 +1137,66 @@ namespace QRiskTree.Engine.ExtendedModel
             };
             result = JsonConvert.DeserializeObject<RiskModel>(json, settings);
             if (result == null)
-            {
                 throw new InvalidOperationException($"Failed to load the Risk Model from '{filePath}'.");
-            }
-            else
-            {
-                // Check the model file version.
-                if (result.SchemaVersion < MinSchemaVersion)
-                {
-                    throw new NotSupportedException($"The model file version {result.SchemaVersion} is not supported.");
-                }
-
-                _instances.Add(result.Id, result);
-
-                // Register all the Facts in the FactsManager.
-                var facts = result._facts?.Facts?.ToArray();
-                if (facts?.Any() ?? false)
-                {
-                    foreach (var fact in facts)
-                    {
-                        result._factsManager?.Add(fact);
-                    }
-                }
-
-                // Register all NodeWithFacts with the FactsManager.
-                var risks = result._risks?.ToArray();
-                if (risks?.Any() ?? false)
-                {
-                    foreach (var risk in risks)
-                    {
-                        risk.AssignModel(result);
-                        var mitigations = risk.Children?.OfType<AppliedMitigation>().ToArray();
-                        if (mitigations?.Any() ?? false)
-                        {
-                            foreach (var mitigation in mitigations)
-                            {
-                                mitigation.AssignModel(result);
-                            }
-                        }
-                        RecursiveRegisterWithFactsManager(risk, result._factsManager);
-                    }
-                }
-            }
 
             return result;
+        }
+
+        /// <summary>
+        /// Complete the loading of the model after deserialization.
+        /// </summary>
+        /// <remarks>This method must be called after loading the model from a file
+        /// to ensure that all internal structures are properly initialized
+        /// and all references are correctly set up.</remarks>
+        /// <exception cref="NotSupportedException">The model file version is not supported.</exception>
+        public void CompleteLoad()
+        {
+            // Check the model file version.
+            if (SchemaVersion < MinSchemaVersion)
+            {
+                throw new NotSupportedException($"The model file version {SchemaVersion} is not supported.");
+            }
+
+            _instances.Add(Id, this);
+
+            // Register all the Facts in the FactsManager.
+            var facts = _facts?.Facts?.ToArray();
+            if (facts?.Any() ?? false)
+            {
+                foreach (var fact in facts)
+                {
+                    _factsManager?.Add(fact);
+                }
+            }
+
+            // Register all NodeWithFacts with the FactsManager.
+            var risks = _risks?.ToArray();
+            if (risks?.Any() ?? false)
+            {
+                foreach (var risk in risks)
+                {
+                    risk.AssignModel(this);
+                    var mitigations = risk.Children?.OfType<AppliedMitigation>().ToArray();
+                    if (mitigations?.Any() ?? false)
+                    {
+                        foreach (var mitigation in mitigations)
+                        {
+                            mitigation.AssignModel(this);
+                        }
+                    }
+                    RecursiveRegisterWithFactsManager(risk, _factsManager);
+                }
+            }
+
+            // Register all Fact Analyzers with the FactsManager.
+            var factAnalyzers = _factAnalyzers?.ToArray();
+            if (factAnalyzers?.Any() ?? false)
+            {
+                foreach (var factAnalyzer in factAnalyzers)
+                {
+                    RecursiveRegisterWithFactsManager(factAnalyzer, _factsManager);
+                }
+            }
         }
 
         private static void RecursiveRegisterWithFactsManager(Node node, FactsManager? factsManager)
@@ -1277,6 +1295,99 @@ namespace QRiskTree.Engine.ExtendedModel
         public void ExportFacts(string filePath)
         {
             _factsManager.Export(filePath);
+        }
+        #endregion
+
+        #region Fact Analyzers Management.
+        [JsonProperty("factAnalyzers", Order = 13)]
+        private List<FactAnalyzerNode>? _factAnalyzers { get; set; }
+
+        /// <summary>
+        /// Get the collection of Fact Analyzers defined in the model.
+        /// </summary>
+        public IEnumerable<FactAnalyzerNode> FactAnalyzers => _factAnalyzers?.AsEnumerable() ?? [];
+
+        /// <summary>
+        /// Adds a new Fact Analyzer to the model.
+        /// </summary>
+        /// <returns>The created <see cref="FactAnalyzerNode"/>.</returns>
+        public FactAnalyzerNode AddFactAnalyzer()
+        {
+            var result = new FactAnalyzerNode();
+            AddFactAnalyzer(result);
+            return result;
+        }
+
+        /// <summary>
+        /// Adds a new Fact Analyzer to the model.
+        /// </summary>
+        /// <param name="name">The name of the new fact analyzer.</param>
+        /// <returns>The created <see cref="FactAnalyzerNode"/>.</returns>
+        public FactAnalyzerNode AddFactAnalyzer(string name)
+        {
+            var result = new FactAnalyzerNode(name);
+            AddFactAnalyzer(result);
+            return result;
+        }
+
+        private void AddFactAnalyzer(FactAnalyzerNode factAnalyzer)
+        {
+            factAnalyzer.AssignFactsManager(_factsManager);
+            _factAnalyzers ??= new List<FactAnalyzerNode>();
+            _factAnalyzers.Add(factAnalyzer);
+            factAnalyzer.ChildAdded += OnChildAdded;
+            factAnalyzer.ChildRemoved += OnChildRemoved;
+            factAnalyzer.FactAdded += OnFactAdded;
+            factAnalyzer.FactRemoved += OnFactRemoved;
+            Update();
+        }
+
+        /// <summary>
+        /// Get a Fact Analyzer by its unique identifier.
+        /// </summary>
+        /// <param name="id">Unique identifier of the fact analyzer.</param>
+        /// <returns>The <see cref="FactAnalyzerNode"/> with the specified ID, or null if not found.</returns>
+        public FactAnalyzerNode? GetFactAnalyzer(Guid id)
+        {
+            return _factAnalyzers?.FirstOrDefault(r => r.Id == id);
+        }
+
+        /// <summary>
+        /// Removes a Fact Analyzer by its unique identifier.
+        /// </summary>
+        /// <param name="id">Unique identifier of the fact analyzer to remove.</param>
+        /// <returns>True if the fact analyzer was successfully removed; otherwise, false.</returns>
+        public bool RemoveFactAnalyzer(Guid id)
+        {
+            var factAnalyzer = GetFactAnalyzer(id);
+            var result = factAnalyzer != null ? (_factAnalyzers?.Remove(factAnalyzer) ?? false) : false;
+            if (result)
+            {
+#pragma warning disable CS8604 // Possible null reference argument.
+                RecursivelyRemoveEvents(factAnalyzer);
+#pragma warning restore CS8604 // Possible null reference argument.
+                Update();
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Removes all Fact Analyzers from the model.
+        /// </summary>
+        public void ClearFactAnalyzers()
+        {
+            var factAnalyzers = _factAnalyzers?.ToArray();
+            if (factAnalyzers?.Any() ?? false)
+            {
+                foreach (var factAnalyzer in factAnalyzers)
+                {
+                    RecursivelyRemoveEvents(factAnalyzer);
+                }
+
+                _factAnalyzers?.Clear();
+                Update();
+            }
         }
         #endregion
     }

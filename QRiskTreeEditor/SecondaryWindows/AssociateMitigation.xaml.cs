@@ -28,7 +28,7 @@ namespace QRiskTreeEditor.SecondaryWindows
         internal AssociateMitigation(MitigatedRiskViewModel risk, IEnumerable<MitigationCostViewModel> mitigations) : this()
         {
             _parent.Text = risk.Name;
-            _items.ItemsSource = mitigations;
+            _items.ItemsSource = mitigations?.OrderBy(x => x.Name);
         }
 
         internal MitigationCostViewModel? SelectedMitigation => _items.SelectedItem as MitigationCostViewModel;

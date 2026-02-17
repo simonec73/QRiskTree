@@ -196,13 +196,38 @@ namespace QRiskTreeEditor.Controls
             var range = data.ToRange(RangeType.Money, minPercentile, maxPercentile);
             if (range != null)
             {
+                var average = data.Average();
+
                 var lineMinValue = new LineAnnotation
                 {
                     Type = LineAnnotationType.Vertical,
                     X = range.Min,
                     Color = OxyColors.Red,
                     LineStyle = LineStyle.Dash,
-                    Text = $"Value at {minPercentile}th Percentile: {range.GetMin(currencySymbol, monetaryScale)}",
+                    Text = $"{minPercentile}th Percentile: {range.GetMin(currencySymbol, monetaryScale)}",
+                    TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Right,
+                    TextVerticalAlignment = OxyPlot.VerticalAlignment.Top
+                };
+
+                var lineModeValue = new LineAnnotation
+                {
+                    Type = LineAnnotationType.Vertical,
+                    X = range.Mode,
+                    Color = OxyColors.Red,
+                    LineStyle = LineStyle.Dash,
+                    Text = $"Mode: {range.GetMode(currencySymbol, monetaryScale)}",
+                    TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Right,
+                    TextVerticalAlignment = OxyPlot.VerticalAlignment.Top,
+                    TextMargin = 250
+                };
+
+                var lineAverageValue = new LineAnnotation
+                {
+                    Type = LineAnnotationType.Vertical,
+                    X = average,
+                    Color = OxyColors.Red,
+                    LineStyle = LineStyle.Dash,
+                    Text = $"Average: {average.FormatMoney(currencySymbol, monetaryScale)}",
                     TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Right,
                     TextVerticalAlignment = OxyPlot.VerticalAlignment.Top
                 };
@@ -213,12 +238,14 @@ namespace QRiskTreeEditor.Controls
                     X = range.Max,
                     Color = OxyColors.Red,
                     LineStyle = LineStyle.Dash,
-                    Text = $"Value at {maxPercentile}th Percentile: {range.GetMax(currencySymbol, monetaryScale)}",
+                    Text = $"{maxPercentile}th Percentile: {range.GetMax(currencySymbol, monetaryScale)}",
                     TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Right,
                     TextVerticalAlignment = OxyPlot.VerticalAlignment.Top
                 };
 
                 model.Annotations.Add(lineMinValue);
+                model.Annotations.Add(lineModeValue);
+                model.Annotations.Add(lineAverageValue);
                 model.Annotations.Add(lineMaxValue);
             }
 

@@ -1,6 +1,10 @@
 ﻿using QRiskTree.Engine;
 using QRiskTree.Engine.ExtendedModel;
+using QRiskTree.Engine.Model;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Windows.Data;
+using PT = PropertyTools.DataAnnotations;
 
 namespace QRiskTreeEditor.ViewModels
 {
@@ -8,11 +12,15 @@ namespace QRiskTreeEditor.ViewModels
     {
         public MitigatedRiskViewModel(MitigatedRisk node, NodeViewModel? parent, RiskModelViewModel model) : base(node, parent, model)
         {
+            _mitigations = new ObservableCollection<AppliedMitigationViewModel>();
+            Mitigations = CollectionViewSource.GetDefaultView(_mitigations);
+            Mitigations.SortDescriptions.Add(new SortDescription(nameof(Name), ListSortDirection.Ascending));
         }
 
         #region Properties.
         [Category("Mitigated Risk")]
         [DisplayName("Enabled")]
+        [PT.SortIndex(50)]
         public bool IsEnabled
         {
             get => (_node as MitigatedRisk)?.IsEnabled ?? false;
@@ -24,6 +32,55 @@ namespace QRiskTreeEditor.ViewModels
                     OnPropertyChanged(nameof(IsEnabled));
                 }
             }
+        }
+        #endregion
+
+        #region Overrides.
+        public override NodeViewModel? Clone(NodeViewModel? parent = null)
+        {
+            NodeViewModel? result = null;
+
+            var mrVM = _model.AddRisk($"{Name} (copy)");
+            if (mrVM != null)
+            {
+                mrVM.Description = Description;
+                mrVM.IsEnabled = IsEnabled;
+
+                var lefVM = _components.OfType<LossEventFrequencyViewModel>().FirstOrDefault();
+                if (lefVM != null)
+                {
+                    lefVM.Clone(mrVM);
+                }
+
+                var lmVM = _components.OfType<LossMagnitudeViewModel>().FirstOrDefault();
+                if (lmVM != null)
+                {
+                    lmVM.Clone(mrVM);
+                }
+
+                CloneMitigations(mrVM);
+
+                if (IsSetByUser)
+                {
+                    mrVM.Min = Min;
+                    mrVM.Mode = Mode;
+                    mrVM.Max = Max;
+                    mrVM.Confidence = Confidence;
+                }
+
+                if (HasFacts)
+                {
+                    foreach (var fact in _facts)
+                    {
+                        if (fact?.LinkedFact != null)
+                            mrVM.AddFact(fact.LinkedFact);
+                    }
+                }
+
+                result = mrVM;
+            }
+
+            return result;
         }
         #endregion
 
@@ -69,9 +126,67 @@ namespace QRiskTreeEditor.ViewModels
             
             return result;
         }
+
+        [Browsable(false)]
+        public override bool HasChildren => _mitigations.Any() || base.HasChildren;
         #endregion
 
         #region Mitigations management.
+        protected ObservableCollection<AppliedMitigationViewModel> _mitigations { get; }
+
+        [Browsable(false)]
+        public ICollectionView Mitigations { get; }
+
+        [Browsable(false)]
+        public bool HasMitigations => _mitigations.Any();
+
+        public void AddChild(AppliedMitigationViewModel child)
+        {
+            if (child == null) throw new ArgumentNullException(nameof(child));
+            if (_node.Add(child.Node))
+            {
+                _mitigations.Add(child);
+                OnPropertyChanged(nameof(_mitigations));
+                OnPropertyChanged(nameof(HasMitigations));
+                OnPropertyChanged(nameof(HasChildren));
+            }
+        }
+
+        public void RemoveChild(AppliedMitigationViewModel child)
+        {
+            if (_node.Remove(child.Node))
+            {
+                _mitigations.Remove(child);
+                OnPropertyChanged(nameof(_mitigations));
+                OnPropertyChanged(nameof(HasMitigations));
+                OnPropertyChanged(nameof(HasChildren));
+            }
+        }
+
+        private void CloneMitigations(MitigatedRiskViewModel target)
+        {
+            var mitigations = Mitigations?.OfType<AppliedMitigationViewModel>()?.ToArray();
+            if (mitigations?.Any() ?? false)
+            {
+                foreach (var mitigation in mitigations)
+                {
+                    var mitigationCost = _model.Mitigations?.OfType<MitigationCostViewModel>()
+                        .FirstOrDefault(x => x.Id == mitigation.MitigationCostId);
+                    if (mitigationCost != null)
+                    {
+                        target.ApplyMitigation(mitigationCost, out var appliedMitigation);
+                        if (appliedMitigation != null)
+                        {
+                            appliedMitigation.Min = mitigation.Min;
+                            appliedMitigation.Mode = mitigation.Mode;
+                            appliedMitigation.Max = mitigation.Max;
+                            appliedMitigation.Confidence = mitigation.Confidence;
+                        }
+                    }
+                }
+            }
+        }
+
         public void InitializeMitigations()
         {
             var mitigations = _node.Children?.OfType<AppliedMitigation>().ToArray();
