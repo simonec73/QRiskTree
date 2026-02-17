@@ -1866,7 +1866,14 @@ namespace QRiskTreeEditor
                     if (MessageBox.Show($"Are you sure you want to delete Fact Analyzer '{faVM.Name}'?",
                         "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
                     {
-                        model.RemoveFactAnalyzer(faVM);
+                        if (faVM.Parent is FactAnalyzerViewModel parent)
+                        {
+                            parent.RemoveChild(faVM);
+                        }
+                        else
+                        {
+                            model.RemoveFactAnalyzer(faVM);
+                        }
                     }
                 }
                 else if (menuItem.Tag is NodeViewModel nodeVM)
