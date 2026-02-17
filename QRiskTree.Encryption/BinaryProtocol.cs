@@ -12,6 +12,8 @@ namespace QRiskTree.Encryption
         private const byte Magic1 = (byte)'Q';
         private const byte Magic2 = (byte)'R';
         private readonly SerializersDeserializersRegistry<T> _registry = new SerializersDeserializersRegistry<T>();
+        private byte _magic1 = Magic1;
+        private byte _magic2 = Magic2;
 
         /// <summary>
         /// Default constructor.
@@ -19,6 +21,22 @@ namespace QRiskTree.Encryption
         public BinaryProtocol()
         {
             _registry.Register(typeof(EncryptedSerializerDeserializer<T>));
+        }
+
+        /// <summary>
+        /// Overrides the default magic characters used in the protocol to ensure that the header of the message is correct. 
+        /// This can help prevent accidental processing of messages that do not conform with the expected format.
+        /// </summary>
+        /// <param name="magic1">The first magic character.</param>
+        /// <param name="magic2">The second magic character.</param>
+        /// <exception cref="ArgumentException">Thrown if any magic character is zero.</exception>
+        /// <remarks>This is not thread safe, but it is expected to be called only once at the beginning of the application.</remarks>
+        public void OverrideMagicChars(byte magic1, byte magic2)
+        {
+            if (magic1 == 0) throw new ArgumentException("Magic character cannot be zero.", nameof(magic1));
+            if (magic2 == 0) throw new ArgumentException("Magic character cannot be zero.", nameof(magic2));
+            _magic1 = magic1;
+            _magic2 = magic2;
         }
 
         /// <summary>
@@ -39,8 +57,8 @@ namespace QRiskTree.Encryption
             if (_registry.TryGetCurrent(out var serializer) && serializer != null)
             {
                 using var writer = new BinaryWriter(output, Encoding.UTF8, leaveOpen: true);
-                writer.Write(Magic1);
-                writer.Write(Magic2);
+                writer.Write(_magic1);
+                writer.Write(_magic2);
                 writer.Write(serializer.TypeId);
                 serializer.WriteTo(model, writer, encryptionManager);
                 writer.Flush();
@@ -68,10 +86,10 @@ namespace QRiskTree.Encryption
             {
                 var m1 = reader.ReadByte();
                 var m2 = reader.ReadByte();
-                if (m1 != Magic1 || m2 != Magic2)
+                if (m1 != _magic1 || m2 != _magic2)
                 {
                     throw new InvalidDataException(
-                        $"Invalid header. Expected '{(char)Magic1}{(char)Magic2}', found '{(char)m1}{(char)m2}'.");
+                        $"Invalid header. Expected '{(char)_magic1}{(char)_magic2}', found '{(char)m1}{(char)m2}'.");
                 }
 
                 var typeId = reader.ReadByte();
