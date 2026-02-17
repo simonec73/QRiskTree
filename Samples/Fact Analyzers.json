@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 0.6,
+  "id": "1eba8fa5-b9d8-4391-be78-7215bf099a75",
+  "name": "Risk Model",
+  "minPercentile": 10,
+  "maxPercentile": 90,
+  "currencySymbol": "$",
+  "facts": {
+    "facts": [
+      {
+        "$type": "QRiskTree.Engine.Facts.FactRange, QRiskTree.Engine",
+        "id": "6069099e-1ef1-443c-bd0d-b260497f1db9",
+        "context": "Context",
+        "source": "Name of the source",
+        "refDate": "2026-01-29T08:33:37.9541547+01:00",
+        "name": "Pos1",
+        "range": {
+          "calculated": false,
+          "Min": 10.0,
+          "mode": 20.0,
+          "Max": 30.0,
+          "createdBy": "Simone Curzi",
+          "createdOn": "2026-01-29T07:33:37.9537105Z",
+          "modifiedBy": "Simone Curzi",
+          "modifiedOn": "2026-01-29T07:33:57.4626194Z"
+        },
+        "createdBy": "Simone Curzi",
+        "createdOn": "2026-01-29T07:33:37.9542308Z",
+        "modifiedBy": "Simone Curzi",
+        "modifiedOn": "2026-01-29T07:33:45.1360549Z"
+      },
+      {
+        "$type": "QRiskTree.Engine.Facts.FactRange, QRiskTree.Engine",
+        "id": "746c1ec1-c5f9-4135-913c-d2b194e41c6b",
+        "context": "Context",
+        "source": "Name of the source",
+        "refDate": "2026-01-29T08:33:39.4679113+01:00",
+        "name": "Pos2",
+        "range": {
+          "calculated": false,
+          "Min": 20.0,
+          "mode": 30.0,
+          "Max": 40.0,
+          "createdBy": "Simone Curzi",
+          "createdOn": "2026-01-29T07:33:39.4678994Z",
+          "modifiedBy": "Simone Curzi",
+          "modifiedOn": "2026-01-29T07:34:02.6312526Z"
+        },
+        "createdBy": "Simone Curzi",
+        "createdOn": "2026-01-29T07:33:39.4679736Z",
+        "modifiedBy": "Simone Curzi",
+        "modifiedOn": "2026-01-29T07:33:46.880146Z"
+      },
+      {
+        "$type": "QRiskTree.Engine.Facts.FactRange, QRiskTree.Engine",
+        "id": "2f486bc8-4240-4fb0-b8b8-c7d181e54294",
+        "context": "Context",
+        "source": "Name of the source",
+        "refDate": "2026-01-29T08:33:40.6844262+01:00",
+        "name": "Neg1",
+        "range": {
+          "calculated": false,
+          "Min": 30.0,
+          "mode": 40.0,
+          "Max": 50.0,
+          "createdBy": "Simone Curzi",
+          "createdOn": "2026-01-29T07:33:40.6844156Z",
+          "modifiedBy": "Simone Curzi",
+          "modifiedOn": "2026-01-29T07:34:11.6780142Z"
+        },
+        "createdBy": "Simone Curzi",
+        "createdOn": "2026-01-29T07:33:40.6844845Z",
+        "modifiedBy": "Simone Curzi",
+        "modifiedOn": "2026-01-29T07:33:49.1559533Z"
+      },
+      {
+        "$type": "QRiskTree.Engine.Facts.FactRange, QRiskTree.Engine",
+        "id": "a987d1ce-0316-4ad6-8850-406ee712b55b",
+        "context": "Context",
+        "source": "Name of the source",
+        "refDate": "2026-01-29T08:33:41.9620078+01:00",
+        "name": "Neg2",
+        "range": {
+          "calculated": false,
+          "Min": 40.0,
+          "mode": 50.0,
+          "Max": 60.0,
+          "createdBy": "Simone Curzi",
+          "createdOn": "2026-01-29T07:33:41.9619967Z",
+          "modifiedBy": "Simone Curzi",
+          "modifiedOn": "2026-01-29T07:34:17.8449086Z"
+        },
+        "createdBy": "Simone Curzi",
+        "createdOn": "2026-01-29T07:33:41.9620742Z",
+        "modifiedBy": "Simone Curzi",
+        "modifiedOn": "2026-01-29T07:33:50.9592729Z"
+      }
+    ]
+  },
+  "factAnalyzers": [
+    {
+      "id": "097e3704-d43b-4475-8f92-1699975cb28f",
+      "name": "Total",
+      "calculated": true,
+      "Min": 130.21354525614603,
+      "mode": 140.5761151038985,
+      "Max": 149.85932018059916,
+      "confidence": "Moderate",
+      "children": [
+        {
+          "$type": "QRiskTree.Engine.Facts.FactAnalyzerNode, QRiskTree.Engine",
+          "opposite": true,
+          "id": "b07a5836-ccc0-4d46-beb8-60efbb2e6f59",
+          "name": "Negative",
+          "calculated": true,
+          "Min": 83.02936203209684,
+          "mode": 89.63671640839385,
+          "Max": 97.04181146359669,
+          "confidence": "Moderate",
+          "facts": [
+            "2f486bc8-4240-4fb0-b8b8-c7d181e54294",
+            "a987d1ce-0316-4ad6-8850-406ee712b55b"
+          ],
+          "createdBy": "Simone Curzi",
+          "createdOn": "2026-01-29T07:33:17.1525416Z",
+          "modifiedBy": "Simone Curzi",
+          "modifiedOn": "2026-01-29T08:12:12.4242764Z"
+        },
+        {
+          "$type": "QRiskTree.Engine.Facts.FactAnalyzerNode, QRiskTree.Engine",
+          "id": "13fb2c0d-0e0b-4127-b608-1523f1c59e60",
+          "name": "Positive",
+          "calculated": true,
+          "Min": 43.00959609723909,
+          "mode": 49.397712307674496,
+          "Max": 57.050210338452644,
+          "confidence": "Moderate",
+          "facts": [
+            "6069099e-1ef1-443c-bd0d-b260497f1db9",
+            "746c1ec1-c5f9-4135-913c-d2b194e41c6b"
+          ],
+          "createdBy": "Simone Curzi",
+          "createdOn": "2026-01-29T07:33:18.3438446Z",
+          "modifiedBy": "Simone Curzi",
+          "modifiedOn": "2026-01-29T08:12:12.4789256Z"
+        }
+      ],
+      "createdBy": "Simone Curzi",
+      "createdOn": "2026-01-29T07:33:10.4688655Z",
+      "modifiedBy": "Simone Curzi",
+      "modifiedOn": "2026-01-29T08:12:12.4846683Z"
+    }
+  ],
+  "createdBy": "Simone Curzi",
+  "createdOn": "2026-01-29T07:33:07.9935494Z",
+  "modifiedBy": "Simone Curzi",
+  "modifiedOn": "2026-01-29T07:33:10.4696786Z"
+}
