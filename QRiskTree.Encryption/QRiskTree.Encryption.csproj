@@ -9,8 +9,8 @@
     <Authors>Simone Curzi</Authors>
     <Copyright>Copyright (c) Simone Curzi, 2025-2026.</Copyright>
     <ProductName>QRiskTree</ProductName>
-    <VersionPrefix>0.6.0</VersionPrefix>
-    <FileVersion>0.6.0</FileVersion>
+    <VersionPrefix>0.7.0</VersionPrefix>
+    <FileVersion>0.7.0</FileVersion>
     <Title>QRiskTree Encryption</Title>
     <Description>QRiskTree, short for Quantitative Risk Tree, is a library and a tool designed to help organizations determine when security is enough and which mitigations offer the best Return on the Security Investment. It enables data-driven decisions by combining threat modeling with quantitative risk analysis.</Description>
     <PackageProjectUrl>https://github.com/simonec73/QRiskTree</PackageProjectUrl>
