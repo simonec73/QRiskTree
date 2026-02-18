@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QRiskTreeParallelTest", "QR
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QRiskTree.Encryption", "QRiskTree.Encryption\QRiskTree.Encryption.csproj", "{1CF1CAF5-C2EF-41FD-B945-CFF9CE953A00}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QRiskTree.Engine.ImportExport", "QRiskTree.Engine.ImportExport\QRiskTree.Engine.ImportExport.csproj", "{9B574400-01C2-467E-BF42-B22CDA38C380}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{1CF1CAF5-C2EF-41FD-B945-CFF9CE953A00}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1CF1CAF5-C2EF-41FD-B945-CFF9CE953A00}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1CF1CAF5-C2EF-41FD-B945-CFF9CE953A00}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9B574400-01C2-467E-BF42-B22CDA38C380}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B574400-01C2-467E-BF42-B22CDA38C380}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B574400-01C2-467E-BF42-B22CDA38C380}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B574400-01C2-467E-BF42-B22CDA38C380}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -24,7 +24,6 @@
 
   <ItemGroup>
     <PackageReference Include="MdXaml" Version="1.27.0" />
-    <PackageReference Include="Microsoft.ThreatModeling.TMFileParser" Version="1.1.0" />
     <PackageReference Include="OxyPlot.Wpf" Version="2.2.0" />
     <PackageReference Include="PropertyTools.Wpf" Version="3.1.0" />
     <PackageReference Include="SecurityCodeScan.VS2019" Version="5.6.7">
@@ -36,6 +35,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\QRiskTree.Encryption\QRiskTree.Encryption.csproj" />
+    <ProjectReference Include="..\QRiskTree.Engine.ImportExport\QRiskTree.Engine.ImportExport.csproj" />
     <ProjectReference Include="..\QRiskTree.Engine\QRiskTree.Engine.csproj" />
   </ItemGroup>
 

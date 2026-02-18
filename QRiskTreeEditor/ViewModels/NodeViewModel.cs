@@ -1,6 +1,7 @@
 ﻿using QRiskTree.Engine;
 using QRiskTree.Engine.ExtendedModel;
 using QRiskTree.Engine.Facts;
+using QRiskTree.Engine.ImportExport;
 using QRiskTree.Engine.Model;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -9,7 +10,7 @@ using PT = PropertyTools.DataAnnotations;
 
 namespace QRiskTreeEditor.ViewModels
 {
-    internal class NodeViewModel : FactsContainerViewModel, INotifyPropertyChanged
+    internal class NodeViewModel : FactsContainerViewModel, INotifyPropertyChanged, INamedObject
     {
         public NodeViewModel(NodeWithFacts node, NodeViewModel? parent, RiskModelViewModel model) : base(node, parent, model)
         {

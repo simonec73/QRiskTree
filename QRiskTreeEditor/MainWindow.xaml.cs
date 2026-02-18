@@ -2,9 +2,9 @@
 using QRiskTree.Engine;
 using QRiskTree.Engine.ExtendedModel;
 using QRiskTree.Engine.Facts;
+using QRiskTree.Engine.ImportExport;
 using QRiskTree.Engine.Model;
 using QRiskTreeEditor.Controls;
-using QRiskTreeEditor.Importers;
 using QRiskTreeEditor.SecondaryWindows;
 using QRiskTreeEditor.ViewModels;
 using System.Collections.Specialized;
@@ -15,8 +15,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using TMFileParser;
-using TMFileParser.Models.output;
 
 namespace QRiskTreeEditor
 {
@@ -551,182 +549,31 @@ namespace QRiskTreeEditor
 
         private void _importFromTMT_Click(object sender, RoutedEventArgs e)
         {
-            var openFileDialog = new Microsoft.Win32.OpenFileDialog
-            {
-                Title = "Import Microsoft Threat Modeling Tool Threat Model",
-                Filter = "Threat Model files (*.tm7)|*.tm7|All files (*.*)|*.*",
-                DefaultExt = ".tm7",
-                CheckFileExists = true
-            };
-
-            if (openFileDialog.ShowDialog() == true)
-            {
-                var reader = new TM7FileReader(new FileInfo(openFileDialog.FileName));
-                var threats = (IEnumerable<object>)reader.GetData("threats") as IEnumerable<TM7Threat>;
-                if (threats?.Any() ?? false)
-                {
-                    if (DataContext is RiskModelViewModel modelVM)
-                    {
-                        foreach (var threat in threats)
-                        {
-                            if (threat != null)
-                            {
-                                StringBuilder sb = new StringBuilder();
-                                var risk = modelVM.Risks.OfType<MitigatedRiskViewModel>()
-                                    .FirstOrDefault(x => string.CompareOrdinal(x.Name, threat.title) == 0);
-                                if (risk == null)
-                                {
-                                    risk = modelVM.AddRisk(threat.title);
-                                    if (!string.IsNullOrWhiteSpace(threat.description))
-                                    {
-                                        sb.AppendLine(threat.description);
-                                        sb.AppendLine();
-                                    }
-                                    sb.AppendLine("Applies to the following Data Flow(s):");
-                                }
-                                else
-                                {
-                                    sb.Append(risk.Description);
-                                }
-
-                                sb.AppendLine($"- {threat.interaction}");
-
-                                if (risk != null)
-                                {
-                                    risk.Description = sb.ToString();
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            Import(new TM7Importer());
         }
 
         private void _importFromOpenTM_Click(object sender, RoutedEventArgs e)
         {
+            Import(new OpenTMImporter());
+        }
+
+        private void Import(IImporter importer)
+        {
             var openFileDialog = new Microsoft.Win32.OpenFileDialog
             {
-                Title = "Import Open Threat Model file",
-                Filter = "Open Threat Model files (*.json)|*.json|All files (*.*)|*.*",
-                DefaultExt = ".json",
+                Title = $"Import {importer.FileDescription} file",
+                Filter = $"Open {importer.FileDescription} files (*{importer.FileExtension})|*{importer.FileExtension}|All files (*.*)|*.*",
+                DefaultExt = importer.FileExtension,
                 CheckFileExists = true
             };
 
             if (openFileDialog.ShowDialog() == true)
             {
-                var model = OpenThreatModelImporter.Import(openFileDialog.FileName);
-
-                if (model != null)
+                if (DataContext is RiskModelViewModel modelVM && modelVM is IRiskModel<MitigatedRiskViewModel, MitigationCostViewModel> riskModel)
                 {
-                    if (DataContext is RiskModelViewModel modelVM)
+                    if (importer.TryImportingIntoRiskModel(openFileDialog.FileName, ref riskModel))
                     {
-                        var threats = model.Threats?.ToArray();
-                        if (threats?.Any() ?? false)
-                        {
-                            foreach (var threat in threats)
-                            {
-                                if (threat != null)
-                                {
-                                    var risk = modelVM.AddRisk(threat.Name);
-
-                                    var builder = new StringBuilder();
-                                    if (!string.IsNullOrWhiteSpace(threat.Description))
-                                    {
-                                        builder.AppendLine(threat.Description);
-                                    }
-
-                                    var categories = threat.Categories?.ToArray();
-                                    bool first = true;
-                                    if (categories?.Any() ?? false)
-                                    {
-                                        if (builder.Length > 0)
-                                            builder.AppendLine();
-
-                                        builder.Append("Categories: ");
-                                        foreach (var category in categories)
-                                        {
-                                            if (!first)
-                                                builder.Append(", ");
-                                            else
-                                                first = false;
-                                            builder.Append(category);
-                                        }
-                                        builder.AppendLine();
-                                    }
-
-                                    var cwes = threat.Cwes?.ToArray();
-                                    first = true;
-                                    if (cwes?.Any() ?? false)
-                                    {
-                                        if (builder.Length > 0)
-                                            builder.AppendLine();
-
-                                        builder.Append("CWEs: ");
-                                        foreach (var cwe in cwes)
-                                        {
-                                            if (!first)
-                                                builder.Append(", ");
-                                            else
-                                                first = false;
-                                            builder.Append(cwe);
-                                        }
-                                        builder.AppendLine();
-                                    }
-
-                                    if (threat.Risk != null)
-                                    {
-                                        if (builder.Length > 0)
-                                            builder.AppendLine();
-
-                                        if (threat.Risk.Likelihood != null && threat.Risk.Likelihood > 0.0)
-                                        {
-                                            builder.AppendLine($"Likelihood: {threat.Risk.Likelihood}%.");
-                                            if (!string.IsNullOrWhiteSpace(threat.Risk.LikelihoodComment))
-                                                builder.AppendLine(threat.Risk.LikelihoodComment);
-                                        }
-
-                                        if (builder.Length > 0)
-                                            builder.AppendLine();
-
-                                        if (threat.Risk.Impact != 0.0)
-                                        {
-                                            builder.AppendLine($"Impact: {threat.Risk.Impact}%.");
-                                            builder.AppendLine(threat.Risk.ImpactComment);
-                                        }
-                                    }
-
-                                    risk.Description = builder.ToString();
-                                }
-                            }
-                        }
-
-                        var mitigations = model.Mitigations?.ToArray();
-                        if (mitigations?.Any() ?? false)
-                        {
-                            foreach (var mitigation in mitigations)
-                            {
-                                if (mitigation != null)
-                                {
-                                    var mitigationVM = modelVM.AddMitigation(mitigation.Name);
-                                    if (mitigationVM != null)
-                                    {
-                                        var builder = new StringBuilder();
-                                        if (!string.IsNullOrWhiteSpace(mitigation.Description))
-                                        {
-                                            builder.AppendLine(mitigation.Description);
-                                        }
-                                        if (mitigation.RiskReduction > 0.0)
-                                        {
-                                            if (builder.Length > 0)
-                                                builder.AppendLine();
-
-                                            builder.Append($"Risk Reduction: {mitigation.RiskReduction}%.");
-                                        }
-                                        mitigationVM.Description = builder.ToString();
-                                    }
-                                }
-                            }
-                        }
+                        MessageBox.Show($"{importer.FileDescription} file '{Path.GetFileName(openFileDialog.FileName)}' has been imported successfully.", "Import successful", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                 }
             }

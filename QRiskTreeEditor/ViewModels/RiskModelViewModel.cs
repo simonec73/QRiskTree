@@ -1,6 +1,7 @@
 ﻿using QRiskTree.Engine;
 using QRiskTree.Engine.ExtendedModel;
 using QRiskTree.Engine.Facts;
+using QRiskTree.Engine.ImportExport;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -14,8 +15,9 @@ using System.Windows.Markup;
 
 namespace QRiskTreeEditor.ViewModels
 {
-    internal class RiskModelViewModel : INotifyPropertyChanged, 
-        IRiskSelectionReceiver, IMitigationSelectionReceiver, IFactSelectionReceiver, IFactAnalyzerSelectionReceiver
+    internal class RiskModelViewModel : INotifyPropertyChanged,
+        IRiskSelectionReceiver, IMitigationSelectionReceiver, IFactSelectionReceiver, IFactAnalyzerSelectionReceiver,
+        IRiskModel<MitigatedRiskViewModel, MitigationCostViewModel>
     {
         private readonly RiskModel _model;
         private readonly RiskModelProperties _properties;
@@ -185,6 +187,11 @@ namespace QRiskTreeEditor.ViewModels
             }
         }
 
+        public MitigatedRiskViewModel? GetRisk(string name)
+        {
+            return _risks.FirstOrDefault(x => string.CompareOrdinal(x.Name, name) == 0);
+        }
+
         private object? _selectedRisk;
 
         public object? SelectedRisk
@@ -230,6 +237,11 @@ namespace QRiskTreeEditor.ViewModels
             {
                 SelectedMitigation = null;
             }
+        }
+
+        public MitigationCostViewModel? GetMitigation(string name)
+        {
+            return _mitigations.FirstOrDefault(x => string.CompareOrdinal(x.Name, name) == 0);
         }
 
         private object? _selectedMitigation;
