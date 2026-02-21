@@ -1,4 +1,5 @@
 ﻿using QRiskTree.Engine.Facts;
+using QRiskTree.Engine.ImportExport;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Data;
@@ -6,7 +7,7 @@ using PT = PropertyTools.DataAnnotations;
 
 namespace QRiskTreeEditor.ViewModels
 {
-    internal abstract class FactsContainerViewModel
+    internal abstract class FactsContainerViewModel : IFactContainer
     {
         protected readonly NodeWithFacts _node;
         protected readonly NodeViewModel? _parent;
@@ -81,6 +82,15 @@ namespace QRiskTreeEditor.ViewModels
                 return true;
             }
 
+            return false;
+        }
+
+        public bool AddFact(IFact fact)
+        {
+            if (fact is FactViewModel factViewModel)
+            {
+                return AddFact(factViewModel);
+            }
             return false;
         }
 

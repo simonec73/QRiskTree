@@ -1,6 +1,6 @@
 ﻿using QRiskTree.Engine;
 using QRiskTree.Engine.Facts;
-using QRiskTreeEditor.Importers;
+using QRiskTree.Engine.ImportExport;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Data;
@@ -8,7 +8,7 @@ using PT = PropertyTools.DataAnnotations;
 
 namespace QRiskTreeEditor.ViewModels
 {
-    internal class FactViewModel : INotifyPropertyChanged
+    internal class FactViewModel : INotifyPropertyChanged, IFact
     {
         private readonly Fact _fact;
         private readonly RiskModelViewModel _model;
@@ -336,6 +336,8 @@ namespace QRiskTreeEditor.ViewModels
 
         [Browsable(false)]
         public bool HasRelated => _related.Any();
+
+        public string? Description { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         internal void AddRelated(FactsContainerViewModel node)
         {

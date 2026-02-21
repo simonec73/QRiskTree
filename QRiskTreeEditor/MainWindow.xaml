@@ -136,6 +136,7 @@
                 <Separator/>
                 <MenuItem x:Name="_importFromTMT" Header="Import from Microsoft Threat Modeling Tool file..." Click="_importFromTMT_Click"/>
                 <MenuItem x:Name="_importFromOpenTM" Header="Import from Open Threat Model file..." Click="_importFromOpenTM_Click"/>
+                <MenuItem x:Name="_importFromSTIX" Header="Import from STIX file..." Click="_importFromSTIX_Click"/>
             </MenuItem>
             <MenuItem x:Name="_menuExport" Header="Export">
                 <MenuItem x:Name="_exportFacts" Header="Export Facts..." Click="_exportFacts_Click"/>

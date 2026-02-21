@@ -557,6 +557,11 @@ namespace QRiskTreeEditor
             Import(new OpenTMImporter());
         }
 
+        private void _importFromSTIX_Click(object sender, RoutedEventArgs e)
+        {
+            Import(new StixImporter());
+        }
+
         private void Import(IImporter importer)
         {
             var openFileDialog = new Microsoft.Win32.OpenFileDialog

@@ -277,6 +277,12 @@ namespace QRiskTreeEditor.ViewModels
             return result;
         }
 
+        public IFact? AddFact(string context, string source, string name, string? description)
+        {
+            var fact = new FactRange(context, source, name, new QRiskTree.Engine.Range(RangeType.Number));
+            return AddFact(fact);
+        }
+
         public void RemoveFact(FactViewModel fact)
         {
             Model.RemoveFact(fact.Fact);

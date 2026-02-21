@@ -32,5 +32,15 @@
         /// <param name="name">The name of the mitigation to retrieve.</param>
         /// <returns>An object representing the mitigation with the specified name.</returns>
         M? GetMitigation(string name);
+
+        /// <summary>
+        /// Add a fact to the model with the specified name and description, and returns the created fact object.
+        /// </summary>
+        /// <param name="context">The context of the fact to add.</param>
+        /// <param name="source">The source of the fact to add.</param>
+        /// <param name="name">The name of the fact to add.</param>
+        /// <param name="description">The description of the fact to add.</param>
+        /// <returns>The created fact object.</returns>
+        IFact? AddFact(string context, string source, string name, string? description);
     }
 }

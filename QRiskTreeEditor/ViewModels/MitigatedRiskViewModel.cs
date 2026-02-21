@@ -9,7 +9,7 @@ using PT = PropertyTools.DataAnnotations;
 
 namespace QRiskTreeEditor.ViewModels
 {
-    internal class MitigatedRiskViewModel : NodeViewModel
+    internal class MitigatedRiskViewModel : NodeViewModel, IApplyMitigation<MitigationCostViewModel>
     {
         public MitigatedRiskViewModel(MitigatedRisk node, NodeViewModel? parent, RiskModelViewModel model) : base(node, parent, model)
         {
@@ -207,6 +207,24 @@ namespace QRiskTreeEditor.ViewModels
                     }
                 }
             }
+        }
+
+        public bool ApplyMitigation(MitigationCostViewModel mitigation)
+        {
+            var result = false;
+
+            var appliedMitigation = AppliedMitigationViewModel.GetAppliedMitigationViewModel(mitigation, this, _model);
+            if (appliedMitigation != null)
+            {
+                _mitigations.Add(appliedMitigation);
+                appliedMitigation.InitializeFacts();
+                mitigation.AddRelated(this);
+                OnPropertyChanged(nameof(Mitigations));
+                OnPropertyChanged(nameof(HasMitigations));
+                OnPropertyChanged(nameof(HasChildren));
+            }
+
+            return result;
         }
 
         public bool ApplyMitigation(MitigationCostViewModel mitigation, out AppliedMitigationViewModel? appliedMitigation)
