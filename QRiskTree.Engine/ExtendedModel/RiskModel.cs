@@ -404,6 +404,84 @@ namespace QRiskTree.Engine.ExtendedModel
         }
         #endregion
 
+        #region Facts management.
+        [JsonProperty("facts", Order = 12)]
+        private FactsCollection? _facts { get; set; }
+
+        /// <summary>
+        /// Adds a fact to the collection managed by the system.
+        /// </summary>
+        /// <param name="fact">The fact to add. Cannot be <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the fact was successfully added; otherwise, <see langword="false"/>.</returns>
+        public bool AddFact(Fact fact)
+        {
+            return _factsManager.Add(fact);
+        }
+
+        /// <summary>
+        /// Removes the specified fact from the collection.
+        /// </summary>
+        /// <param name="fact">The fact to remove from the collection. Cannot be <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the fact was successfully removed; otherwise, <see langword="false"/>.</returns>
+        public bool RemoveFact(Fact fact)
+        {
+            return _factsManager.Remove(fact);
+        }
+
+        private void RecursivelyRemoveFact(Fact fact)
+        {
+            // Remove the fact from all risks and their children.
+            _risks?.ForEach(r => RemoveFact(r, fact));
+        }
+
+        private void RemoveFact(NodeWithFacts node, Fact fact)
+        {
+            if (node.HasFact(fact.Id))
+            {
+                // Remove the fact from the node.
+                node.Remove(fact);
+                Update();
+            }
+
+            var children = node.Children?.OfType<NodeWithFacts>().ToArray();
+            if (children?.Any() ?? false)
+            {
+                // Recursively remove the fact from all children.
+                foreach (var child in children)
+                {
+                    RemoveFact(child, fact);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the collection of available facts managed by the system.
+        /// </summary>
+        public IEnumerable<Fact>? AvailableFacts => _factsManager.Facts;
+
+        /// <summary>
+        /// Import the facts in the embedded FactsManager from a JSON file.
+        /// </summary>
+        /// <param name="filePath">Path of the file containing the Facts to be imported.</param>
+        /// <param name="overwrite">True if eventual existing facts must be overwritten, false otherwise.</param>
+        public void ImportFacts(string filePath, bool overwrite = false)
+        {
+            _factsManager.Import(filePath, overwrite);
+        }
+
+        /// <summary>
+        /// Exports the current set of facts to the specified file.
+        /// </summary>
+        /// <remarks>This method writes the facts managed by the internal facts manager to the specified
+        /// file.  Ensure the application has the necessary permissions to write to the specified file path.</remarks>
+        /// <param name="filePath">The path of the file to which the facts will be exported. The path must be a valid file path and cannot be
+        /// null or empty.</param>
+        public void ExportFacts(string filePath)
+        {
+            _factsManager.Export(filePath);
+        }
+        #endregion
+
         #region Events management.
         private void OnChildAdded(Node parent, Node child)
         {
@@ -1217,84 +1295,6 @@ namespace QRiskTree.Engine.ExtendedModel
                     RecursiveRegisterWithFactsManager(child, factsManager);
                 }
             }
-        }
-        #endregion
-
-        #region Facts management.
-        [JsonProperty("facts", Order = 12)]
-        private FactsCollection? _facts { get; set; }
-
-        /// <summary>
-        /// Adds a fact to the collection managed by the system.
-        /// </summary>
-        /// <param name="fact">The fact to add. Cannot be <see langword="null"/>.</param>
-        /// <returns><see langword="true"/> if the fact was successfully added; otherwise, <see langword="false"/>.</returns>
-        public bool AddFact(Fact fact)
-        {
-            return _factsManager.Add(fact);
-        }
-
-        /// <summary>
-        /// Removes the specified fact from the collection.
-        /// </summary>
-        /// <param name="fact">The fact to remove from the collection. Cannot be <see langword="null"/>.</param>
-        /// <returns><see langword="true"/> if the fact was successfully removed; otherwise, <see langword="false"/>.</returns>
-        public bool RemoveFact(Fact fact)
-        {
-            return _factsManager.Remove(fact);
-        }
-
-        private void RecursivelyRemoveFact(Fact fact)
-        {
-            // Remove the fact from all risks and their children.
-            _risks?.ForEach(r => RemoveFact(r, fact));
-        }
-
-        private void RemoveFact(NodeWithFacts node, Fact fact)
-        {
-            if (node.HasFact(fact.Id))
-            {
-                // Remove the fact from the node.
-                node.Remove(fact);
-                Update();
-            }
-
-            var children = node.Children?.OfType<NodeWithFacts>().ToArray();
-            if (children?.Any() ?? false)
-            {
-                // Recursively remove the fact from all children.
-                foreach (var child in children)
-                {
-                    RemoveFact(child, fact);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets the collection of available facts managed by the system.
-        /// </summary>
-        public IEnumerable<Fact>? AvailableFacts => _factsManager.Facts;
-
-        /// <summary>
-        /// Import the facts in the embedded FactsManager from a JSON file.
-        /// </summary>
-        /// <param name="filePath">Path of the file containing the Facts to be imported.</param>
-        /// <param name="overwrite">True if eventual existing facts must be overwritten, false otherwise.</param>
-        public void ImportFacts(string filePath, bool overwrite = false)
-        {
-            _factsManager.Import(filePath, overwrite);
-        }
-
-        /// <summary>
-        /// Exports the current set of facts to the specified file.
-        /// </summary>
-        /// <remarks>This method writes the facts managed by the internal facts manager to the specified
-        /// file.  Ensure the application has the necessary permissions to write to the specified file path.</remarks>
-        /// <param name="filePath">The path of the file to which the facts will be exported. The path must be a valid file path and cannot be
-        /// null or empty.</param>
-        public void ExportFacts(string filePath)
-        {
-            _factsManager.Export(filePath);
         }
         #endregion
 
