@@ -18,7 +18,8 @@
     <RepositoryUrl>https://github.com/simonec73/QRiskTree</RepositoryUrl>
     <PackageTags>RiskAnalysis;ThreatModeling</PackageTags>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>    
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>    
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -41,6 +42,10 @@
     <None Update="Logo.png">
       <PackagePath>\</PackagePath>
       <Pack>True</Pack>
+    </None>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
 
