@@ -12,6 +12,7 @@ namespace QRiskTree.Encryption
     {
         private SecureString? _passphrase;
         private readonly ICipherset _c1 = new Cipherset1();
+        private readonly ICipherset _c2 = new Cipherset2();
         private int _iterations;
         private byte[] _salt = Array.Empty<byte>();
         private int _keySize;
@@ -19,20 +20,43 @@ namespace QRiskTree.Encryption
         private HashAlgorithmName _hashAlgorithm;
 
         #region Public members.
-        public const short DefaultCipherSet = 1;
+        /// <summary>
+        /// Default cipherset to use for encryption and decryption. 
+        /// The default cipherset is the most secure one available in the library, 
+        /// but it can be changed to a less secure one for compatibility reasons.
+        /// </summary>
+        public const short DefaultCipherSet = 2;
 
+        /// <summary>
+        /// Flag indicating whether the encryption manager is initialized with a passphrase or not.
+        /// </summary>
         public bool IsInitialized => _passphrase != null;
 
+        /// <summary>
+        /// Sets the passphrase to use for encryption and decryption.
+        /// </summary>
+        /// <param name="passphrase">The passphrase to use for encryption and decryption.</param>
         public void SetPassphrase(SecureString passphrase)
         {
             _passphrase = passphrase;
         }
 
+        /// <summary>
+        /// Resets the passphrase, making the encryption manager uninitialized.
+        /// </summary>
         public void ResetPassphrase()
         {
             _passphrase = null;
         }
 
+        /// <summary>
+        /// Encrypts the given data using the passphrase and the specified cipherset.
+        /// </summary>
+        /// <param name="data">The data to encrypt.</param>
+        /// <param name="cipherSet">The cipherset to use for encryption.
+        /// If missing, the latest and strongest cipherset will be used.</param>
+        /// <returns>The encrypted data.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if the passphrase is not set.</exception>
         public byte[] Encrypt(byte[] data, short cipherSet = DefaultCipherSet)
         {
             if (_passphrase == null)
@@ -87,6 +111,14 @@ namespace QRiskTree.Encryption
             }
         }
 
+        /// <summary>
+        /// Decrypts the specified encrypted data using the configured passphrase and cryptographic parameters.
+        /// </summary>
+        /// <param name="encryptedData">The encrypted data to decrypt.</param>
+        /// <returns>The decrypted data as a byte array, or null if decryption fails.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the passphrase is not set.</exception>
+        /// <exception cref="NotSupportedException">Thrown when the cipher set specified in the encrypted data is invalid or not supported.</exception>
+        /// <exception cref="CryptographicException">Thrown when the data integrity check fails.</exception>
         public byte[]? Decrypt(byte[] encryptedData)
         {
             if (_passphrase == null)
@@ -146,92 +178,57 @@ namespace QRiskTree.Encryption
         #region Private members to handle the cipherset details.
         private int GetIterations(short cipherSet)
         {
-            int result;
-            switch (cipherSet)
+            return cipherSet switch
             {
-                case 1:
-                    result = _c1.Iterations;
-                    break;
-                default:
-                    result = _c1.Iterations;
-                    break;
-            }
-            return result;
+                1 => _c1.Iterations,
+                _ => _c2.Iterations
+            };
         }
 
         private int GetKeySize(short cipherSet)
         {
-            int result;
-            switch (cipherSet)
+            return cipherSet switch
             {
-                case 1:
-                    result = _c1.KeySize;
-                    break;
-                default:
-                    result = _c1.KeySize;
-                    break;
-            }
-            return result;
+                1 => _c1.KeySize,
+                _ => _c2.KeySize
+            };
         }
 
         private int GetHashSize(short cipherSet)
         {
-            int result;
-            switch (cipherSet)
+            return cipherSet switch
             {
-                case 1:
-                    result = _c1.HashSize;
-                    break;
-                default:
-                    result = _c1.HashSize;
-                    break;
-            }
-            return result;
+                1 => _c1.HashSize,
+                _ => _c2.HashSize
+            };
         }
 
         private byte[] GetSalt(short cipherSet)
         {
-            byte[] result;
-            switch (cipherSet)
+            return cipherSet switch
             {
-                case 1:
-                    result = _c1.Salt;
-                    break;
-                default:
-                    result = _c1.Salt;
-                    break;
-            }
-            return result;
+                1 => _c1.Salt,
+                _ => _c2.Salt
+            };
+
         }
 
         private HashAlgorithmName GetHashAlgorithm(short cipherSet)
         {
-            HashAlgorithmName result;
-            switch (cipherSet)
+            return cipherSet switch
             {
-                case 1:
-                    result = _c1.HashAlgorithm;
-                    break;
-                default:
-                    result = _c1.HashAlgorithm;
-                    break;
-            }
-            return result;
+                1 => _c1.HashAlgorithm,
+                _ => _c2.HashAlgorithm
+            };
         }
 
         private SymmetricAlgorithm GetAlgorithm(SecureString passphrase, short cipherSet)
         {
-            SymmetricAlgorithm result;
-
-            switch (cipherSet)
+            SymmetricAlgorithm result = cipherSet switch
             {
-                case 1:
-                    result = _c1.GetSymmetricAlgorithm();
-                    break;
-                default:
-                    result = _c1.GetSymmetricAlgorithm();
-                    break;
-            }
+                1 => _c1.GetSymmetricAlgorithm(),
+                _ => _c2.GetSymmetricAlgorithm()
+            };
 
             result.Key = passphrase.Process(DeriveKey);
 
@@ -240,17 +237,11 @@ namespace QRiskTree.Encryption
 
         private HMAC GetHMAC(SecureString passphrase, short cipherSet)
         {
-            HMAC result;
-
-            switch (cipherSet)
+            HMAC result = cipherSet switch
             {
-                case 1:
-                    result = _c1.GetHMAC();
-                    break;
-                default:
-                    result = _c1.GetHMAC();
-                    break;
-            }
+                1 => _c1.GetHMAC(),
+                _ => _c2.GetHMAC()
+            };
 
             result.Key = passphrase.Process(DeriveHash);
 
